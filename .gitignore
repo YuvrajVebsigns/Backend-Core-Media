@@ -2,9 +2,10 @@
 /dist
 /node_modules
 /build
+/docs
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
