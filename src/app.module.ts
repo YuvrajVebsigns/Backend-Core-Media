@@ -5,6 +5,7 @@ import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import * as Joi from 'joi';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import { AppController } from './app.controller';
@@ -12,6 +13,10 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
+import { EventsModule } from './events/events.module';
+import { FeatureFlagModule } from './feature-flags/feature-flag.module';
+import { ClsModule } from 'nestjs-cls';
+import { randomUUID } from 'crypto';
 
 const envFilePath = `.env.${process.env.NODE_ENV || 'local'}`;
 const envConfig = fs.existsSync(envFilePath) ? dotenv.parse(fs.readFileSync(envFilePath)) : {};
@@ -37,6 +42,24 @@ const redisQueueImports = isProd || useRedis ? [
     ConfigModule.forRoot({
       envFilePath,
       isGlobal: true,
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string()
+          .valid('development', 'production', 'test')
+          .default('development'),
+        PORT: Joi.number().default(3000),
+        JWT_SECRET: Joi.string().required(),
+        USE_REDIS: Joi.boolean().default(false),
+        REDIS_HOST: Joi.string().optional(),
+        REDIS_PORT: Joi.number().optional(),
+      }),
+    }),
+    ClsModule.forRoot({
+      global: true,
+      middleware: {
+        mount: true,
+        generateId: true,
+        idGenerator: (req: any) => req.headers['x-correlation-id'] || randomUUID(),
+      },
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
@@ -70,6 +93,8 @@ const redisQueueImports = isProd || useRedis ? [
     }),
     AuthModule,
     HealthModule,
+    EventsModule,
+    FeatureFlagModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],

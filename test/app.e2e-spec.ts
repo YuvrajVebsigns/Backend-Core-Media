@@ -11,6 +11,7 @@ describe('AppController (e2e)', () => {
 
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
+    process.env.JWT_SECRET = 'test_secret_key_for_e2e';
     
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
