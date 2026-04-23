@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { join } from 'path';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { AppModule } from './app.module';
@@ -53,6 +53,15 @@ async function bootstrap() {
     }),
   });
 
+  // Set Global Prefix (e.g., /api/v1/...)
+  app.setGlobalPrefix('api');
+
+  // Enable URI Versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
+
   app.use(helmet());
 
   app.enableCors({
@@ -78,13 +87,14 @@ async function bootstrap() {
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Core Media API')
-    .setDescription('The Core Media API documentation')
+    .setDescription('The Core Media API documentation (Version 1)')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document, {
+  // Serve Swagger UI at /api/docs
+  SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
     },
