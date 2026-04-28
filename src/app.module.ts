@@ -11,6 +11,9 @@ import * as fs from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { SystemUsersModule } from './system-users/system-users.module';
+import { RolesModule } from './roles/roles.module';
+import { SeedModule } from './database/seed.module';
 import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
@@ -95,6 +98,9 @@ const redisQueueImports = isProd || useRedis ? [
     }),
     DatabaseModule,
     AuthModule,
+    SystemUsersModule,
+    RolesModule,
+    SeedModule,
     HealthModule,
     EventsModule,
     FeatureFlagModule,
