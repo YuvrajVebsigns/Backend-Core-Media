@@ -12,4 +12,4 @@ import { Role, RoleSchema } from './schemas/role.schema';
   providers: [RolesService],
   exports: [RolesService],
 })
-export class RolesModule {}
+export class RolesModule { }

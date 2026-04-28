@@ -127,8 +127,12 @@ async function bootstrap() {
   );
 
   const nodeEnv = configService.get<string>('NODE_ENV');
-  if (nodeEnv === 'development') {
+  if (nodeEnv === 'development' || nodeEnv === 'test') {
     app.use(morgan('dev'));
+    // Redirect root to swagger in development/test only
+    app.getHttpAdapter().get('/', (req: any, res: any) => {
+      res.redirect(301, '/api/docs#');
+    });
   } else {
     app.use(morgan('combined', {
       stream: {
@@ -139,6 +143,22 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);
+
+  const uri = configService.get<string>('MONGODB_URI');
+  const url = await app.getUrl();
+
+  console.log('\n┌────────────────────────────────────────────────────────┐');
+  console.log('│                🚀  Server is running!                  │');
+  console.log('├────────────────────────────────────────────────────────┤');
+  console.log(`│  ENV      : ${nodeEnv?.padEnd(40)}   │`);
+  console.log(`│  PORT     : ${port.toString().padEnd(40)}   │`);
+  console.log(`│  URL      : ${url.padEnd(40)}   │`);
+  console.log(`│  SWAGGER  : ${(url + '/api/docs').padEnd(40)}   │`);
+  console.log('├────────────────────────────────────────────────────────┤');
+  console.log('│           🍃  MongoDB Connection Status                │');
+  console.log('├────────────────────────────────────────────────────────┤');
+  console.log(`│  URI      : ${uri?.replace(/:\/\/([^:]+):([^@]+)@/, '://<user>:<pass>@').padEnd(40)} │`);
+  console.log('└────────────────────────────────────────────────────────┘\n');
 }
 bootstrap().catch((err) => {
   console.error('Error during bootstrap:', err);

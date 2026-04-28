@@ -33,10 +33,17 @@ export class RolesSeeder implements OnApplicationBootstrap {
     ];
 
     for (const roleData of roles) {
-      const existingRole = await this.rolesService.findByName(roleData.name);
-      if (!existingRole) {
-        await this.rolesService.create(roleData);
-        console.log(`✅ Role seeded: ${roleData.name}`);
+      try {
+        const existingRole = await this.rolesService.findByName(roleData.name);
+        if (!existingRole) {
+          await this.rolesService.create(roleData);
+          console.log(`✅ Role seeded: ${roleData.name}`);
+        }
+      } catch (error) {
+        // Handle race conditions during parallel tests
+        if (error.code !== 11000) {
+          throw error;
+        }
       }
     }
   }
