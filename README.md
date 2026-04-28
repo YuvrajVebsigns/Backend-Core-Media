@@ -72,6 +72,7 @@ A **production-grade, enterprise-ready** NestJS backend architecture built with 
 | Validation | class-validator + class-transformer + Joi |
 | Logging | Winston + winston-daily-rotate-file + Morgan |
 | Caching | cache-manager + cache-manager-redis-yet |
+| Database | MongoDB + Mongoose |
 | Queue | Bull (BullMQ) + Redis |
 | Health | @nestjs/terminus |
 | Rate Limiting | @nestjs/throttler |
@@ -198,6 +199,7 @@ Create `.env.local` for development and `.env.production` for production.
 | `USE_REDIS` | boolean | No | `false` | Force-enable Redis in dev mode |
 | `REDIS_HOST` | string | No | `localhost` | Redis server hostname |
 | `REDIS_PORT` | number | No | `6379` | Redis server port |
+| `MONGODB_URI` | string | **Yes** | — | MongoDB connection string |
 | `FEATURE_*` | boolean | No | `false` | Feature flags (see Feature Flags section) |
 
 ### Example `.env.local`
@@ -209,6 +211,7 @@ JWT_SECRET=super_secret_dev_key_123
 USE_REDIS=false
 REDIS_HOST=localhost
 REDIS_PORT=6379
+MONGODB_URI=mongodb://localhost:27017/core-media-local
 FEATURE_BETA_API=true
 FEATURE_DARK_MODE=false
 ```
@@ -817,6 +820,42 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) runs on every push/PR to `m
 
 - **Redis service container** is automatically spun up for E2E tests
 - Deploy job only runs on `main` branch after all tests pass
+
+---
+
+## 📡 API Fetcher (Client Usage)
+
+All API responses follow a standardized envelope. Below is a recommended fetcher pattern for frontend integration.
+
+### Response Envelope
+```json
+{
+  "success": true,
+  "message": "Operation successful",
+  "data": { ... }
+}
+```
+
+### Example Fetcher (Axios)
+```typescript
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:8080/api/v1',
+  withCredentials: true,
+});
+
+// Interceptor to extract data from the envelope
+api.interceptors.response.use(
+  (response) => response.data.data, // Returns only the "data" part of the envelope
+  (error) => {
+    const message = error.response?.data?.message || 'Something went wrong';
+    return Promise.reject(new Error(message));
+  }
+);
+
+export const fetcher = api;
+```
 
 ---
 

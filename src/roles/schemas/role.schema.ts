@@ -25,7 +25,18 @@ RoleSchema.set('toJSON', {
   getters: true,
   virtuals: true,
   transform: (doc, ret: any) => {
-    ret.id = ret._id;
+    if (ret._id) ret.id = ret._id.toString();
+    delete ret._id;
+    delete ret.__v;
+    return ret;
+  },
+});
+
+RoleSchema.set('toObject', {
+  getters: true,
+  virtuals: true,
+  transform: (doc, ret: any) => {
+    if (ret._id) ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
     return ret;

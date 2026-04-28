@@ -8,4 +8,4 @@ import { SystemUsersSeeder } from './seeds/system-users.seeder';
   imports: [RolesModule, SystemUsersModule],
   providers: [RolesSeeder, SystemUsersSeeder],
 })
-export class SeedModule {}
+export class SeedModule { }

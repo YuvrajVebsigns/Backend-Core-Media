@@ -34,7 +34,7 @@ export class RolesService {
 
   async update(id: string, updateDto: any): Promise<Role> {
     const updatedRole = await this.roleModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!updatedRole) {

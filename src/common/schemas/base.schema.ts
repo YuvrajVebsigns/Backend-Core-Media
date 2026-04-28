@@ -7,7 +7,7 @@ import { Document } from 'mongoose';
     getters: true,
     virtuals: true,
     transform: (doc, ret: any) => {
-      ret.id = ret._id;
+      if (ret._id) ret.id = ret._id.toString();
       delete ret._id;
       delete ret.__v;
       return ret;
@@ -17,7 +17,7 @@ import { Document } from 'mongoose';
     getters: true,
     virtuals: true,
     transform: (doc, ret: any) => {
-      ret.id = ret._id;
+      if (ret._id) ret.id = ret._id.toString();
       delete ret._id;
       delete ret.__v;
       return ret;
@@ -25,6 +25,8 @@ import { Document } from 'mongoose';
   },
 })
 export class BaseSchema extends Document {
+  id: string;
+
   @Prop({ default: false })
   isDeleted: boolean;
 

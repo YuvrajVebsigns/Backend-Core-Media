@@ -25,7 +25,8 @@ export class SystemUsersService {
       password: hashedPassword,
     });
 
-    return newUser.save();
+    const savedUser = await newUser.save();
+    return savedUser.populate('role');
   }
 
   async findAll(): Promise<SystemUser[]> {
@@ -43,6 +44,14 @@ export class SystemUsersService {
     return user;
   }
 
+  async findOneWithRefreshToken(id: string): Promise<SystemUser | null> {
+    return this.systemUserModel
+      .findOne({ _id: id, isDeleted: false })
+      .select('+refreshToken')
+      .populate('role')
+      .exec();
+  }
+
   async findByEmail(email: string): Promise<SystemUser | null> {
     return this.systemUserModel.findOne({ email, isDeleted: false }).select('+password').exec();
   }
@@ -53,7 +62,7 @@ export class SystemUsersService {
     }
 
     const updatedUser = await this.systemUserModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!updatedUser) {
