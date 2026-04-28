@@ -15,6 +15,7 @@ import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
+import { DatabaseModule } from './database/database.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 
@@ -48,6 +49,7 @@ const redisQueueImports = isProd || useRedis ? [
           .default('development'),
         PORT: Joi.number().default(3000),
         JWT_SECRET: Joi.string().required(),
+        MONGODB_URI: Joi.string().uri().required(),
         USE_REDIS: Joi.boolean().default(false),
         REDIS_HOST: Joi.string().optional(),
         REDIS_PORT: Joi.number().optional(),
@@ -91,6 +93,7 @@ const redisQueueImports = isProd || useRedis ? [
         };
       },
     }),
+    DatabaseModule,
     AuthModule,
     HealthModule,
     EventsModule,
