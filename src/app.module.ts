@@ -11,10 +11,14 @@ import * as fs from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { SystemUsersModule } from './system-users/system-users.module';
+import { RolesModule } from './roles/roles.module';
+import { SeedModule } from './database/seed.module';
 import { HealthModule } from './health/health.module';
 import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
+import { DatabaseModule } from './database/database.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 
@@ -48,6 +52,7 @@ const redisQueueImports = isProd || useRedis ? [
           .default('development'),
         PORT: Joi.number().default(3000),
         JWT_SECRET: Joi.string().required(),
+        MONGODB_URI: Joi.string().uri().required(),
         USE_REDIS: Joi.boolean().default(false),
         REDIS_HOST: Joi.string().optional(),
         REDIS_PORT: Joi.number().optional(),
@@ -91,7 +96,11 @@ const redisQueueImports = isProd || useRedis ? [
         };
       },
     }),
+    DatabaseModule,
     AuthModule,
+    SystemUsersModule,
+    RolesModule,
+    SeedModule,
     HealthModule,
     EventsModule,
     FeatureFlagModule,
