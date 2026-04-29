@@ -22,6 +22,10 @@ export class CreateSystemUserDto {
   @IsNotEmpty()
   role: string;
 
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  acceptTerms?: boolean;
+
   @ApiPropertyOptional({ example: '1234567890' })
   @IsOptional()
   @IsString()
@@ -74,6 +78,9 @@ export class SystemUserResponseDto {
 
   @ApiProperty({ example: true })
   isActive: boolean;
+
+  @ApiProperty({ example: true })
+  acceptTerms: boolean;
 
   @ApiPropertyOptional({ example: '1234567890' })
   phoneNumber?: string;

@@ -38,6 +38,9 @@ export class SystemUser extends BaseSchema {
 
   @Prop()
   lastLogin: Date;
+
+  @Prop({ default: false })
+  acceptTerms: boolean;
 }
 
 export const SystemUserSchema = SchemaFactory.createForClass(SystemUser);
