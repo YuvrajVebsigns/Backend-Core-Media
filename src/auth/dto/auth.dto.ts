@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, IsBoolean, Equals } from 'class-validator';
 import { SystemUserResponseDto } from '../../system-users/dto/system-user.dto';
 
 export class SignupDto {
@@ -18,6 +18,12 @@ export class SignupDto {
   @IsString()
   @IsNotEmpty()
   fullName: string;
+
+  @ApiProperty({ example: true, description: 'User must accept terms and conditions' })
+  @IsBoolean()
+  @IsNotEmpty()
+  @Equals(true, { message: 'You must accept the terms and conditions' })
+  acceptTerms: boolean;
 }
 
 export class LoginDto {
