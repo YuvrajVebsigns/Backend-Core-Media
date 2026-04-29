@@ -4,9 +4,9 @@ import { ApiStandardResponse } from '../common/decorators/api-standard-response.
 import { RolesService } from './roles.service';
 import { CreateRoleDto, UpdateRoleDto, RoleResponseDto } from './dto/role.dto';
 
-@ApiTags('Roles')
+@ApiTags('Admin | Roles')
 @ApiBearerAuth()
-@Controller('roles')
+@Controller('admin/roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 

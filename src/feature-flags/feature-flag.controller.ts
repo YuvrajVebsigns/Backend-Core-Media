@@ -2,8 +2,8 @@ import { Controller, Get, Param, Post, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { FeatureFlagService, FeatureFlag } from './feature-flag.service';
 
-@ApiTags('Feature Flags')
-@Controller('feature-flags')
+@ApiTags('Admin | Feature Flags')
+@Controller('admin/feature-flags')
 export class FeatureFlagController {
   constructor(private readonly featureFlagService: FeatureFlagService) { }
 

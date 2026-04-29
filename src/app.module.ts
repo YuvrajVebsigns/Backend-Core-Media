@@ -22,6 +22,7 @@ import { DatabaseModule } from './database/database.module';
 import { MenuModule } from './modules/menu/menu.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
+import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const envFilePath = fs.existsSync(`.env.${nodeEnv}`) 
@@ -122,7 +123,7 @@ const redisQueueImports = isProd || useRedis ? [
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: CacheInterceptor,
+      useClass: RoleCacheInterceptor,
     },
   ],
 })

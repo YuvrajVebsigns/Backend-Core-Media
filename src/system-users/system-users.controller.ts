@@ -4,9 +4,9 @@ import { ApiStandardResponse } from '../common/decorators/api-standard-response.
 import { SystemUsersService } from './system-users.service';
 import { CreateSystemUserDto, UpdateSystemUserDto, SystemUserResponseDto } from './dto/system-user.dto';
 
-@ApiTags('System Users')
+@ApiTags('Admin | System Users')
 @ApiBearerAuth()
-@Controller('system-users')
+@Controller('admin/system-users')
 export class SystemUsersController {
   constructor(private readonly systemUsersService: SystemUsersService) {}
 

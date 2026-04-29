@@ -1,9 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { 
-  HealthCheck, 
-  HealthCheckService, 
-  MemoryHealthIndicator, 
-  MongooseHealthIndicator 
+import {
+  HealthCheck,
+  HealthCheckService,
+  MemoryHealthIndicator,
+  MongooseHealthIndicator
 } from '@nestjs/terminus';
 import { RedisHealthIndicator } from './redis.health';
 import { SystemHealthIndicator } from './system.health';
@@ -18,7 +18,7 @@ export class HealthController {
     private redisHealth: RedisHealthIndicator,
     private mongoose: MongooseHealthIndicator,
     private system: SystemHealthIndicator,
-  ) {}
+  ) { }
 
   @Get()
   @HealthCheck()
@@ -27,10 +27,10 @@ export class HealthController {
     return this.health.check([
       // Check if memory heap usage exceeds 512MB
       () => this.memory.checkHeap('memory_heap', 512 * 1024 * 1024),
-      
+
       // Ping MongoDB
       () => this.mongoose.pingCheck('database'),
-      
+
       // Ping Redis/Cache via Cache Manager
       () => this.redisHealth.isHealthy('cache'),
 

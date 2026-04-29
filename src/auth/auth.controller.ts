@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UnauthorizedException, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, UnauthorizedException, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiStandardResponse } from '../common/decorators/api-standard-response.decorator';
 import { AuthService } from './auth.service';
@@ -6,10 +6,10 @@ import { LoginDto, SignupDto, ForgotPasswordDto, VerifyOtpDto, ResetPasswordDto,
 import { CreateSystemUserDto, SystemUserResponseDto } from '../system-users/dto/system-user.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
-@ApiTags('Auth')
-@Controller('auth')
+@ApiTags('Admin | Auth')
+@Controller('admin/auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('login')
   @ApiOperation({ summary: 'Login with email and password' })
@@ -25,9 +25,9 @@ export class AuthController {
 
   @Post('signup')
   @ApiOperation({ summary: 'Create a new system user (Signup)' })
-  @ApiStandardResponse({ 
-    status: 201, 
-    description: 'User created successfully', 
+  @ApiStandardResponse({
+    status: 201,
+    description: 'User created successfully',
     type: SystemUserResponseDto
   })
   async signup(@Body() signupDto: SignupDto) {
@@ -70,6 +70,15 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout and invalidate refresh token' })
   @ApiStandardResponse({ status: 200, description: 'Logged out successfully', type: AuthMessageResponseDto })
   async logout(@Request() req: any) {
-    return this.authService.logout(req.user.userId);
+    return this.authService.logout(req.user.id);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user profile data including role and permissions' })
+  @ApiStandardResponse({ status: 200, description: 'User profile fetched successfully', type: SystemUserResponseDto })
+  async getProfile(@Request() req: any) {
+    return this.authService.getProfile(req.user.id);
   }
 }
