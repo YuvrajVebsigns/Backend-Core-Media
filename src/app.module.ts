@@ -19,10 +19,17 @@ import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
 import { DatabaseModule } from './database/database.module';
+import { MenuModule } from './modules/menu/menu.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 
-const envFilePath = `.env.${process.env.NODE_ENV || 'local'}`;
+const nodeEnv = process.env.NODE_ENV || 'development';
+const envFilePath = fs.existsSync(`.env.${nodeEnv}`) 
+  ? `.env.${nodeEnv}` 
+  : fs.existsSync('.env.local') 
+    ? '.env.local' 
+    : '.env';
+
 const envConfig = fs.existsSync(envFilePath) ? dotenv.parse(fs.readFileSync(envFilePath)) : {};
 const isProd = (process.env.NODE_ENV || envConfig.NODE_ENV) === 'production';
 const useRedis = (process.env.USE_REDIS || envConfig.USE_REDIS) === 'true';
@@ -76,18 +83,17 @@ const redisQueueImports = isProd || useRedis ? [
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
-        const useRedis = configService.get<string>('USE_REDIS') === 'true';
+        const useRedis = configService.get<boolean>('USE_REDIS') === true;
 
         if (isProd || useRedis) {
-          return {
-            store: await redisStore({
-              socket: {
-                host: configService.get<string>('REDIS_HOST') || 'localhost',
-                port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
-              },
-              ttl: 60 * 1000,
-            }),
-          };
+          const store = await redisStore({
+            socket: {
+              host: configService.get<string>('REDIS_HOST') || 'localhost',
+              port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+            },
+            ttl: 60 * 1000,
+          });
+          return { store };
         }
 
         // Fallback to in-memory cache for local development
@@ -104,6 +110,7 @@ const redisQueueImports = isProd || useRedis ? [
     HealthModule,
     EventsModule,
     FeatureFlagModule,
+    MenuModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],

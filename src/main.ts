@@ -145,6 +145,9 @@ async function bootstrap() {
   await app.listen(port);
 
   const uri = configService.get<string>('MONGODB_URI');
+  const useRedis = configService.get<boolean>('USE_REDIS') === true;
+  const redisHost = configService.get<string>('REDIS_HOST') || 'localhost';
+  const redisPort = configService.get<string>('REDIS_PORT') || '6379';
   const url = await app.getUrl();
 
   console.log('\n┌────────────────────────────────────────────────────────┐');
@@ -158,8 +161,23 @@ async function bootstrap() {
   console.log('│           🍃  MongoDB Connection Status                │');
   console.log('├────────────────────────────────────────────────────────┤');
   console.log(`│  URI      : ${uri?.replace(/:\/\/([^:]+):([^@]+)@/, '://<user>:<pass>@').padEnd(40)} │`);
+
+  if (useRedis) {
+    console.log('├────────────────────────────────────────────────────────┤');
+    console.log('│           🟢  Redis Connection Status                  │');
+    console.log('├────────────────────────────────────────────────────────┤');
+    console.log(`│  STATUS   : ${'Connected'.padEnd(40)}   │`);
+    console.log(`│  HOST     : ${redisHost.padEnd(40)}   │`);
+    console.log(`│  PORT     : ${redisPort.toString().padEnd(40)}   │`);
+  } else {
+    console.log('├────────────────────────────────────────────────────────┤');
+    console.log('│           ⚪️  Redis Connection Status                  │');
+    console.log('├────────────────────────────────────────────────────────┤');
+    console.log(`│  STATUS   : ${'Disabled (In-Memory Fallback)'.padEnd(40)}   │`);
+  }
   console.log('└────────────────────────────────────────────────────────┘\n');
 }
+
 bootstrap().catch((err) => {
   console.error('Error during bootstrap:', err);
   process.exit(1);

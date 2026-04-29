@@ -1,6 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, MemoryHealthIndicator } from '@nestjs/terminus';
+import { 
+  HealthCheck, 
+  HealthCheckService, 
+  MemoryHealthIndicator, 
+  MongooseHealthIndicator 
+} from '@nestjs/terminus';
 import { RedisHealthIndicator } from './redis.health';
+import { SystemHealthIndicator } from './system.health';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('System')
@@ -10,21 +16,26 @@ export class HealthController {
     private health: HealthCheckService,
     private memory: MemoryHealthIndicator,
     private redisHealth: RedisHealthIndicator,
+    private mongoose: MongooseHealthIndicator,
+    private system: SystemHealthIndicator,
   ) {}
 
   @Get()
   @HealthCheck()
-  @ApiOperation({ summary: 'Check API, Database, and Redis health' })
+  @ApiOperation({ summary: 'Check API, Database, Redis, and System Metrics' })
   check() {
     return this.health.check([
-      // Check if memory heap usage exceeds 150MB
-      () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
+      // Check if memory heap usage exceeds 512MB
+      () => this.memory.checkHeap('memory_heap', 512 * 1024 * 1024),
       
-      // Ping Redis via Cache Manager
-      () => this.redisHealth.isHealthy('redis'),
+      // Ping MongoDB
+      () => this.mongoose.pingCheck('database'),
+      
+      // Ping Redis/Cache via Cache Manager
+      () => this.redisHealth.isHealthy('cache'),
 
-      // TODO: Uncomment and add DB check once TypeORM or Prisma is configured
-      // () => this.db.pingCheck('database')
+      // Detailed System & Memory usage
+      () => this.system.check('system'),
     ]);
   }
 }
