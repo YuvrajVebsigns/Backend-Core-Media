@@ -29,13 +29,16 @@ export class AuthService {
 
   async login(user: any) {
     const payload = { email: user.email, sub: user.id, role: user.role?.name };
-    
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+
+    const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
 
-    // Store hashed refresh token in database
+    // Store hashed refresh token and update last login in database
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    await this.systemUsersService.update(user.id, { refreshToken: hashedRefreshToken });
+    await this.systemUsersService.update(user.id, {
+      refreshToken: hashedRefreshToken,
+      lastLogin: new Date()
+    });
 
     return {
       access_token: accessToken,
@@ -48,7 +51,7 @@ export class AuthService {
     try {
       const payload = this.jwtService.verify(token);
       const user = await this.systemUsersService.findOneWithRefreshToken(payload.sub);
-      
+
       if (!user || !user.refreshToken) {
         throw new UnauthorizedException('Access Denied');
       }
@@ -57,7 +60,7 @@ export class AuthService {
       if (!refreshTokenMatches) {
         throw new UnauthorizedException('Access Denied');
       }
-      
+
       return this.generateNewTokens(user);
     } catch (e) {
       throw new UnauthorizedException('Invalid or expired refresh token');
@@ -66,7 +69,7 @@ export class AuthService {
 
   private async generateNewTokens(user: any) {
     const payload = { email: user.email, sub: user.id, role: user.role?.name };
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+    const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -149,5 +152,9 @@ export class AuthService {
     } catch (error) {
       throw new BadRequestException('Invalid or expired reset token');
     }
+  }
+
+  async getProfile(userId: string) {
+    return this.systemUsersService.findOne(userId);
   }
 }

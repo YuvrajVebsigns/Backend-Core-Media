@@ -10,8 +10,8 @@ class EmailJobDto {
   name: string;
 }
 
-@ApiTags('Background Jobs')
-@Controller('jobs')
+@ApiTags('Admin | Background Jobs')
+@Controller('admin/jobs')
 export class JobsController {
   constructor(private readonly jobsService: JobsService) {}
 

@@ -93,4 +93,7 @@ export class SystemUserResponseDto {
 
   @ApiProperty()
   updatedAt: Date;
+
+  @ApiPropertyOptional()
+  lastLogin?: Date;
 }
