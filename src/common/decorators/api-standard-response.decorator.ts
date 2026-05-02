@@ -1,4 +1,4 @@
-import { applyDecorators, Type } from '@nestjs/common';
+import { applyDecorators, Type, SetMetadata } from '@nestjs/common';
 import { ApiResponse, getSchemaPath, ApiExtraModels } from '@nestjs/swagger';
 
 export interface ApiStandardResponseOptions {
@@ -7,6 +7,8 @@ export interface ApiStandardResponseOptions {
   type?: Type<any> | any;
   isArray?: boolean;
 }
+
+export const RESPONSE_MESSAGE_METADATA = 'response_message';
 
 export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
   const status = options.status || 200;
@@ -47,6 +49,7 @@ export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
         ],
       },
     }),
+    SetMetadata(RESPONSE_MESSAGE_METADATA, description),
   );
 
   return applyDecorators(...decorators);

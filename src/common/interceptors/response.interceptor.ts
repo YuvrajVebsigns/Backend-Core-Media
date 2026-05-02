@@ -4,6 +4,8 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { RESPONSE_MESSAGE_METADATA } from '../decorators/api-standard-response.decorator';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -16,6 +18,8 @@ export interface StandardResponse<T> {
 @Injectable()
 export class ResponseInterceptor<T>
   implements NestInterceptor<T, StandardResponse<T>> {
+  constructor(private reflector: Reflector) { }
+
   intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -23,11 +27,16 @@ export class ResponseInterceptor<T>
     const request = context.switchToHttp().getRequest();
     const showMetadata = request.query.showMetadata === 'true';
 
+    const responseMessage = this.reflector.get<string>(
+      RESPONSE_MESSAGE_METADATA,
+      context.getHandler(),
+    );
+
     return next.handle().pipe(
       map((res) => {
         // If the controller already returned a formatted response, use it
-        const message = res?.message || 'Operation successful';
-        let data = res?.data !== undefined ? res.data : (res ?? null);
+        const message = res?.message || responseMessage || 'Operation successful';
+        let data = res?.data !== undefined && !res?.meta ? res.data : (res ?? null);
 
         if (!showMetadata) {
           data = this.stripMetadata(data);
@@ -61,7 +70,7 @@ export class ResponseInterceptor<T>
         obj.id = obj.id || obj._id.toString();
         delete obj._id;
       }
-      
+
       // Ensure id is a string if it exists (might be a buffer from elsewhere)
       if (obj.id && typeof obj.id !== 'string' && typeof obj.id.toString === 'function') {
         obj.id = obj.id.toString();

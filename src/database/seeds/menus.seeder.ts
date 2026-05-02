@@ -17,7 +17,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'dashboard.view',
         icon: 'GridIcon',
         order: 1,
-        group: 'MENU',
+        group: 'menu',
       },
       {
         name: 'Websites Management',
@@ -25,7 +25,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'websites.view',
         icon: 'GlobeIcon',
         order: 2,
-        group: 'MENU',
+        group: 'menu',
       },
       {
         name: 'Sidebar Menu',
@@ -33,7 +33,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'sidebar-menu.view',
         icon: 'PageIcon',
         order: 3,
-        group: 'Super Admin Controls',
+        group: 'super admin controls',
       },
       {
         name: 'Roles & Permission',
@@ -41,7 +41,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'roles-permission.view',
         icon: 'PageIcon',
         order: 4,
-        group: 'Super Admin Controls',
+        group: 'super admin controls',
       },
       {
         name: 'Feature Toggle',
@@ -49,7 +49,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'feature-toggle.view',
         icon: 'GridIcon',
         order: 5,
-        group: 'Super Admin Controls',
+        group: 'super admin controls',
       },
       {
         name: 'Settings',
@@ -57,7 +57,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'settings.view',
         icon: 'PageIcon',
         order: 6,
-        group: 'Super Admin Controls',
+        group: 'super admin controls',
       },
       {
         name: 'Support Ticket',
@@ -65,14 +65,14 @@ export class MenusSeeder implements OnApplicationBootstrap {
         permissionKey: 'support-ticket.view',
         icon: 'PageIcon',
         order: 7,
-        group: 'Super Admin Controls',
+        group: 'super admin controls',
       },
     ];
 
-    const existingMenus = await this.menuService.getAllMenus();
+    const existingMenus = await this.menuService.getAllMenus(true, { page: 1, limit: 10 });
 
     // Simple check: if no menus exist, seed them
-    if (existingMenus.length === 0) {
+    if (existingMenus.data.length === 0) {
       for (const menuData of menus) {
         try {
           await this.menuService.createMenu(menuData as any);
