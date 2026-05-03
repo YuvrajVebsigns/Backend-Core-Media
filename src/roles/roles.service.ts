@@ -17,11 +17,11 @@ export class RolesService {
   }
 
   async findAll(): Promise<Role[]> {
-    return this.roleModel.find({ isDeleted: false }).exec();
+    return this.roleModel.find().exec();
   }
 
   async findOne(id: string): Promise<Role> {
-    const role = await this.roleModel.findOne({ _id: id, isDeleted: false }).exec();
+    const role = await this.roleModel.findOne({ _id: id }).exec();
     if (!role) {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
@@ -29,12 +29,12 @@ export class RolesService {
   }
 
   async findByName(name: string): Promise<Role | null> {
-    return this.roleModel.findOne({ name, isDeleted: false }).exec();
+    return this.roleModel.findOne({ name }).exec();
   }
 
   async update(id: string, updateDto: any): Promise<Role> {
     const updatedRole = await this.roleModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { returnDocument: 'after' })
+      .findOneAndUpdate({ _id: id }, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!updatedRole) {
@@ -45,7 +45,7 @@ export class RolesService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.roleModel.updateOne({ _id: id }, { isDeleted: true }).exec();
+    const result = await this.roleModel.updateOne({ _id: id }, { isDeleted: new Date() }).exec();
     if (result.matchedCount === 0) {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }

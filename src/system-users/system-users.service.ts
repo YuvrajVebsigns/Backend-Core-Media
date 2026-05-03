@@ -30,12 +30,12 @@ export class SystemUsersService {
   }
 
   async findAll(): Promise<SystemUser[]> {
-    return this.systemUserModel.find({ isDeleted: false }).populate('role').exec();
+    return this.systemUserModel.find().populate('role').exec();
   }
 
   async findOne(id: string): Promise<SystemUser> {
     const user = await this.systemUserModel
-      .findOne({ _id: id, isDeleted: false })
+      .findOne({ _id: id })
       .populate('role')
       .exec();
     if (!user) {
@@ -46,14 +46,14 @@ export class SystemUsersService {
 
   async findOneWithRefreshToken(id: string): Promise<SystemUser | null> {
     return this.systemUserModel
-      .findOne({ _id: id, isDeleted: false })
+      .findOne({ _id: id })
       .select('+refreshToken')
       .populate('role')
       .exec();
   }
 
   async findByEmail(email: string): Promise<SystemUser | null> {
-    return this.systemUserModel.findOne({ email, isDeleted: false }).select('+password').exec();
+    return this.systemUserModel.findOne({ email }).select('+password').exec();
   }
 
   async update(id: string, updateDto: any): Promise<SystemUser> {
@@ -62,7 +62,7 @@ export class SystemUsersService {
     }
 
     const updatedUser = await this.systemUserModel
-      .findOneAndUpdate({ _id: id, isDeleted: false }, updateDto, { returnDocument: 'after' })
+      .findOneAndUpdate({ _id: id }, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!updatedUser) {
@@ -73,7 +73,7 @@ export class SystemUsersService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.systemUserModel.updateOne({ _id: id }, { isDeleted: true }).exec();
+    const result = await this.systemUserModel.updateOne({ _id: id }, { isDeleted: new Date() }).exec();
     if (result.matchedCount === 0) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }

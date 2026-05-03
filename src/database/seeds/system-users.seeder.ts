@@ -21,21 +21,21 @@ export class SystemUsersSeeder implements OnApplicationBootstrap {
   async seed() {
     const users = [
       {
-        email: 'superadmin@coremedia.com',
-        password: 'SuperAdminPassword123!',
-        fullName: 'System Super Admin',
+        email: 'superadmin@gmail.com',
+        password: 'admin@123',
+        fullName: 'Super Admin',
         roleName: SystemUserRole.SUPER_ADMIN,
       },
       {
-        email: 'admin@coremedia.com',
-        password: 'AdminPassword123!',
-        fullName: 'System Admin',
+        email: 'admin@gmail.com',
+        password: 'admin@123',
+        fullName: 'Admin',
         roleName: SystemUserRole.ADMIN,
       },
       {
-        email: 'staff@coremedia.com',
-        password: 'StaffPassword123!',
-        fullName: 'System Staff',
+        email: 'staff@gmail.com',
+        password: 'admin@123',
+        fullName: 'Staff',
         roleName: SystemUserRole.STAFF,
       },
     ];

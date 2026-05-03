@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { BaseSchema } from '../../common/schemas/base.schema';
+import { BaseSchema, applySoftDeleteMiddleware } from '../../common/schemas/base.schema';
 import { Schema as MongooseSchema } from 'mongoose';
 import { Role } from '../../roles/schemas/role.schema';
 
@@ -44,6 +44,9 @@ export class SystemUser extends BaseSchema {
 }
 
 export const SystemUserSchema = SchemaFactory.createForClass(SystemUser);
+
+// Apply soft delete middleware
+applySoftDeleteMiddleware(SystemUserSchema);
 
 // Ensure _id to id transformation from BaseSchema is applied
 const transform = (doc, ret: any) => {

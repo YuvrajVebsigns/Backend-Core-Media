@@ -27,9 +27,31 @@ import { Document } from 'mongoose';
 export class BaseSchema extends Document {
   id: string;
 
-  @Prop({ default: false })
-  isDeleted: boolean;
+  @Prop({ default: null, type: Date })
+  isDeleted: Date | null;
 
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * Mongoose Middleware to handle soft delete filtering automatically
+ */
+export const applySoftDeleteMiddleware = (schema: any) => {
+  schema.pre(/^find/, function () {
+    this.where({ isDeleted: null });
+  });
+
+  schema.pre('countDocuments', function () {
+    this.where({ isDeleted: null });
+  });
+
+  schema.pre(/^update/, function () {
+    this.where({ isDeleted: null });
+  });
+
+  schema.pre('aggregate', function () {
+    const pipeline = this.pipeline();
+    pipeline.unshift({ $match: { isDeleted: null } });
+  });
+};

@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginatedMetaDto } from '../../../common/dto/paginated-response.dto';
 
-export class ParentMenuDto {
+export class ParentSidebarMenuDto {
   @ApiProperty({ example: '60d5ecb3ed1e462a5c8e3e4a' })
   id: string;
 
@@ -9,7 +9,7 @@ export class ParentMenuDto {
   name: string;
 }
 
-export class MenuResponseDto {
+export class SidebarMenuResponseDto {
   @ApiProperty({ example: '60d5ecb3ed1e462a5c8e3e4a' })
   id: string;
 
@@ -19,8 +19,8 @@ export class MenuResponseDto {
   @ApiProperty({ example: '/users' })
   path: string;
 
-  @ApiPropertyOptional({ type: ParentMenuDto, description: 'Populated parent menu or null' })
-  parentId?: ParentMenuDto | string | null;
+  @ApiPropertyOptional({ type: ParentSidebarMenuDto, description: 'Populated parent sidebarMenu or null' })
+  parentId?: ParentSidebarMenuDto | string | null;
 
   @ApiProperty({ example: 'users.view' })
   permissionKey: string;
@@ -37,7 +37,7 @@ export class MenuResponseDto {
   @ApiProperty({ example: true })
   isVisible: boolean;
 
-  @ApiPropertyOptional({ example: 'menu' })
+  @ApiPropertyOptional({ example: 'sidebarMenu' })
   group?: string;
 
   @ApiProperty()
@@ -47,9 +47,9 @@ export class MenuResponseDto {
   updatedAt: Date;
 }
 
-export class PaginatedMenuResponseDto {
-  @ApiProperty({ type: [MenuResponseDto] })
-  data: MenuResponseDto[];
+export class PaginatedSidebarMenuResponseDto {
+  @ApiProperty({ type: [SidebarMenuResponseDto] })
+  data: SidebarMenuResponseDto[];
 
   @ApiProperty({ type: PaginatedMetaDto })
   meta: PaginatedMetaDto;
