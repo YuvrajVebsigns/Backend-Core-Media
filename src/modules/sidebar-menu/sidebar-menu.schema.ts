@@ -1,16 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema } from 'mongoose';
-import { BaseSchema } from 'src/common/schemas/base.schema';
+import { BaseSchema, applySoftDeleteMiddleware } from 'src/common/schemas/base.schema';
 
 @Schema({ timestamps: true })
-export class Menu extends BaseSchema {
+export class SidebarMenu extends BaseSchema {
   @Prop({ required: true })
   name: string;
 
   @Prop({ required: true })
   path: string;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Menu', default: null })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'SidebarMenu', default: null })
   parentId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true })
@@ -32,7 +32,10 @@ export class Menu extends BaseSchema {
   group?: string;
 }
 
-export const MenuSchema = SchemaFactory.createForClass(Menu);
+export const SidebarMenuSchema = SchemaFactory.createForClass(SidebarMenu);
 
-MenuSchema.index({ permissionKey: 1 });
-MenuSchema.index({ parentId: 1 });
+// Apply soft delete middleware
+applySoftDeleteMiddleware(SidebarMenuSchema);
+
+SidebarMenuSchema.index({ permissionKey: 1 });
+SidebarMenuSchema.index({ parentId: 1 });

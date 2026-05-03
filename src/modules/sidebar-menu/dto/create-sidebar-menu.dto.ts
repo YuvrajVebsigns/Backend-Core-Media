@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsOptional, IsNumber, IsBoolean, IsMongoId } from 'class-validator';
 
-export class CreateMenuDto {
+export class CreateSidebarMenuDto {
   @ApiProperty({ example: 'Dashboard' })
   @IsString()
   @IsNotEmpty()

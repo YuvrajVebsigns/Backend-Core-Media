@@ -1,9 +1,9 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { MenuService } from '../../modules/menu/menu.service';
+import { SidebarMenuService } from '../../modules/sidebar-menu/sidebar-menu.service';
 
 @Injectable()
-export class MenusSeeder implements OnApplicationBootstrap {
-  constructor(private readonly menuService: MenuService) { }
+export class SidebarMenusSeeder implements OnApplicationBootstrap {
+  constructor(private readonly sidebarMenuService: SidebarMenuService) { }
 
   async onApplicationBootstrap() {
     await this.seed();
@@ -15,7 +15,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         name: 'Dashboard',
         path: '/',
         permissionKey: 'dashboard.view',
-        icon: 'GridIcon',
+        icon: 'layout-dashboard',
         order: 1,
         group: 'menu',
       },
@@ -23,31 +23,39 @@ export class MenusSeeder implements OnApplicationBootstrap {
         name: 'Websites Management',
         path: '/websites',
         permissionKey: 'websites.view',
-        icon: 'GlobeIcon',
+        icon: 'globe',
         order: 2,
         group: 'menu',
-      },
-      {
-        name: 'Sidebar Menu',
-        path: '/sidebar-menu',
-        permissionKey: 'sidebar-menu.view',
-        icon: 'PageIcon',
-        order: 3,
-        group: 'super admin controls',
       },
       {
         name: 'Roles & Permission',
         path: '/roles-permission',
         permissionKey: 'roles-permission.view',
-        icon: 'PageIcon',
+        icon: 'user-round-key',
         order: 4,
+        group: 'system administration',
+      },
+      {
+        name: 'Staffs',
+        path: '/staffs',
+        permissionKey: 'staffs.view',
+        icon: 'users-round',
+        order: 5,
+        group: 'system administration',
+      },
+      {
+        name: 'Sidebar Menu',
+        path: '/sidebar-menu',
+        permissionKey: 'sidebar-menu.view',
+        icon: 'menu',
+        order: 3,
         group: 'super admin controls',
       },
       {
         name: 'Feature Toggle',
         path: '/feature-toggle',
         permissionKey: 'feature-toggle.view',
-        icon: 'GridIcon',
+        icon: 'toggle-right',
         order: 5,
         group: 'super admin controls',
       },
@@ -55,7 +63,7 @@ export class MenusSeeder implements OnApplicationBootstrap {
         name: 'Settings',
         path: '/settings',
         permissionKey: 'settings.view',
-        icon: 'PageIcon',
+        icon: 'settings',
         order: 6,
         group: 'super admin controls',
       },
@@ -63,20 +71,20 @@ export class MenusSeeder implements OnApplicationBootstrap {
         name: 'Support Ticket',
         path: '/support-ticket',
         permissionKey: 'support-ticket.view',
-        icon: 'PageIcon',
+        icon: 'tickets',
         order: 7,
         group: 'super admin controls',
       },
     ];
 
-    const existingMenus = await this.menuService.getAllMenus(true, { page: 1, limit: 10 });
+    const existingSidebarMenus = await this.sidebarMenuService.getAllSidebarMenus(true, { page: 1, limit: 10 });
 
     // Simple check: if no menus exist, seed them
-    if (existingMenus.data.length === 0) {
+    if (existingSidebarMenus.data.length === 0) {
       for (const menuData of menus) {
         try {
-          await this.menuService.createMenu(menuData as any);
-          console.log(`✅ Menu seeded: ${menuData.name}`);
+          await this.sidebarMenuService.createSidebarMenu(menuData as any);
+          console.log(`✅ SidebarMenu seeded: ${menuData.name}`);
         } catch (error) {
           console.error(`❌ Failed to seed menu ${menuData.name}:`, error.message);
         }

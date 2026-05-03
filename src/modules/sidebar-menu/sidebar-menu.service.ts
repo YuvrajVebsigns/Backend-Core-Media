@@ -3,23 +3,23 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { Menu } from './menu.schema';
-import { CreateMenuDto } from './dto/create-menu.dto';
-import { UpdateMenuDto } from './dto/update-menu.dto';
-import { MenuPaginationQueryDto } from './dto/menu-pagination-query.dto';
+import { SidebarMenu } from './sidebar-menu.schema';
+import { CreateSidebarMenuDto } from './dto/create-sidebar-menu.dto';
+import { UpdateSidebarMenuDto } from './dto/update-sidebar-menu.dto';
+import { SidebarMenuPaginationQueryDto } from './dto/sidebar-menu-pagination-query.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 
 import { SystemUserRole } from '../../common/enums/role.enum';
 
 @Injectable()
-export class MenuService {
+export class SidebarMenuService {
   constructor(
-    @InjectModel(Menu.name) private menuModel: Model<Menu>,
+    @InjectModel(SidebarMenu.name) private sidebarMenuModel: Model<SidebarMenu>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
-  private async clearMenuCache() {
+  private async clearSidebarMenuCache() {
     const manager = this.cacheManager as any;
     try {
       if (manager.clear) await manager.clear();
@@ -27,16 +27,16 @@ export class MenuService {
       else if (manager.store?.clear) await manager.store.clear();
       else if (manager.store?.reset) await manager.store.reset();
     } catch (error) {
-      console.warn('⚠️ Could not clear menu cache:', error.message);
+      console.warn('⚠️ Could not clear sidebarMenu cache:', error.message);
     }
   }
 
-  async createMenu(dto: CreateMenuDto): Promise<Menu> {
+  async createSidebarMenu(dto: CreateSidebarMenuDto): Promise<SidebarMenu> {
     if (dto.group) {
       dto.group = dto.group.toLowerCase();
     }
     // Check for duplicates
-    const existing = await this.menuModel.findOne({
+    const existing = await this.sidebarMenuModel.findOne({
       $or: [
         { path: dto.path },
         { permissionKey: dto.permissionKey }
@@ -45,31 +45,31 @@ export class MenuService {
 
     if (existing) {
       if (existing.path === dto.path) {
-        throw new ConflictException(`Menu with path "${dto.path}" already exists`);
+        throw new ConflictException(`SidebarMenu with path "${dto.path}" already exists`);
       }
-      throw new ConflictException(`Menu with permission key "${dto.permissionKey}" already exists`);
+      throw new ConflictException(`SidebarMenu with permission key "${dto.permissionKey}" already exists`);
     }
 
     if (dto.order === undefined || dto.order === null) {
-      const lastMenu = await this.menuModel
+      const lastSidebarMenu = await this.sidebarMenuModel
         .findOne({ parentId: (dto.parentId as any) || null })
         .sort({ order: -1 })
         .exec();
-      dto.order = lastMenu ? lastMenu.order + 1 : 0;
+      dto.order = lastSidebarMenu ? lastSidebarMenu.order + 1 : 0;
     }
-    const newMenu = new this.menuModel(dto);
-    const saved = await newMenu.save();
-    await this.clearMenuCache();
+    const newSidebarMenu = new this.sidebarMenuModel(dto);
+    const saved = await newSidebarMenu.save();
+    await this.clearSidebarMenuCache();
     return saved;
   }
 
-  async updateMenu(id: string, dto: UpdateMenuDto): Promise<Menu> {
+  async updateSidebarMenu(id: string, dto: UpdateSidebarMenuDto): Promise<SidebarMenu> {
     if (dto.group) {
       dto.group = dto.group.toLowerCase();
     }
     // Check for duplicates excluding current item
     if (dto.path || dto.permissionKey) {
-      const existing = await this.menuModel.findOne({
+      const existing = await this.sidebarMenuModel.findOne({
         _id: { $ne: id },
         $or: [
           ...(dto.path ? [{ path: dto.path }] : []),
@@ -79,32 +79,32 @@ export class MenuService {
 
       if (existing) {
         if (dto.path && existing.path === dto.path) {
-          throw new ConflictException(`Menu with path "${dto.path}" already exists`);
+          throw new ConflictException(`SidebarMenu with path "${dto.path}" already exists`);
         }
-        throw new ConflictException(`Menu with permission key "${dto.permissionKey}" already exists`);
+        throw new ConflictException(`SidebarMenu with permission key "${dto.permissionKey}" already exists`);
       }
     }
 
-    const updated = await this.menuModel
+    const updated = await this.sidebarMenuModel
       .findByIdAndUpdate(id, dto, { new: true })
       .lean()
       .exec();
-    if (!updated) throw new NotFoundException('Menu not found');
-    await this.clearMenuCache();
+    if (!updated) throw new NotFoundException('SidebarMenu not found');
+    await this.clearSidebarMenuCache();
     return updated as any;
   }
 
-  async deleteMenu(id: string): Promise<void> {
-    const menu = await this.menuModel.findById(id);
-    if (!menu) throw new NotFoundException('Menu not found');
+  async deleteSidebarMenu(id: string): Promise<void> {
+    const sidebarMenu = await this.sidebarMenuModel.findById(id);
+    if (!sidebarMenu) throw new NotFoundException('SidebarMenu not found');
 
-    const { parentId, order } = menu;
+    const { parentId, order } = sidebarMenu;
 
-    // Delete the menu
-    await this.menuModel.findByIdAndDelete(id).exec();
+    // Delete the sidebarMenu
+    await this.sidebarMenuModel.findByIdAndUpdate(id, { isDeleted: new Date() }).exec();
 
     // Re-order: Shift up all items that were after the deleted item at the same level
-    await this.menuModel.updateMany(
+    await this.sidebarMenuModel.updateMany(
       {
         parentId: parentId || null,
         order: { $gt: order }
@@ -113,10 +113,10 @@ export class MenuService {
     ).exec();
 
     // Clear cache
-    await this.clearMenuCache();
+    await this.clearSidebarMenuCache();
   }
 
-  async getAllMenus(isSuperAdmin: boolean, queryDto: MenuPaginationQueryDto = {}): Promise<PaginatedResponseDto<Menu>> {
+  async getAllSidebarMenus(isSuperAdmin: boolean, queryDto: SidebarMenuPaginationQueryDto = {}): Promise<PaginatedResponseDto<SidebarMenu>> {
     const { page = 1, limit = 10, search, sort, filters } = queryDto;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -139,7 +139,7 @@ export class MenuService {
 
     const finalQuery = { ...baseQuery, ...searchFilter, ...parsedFilters };
 
-    const total = await this.menuModel.countDocuments(finalQuery).exec();
+    const total = await this.sidebarMenuModel.countDocuments(finalQuery).exec();
 
     const sortObj: any = {};
     if (sort) {
@@ -149,7 +149,7 @@ export class MenuService {
       sortObj.order = 1;
     }
 
-    const data = await this.menuModel
+    const data = await this.sidebarMenuModel
       .find(finalQuery)
       .populate('parentId', 'id name')
       .sort(sortObj)
@@ -161,12 +161,12 @@ export class MenuService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async getUserMenus(userPermissions: string[], roleName: string): Promise<any[]> {
-    const cacheKey = `menus:v1:${roleName}`;
-    const cachedMenus = await this.cacheManager.get<any[]>(cacheKey);
+  async getUserSidebarMenus(userPermissions: string[], roleName: string): Promise<any[]> {
+    const cacheKey = `sidebarMenus:v1:${roleName}`;
+    const cachedSidebarMenus = await this.cacheManager.get<any[]>(cacheKey);
 
-    if (cachedMenus) {
-      return cachedMenus;
+    if (cachedSidebarMenus) {
+      return cachedSidebarMenus;
     }
 
     const normalizedRole = roleName?.toUpperCase().replace(/['"]/g, '');
@@ -180,47 +180,47 @@ export class MenuService {
     // Clean permissions (remove extra quotes like "'*'" -> "*")
     const cleanPermissions = userPermissions.map(p => p.replace(/['"]/g, ''));
 
-    const allMenus = await this.menuModel
+    const allSidebarMenus = await this.sidebarMenuModel
       .find(query)
       .sort({ order: 1 })
       .lean()
       .exec();
 
-    let filteredMenus: any[] = [];
+    let filteredSidebarMenus: any[] = [];
 
     if (isSuperAdmin) {
-      filteredMenus = allMenus;
+      filteredSidebarMenus = allSidebarMenus;
     } else {
-      filteredMenus = allMenus.filter((menu) => {
-        const groupMatch = menu.group?.toLowerCase() !== 'super admin controls';
-        const permissionMatch = cleanPermissions.includes('*') || cleanPermissions.includes(menu.permissionKey);
+      filteredSidebarMenus = allSidebarMenus.filter((sidebarMenu) => {
+        const groupMatch = sidebarMenu.group?.toLowerCase() !== 'super admin controls';
+        const permissionMatch = cleanPermissions.includes('*') || cleanPermissions.includes(sidebarMenu.permissionKey);
 
         return groupMatch && permissionMatch;
       });
     }
 
     // Build Tree
-    const menuTree = this.buildTree(filteredMenus);
+    const sidebarMenuTree = this.buildTree(filteredSidebarMenus);
 
     // Cache for 1 hour
-    await this.cacheManager.set(cacheKey, menuTree, 3600 * 1000);
+    await this.cacheManager.set(cacheKey, sidebarMenuTree, 3600 * 1000);
 
-    return menuTree;
+    return sidebarMenuTree;
   }
 
-  private buildTree(menus: any[], parentId: any = null): any[] {
+  private buildTree(sidebarMenus: any[], parentId: any = null): any[] {
     const tree: any[] = [];
     const childrenMap = new Map();
 
     // Group children by parentId
-    menus.forEach((menu) => {
-      const pId = menu.parentId ? menu.parentId.toString() : null;
+    sidebarMenus.forEach((sidebarMenu) => {
+      const pId = sidebarMenu.parentId ? sidebarMenu.parentId.toString() : null;
       if (!childrenMap.has(pId)) {
         childrenMap.set(pId, []);
       }
       childrenMap.get(pId).push({
-        ...menu,
-        id: menu._id.toString(),
+        ...sidebarMenu,
+        id: sidebarMenu._id.toString(),
         children: [],
       });
     });

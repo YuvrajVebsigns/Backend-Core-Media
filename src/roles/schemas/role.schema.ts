@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { BaseSchema } from '../../common/schemas/base.schema';
+import { BaseSchema, applySoftDeleteMiddleware } from '../../common/schemas/base.schema';
 
 @Schema({
   collection: 'roles',
@@ -20,6 +20,9 @@ export class Role extends BaseSchema {
 }
 
 export const RoleSchema = SchemaFactory.createForClass(Role);
+
+// Apply soft delete middleware
+applySoftDeleteMiddleware(RoleSchema);
 
 RoleSchema.set('toJSON', {
   getters: true,

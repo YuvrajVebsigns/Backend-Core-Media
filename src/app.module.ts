@@ -19,7 +19,7 @@ import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
 import { DatabaseModule } from './database/database.module';
-import { MenuModule } from './modules/menu/menu.module';
+import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
@@ -111,7 +111,7 @@ const redisQueueImports = isProd || useRedis ? [
     HealthModule,
     EventsModule,
     FeatureFlagModule,
-    MenuModule,
+    SidebarMenuModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],
