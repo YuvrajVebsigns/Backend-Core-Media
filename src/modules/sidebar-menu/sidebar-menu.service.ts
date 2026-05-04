@@ -132,9 +132,14 @@ export class SidebarMenuService {
       ];
     }
 
-    let parsedFilters = {};
+    let parsedFilters: any = {};
     if (filters) {
       parsedFilters = typeof filters === 'string' ? JSON.parse(filters) : filters;
+    }
+
+    // If not super_admin, hide super admin controls group
+    if (!isSuperAdmin) {
+      parsedFilters.group = { $ne: 'super admin controls' };
     }
 
     const finalQuery = { ...baseQuery, ...searchFilter, ...parsedFilters };

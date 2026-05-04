@@ -64,6 +64,7 @@ const transform = (doc, ret: any) => {
       ret.role = {
         id: roleId,
         name: ret.role.name,
+        roleKey: ret.role.roleKey,
         permissions: ret.role.permissions,
       };
     } else if (typeof ret.role === 'object') {
