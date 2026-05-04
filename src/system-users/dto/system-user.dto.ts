@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, IsOptional, IsEnum, IsArray } from 'class-validator';
+import { RoleResponseDto } from '../../roles/dto/role.dto';
 
 export class CreateSystemUserDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -73,8 +74,8 @@ export class SystemUserResponseDto {
   @ApiProperty({ example: 'John Doe' })
   fullName: string;
 
-  @ApiProperty()
-  role: any;
+  @ApiProperty({ type: RoleResponseDto })
+  role: RoleResponseDto;
 
   @ApiProperty({ example: true })
   isActive: boolean;

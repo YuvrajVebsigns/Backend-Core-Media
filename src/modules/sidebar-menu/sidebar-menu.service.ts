@@ -161,16 +161,15 @@ export class SidebarMenuService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async getUserSidebarMenus(userPermissions: string[], roleName: string): Promise<any[]> {
-    const cacheKey = `sidebarMenus:v1:${roleName}`;
+  async getUserSidebarMenus(userPermissions: string[], roleKey: string): Promise<any[]> {
+    const cacheKey = `menus:${roleKey}`;
     const cachedSidebarMenus = await this.cacheManager.get<any[]>(cacheKey);
 
     if (cachedSidebarMenus) {
       return cachedSidebarMenus;
     }
 
-    const normalizedRole = roleName?.toUpperCase().replace(/['"]/g, '');
-    const isSuperAdmin = normalizedRole === SystemUserRole.SUPER_ADMIN;
+    const isSuperAdmin = roleKey === SystemUserRole.SUPER_ADMIN;
 
     const query: any = { isActive: true };
     if (!isSuperAdmin) {

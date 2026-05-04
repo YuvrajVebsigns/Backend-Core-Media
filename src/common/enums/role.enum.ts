@@ -1,5 +1,5 @@
 export enum SystemUserRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  STAFF = 'STAFF',
+  SUPER_ADMIN = 'super_admin',
+  ADMIN = 'admin',
+  STAFF = 'staff',
 }

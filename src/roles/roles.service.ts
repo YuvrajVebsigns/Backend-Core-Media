@@ -1,16 +1,41 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Role } from './schemas/role.schema';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class RolesService {
-  constructor(@InjectModel(Role.name) private roleModel: Model<Role>) { }
+  constructor(
+    @InjectModel(Role.name) private roleModel: Model<Role>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) { }
+
+  private async clearMenuCache() {
+    try {
+      const manager = this.cacheManager as any;
+      if (manager.clear) await manager.clear();
+      else if (manager.reset) await manager.reset();
+      else if (manager.store?.clear) await manager.store.clear();
+      else if (manager.store?.reset) await manager.store.reset();
+    } catch (error) {
+      console.warn('⚠️ Could not clear menu cache:', error.message);
+    }
+  }
 
   async create(createDto: any): Promise<Role> {
-    const existingRole = await this.roleModel.findOne({ name: createDto.name });
+    const existingRole = await this.roleModel.findOne({ 
+      $or: [
+        { name: createDto.name },
+        { roleKey: createDto.roleKey }
+      ]
+    });
     if (existingRole) {
-      throw new ConflictException('Role name already exists');
+      if (existingRole.name === createDto.name) {
+        throw new ConflictException('Role name already exists');
+      }
+      throw new ConflictException('Role key already exists');
     }
     const newRole = new this.roleModel(createDto);
     return newRole.save();
@@ -32,7 +57,27 @@ export class RolesService {
     return this.roleModel.findOne({ name }).exec();
   }
 
+  async findByRoleKey(roleKey: string): Promise<Role | null> {
+    return this.roleModel.findOne({ roleKey }).exec();
+  }
+
   async update(id: string, updateDto: any): Promise<Role> {
+    if (updateDto.name || updateDto.roleKey) {
+      const existing = await this.roleModel.findOne({
+        _id: { $ne: id },
+        $or: [
+          ...(updateDto.name ? [{ name: updateDto.name }] : []),
+          ...(updateDto.roleKey ? [{ roleKey: updateDto.roleKey }] : [])
+        ]
+      });
+      if (existing) {
+        if (updateDto.name && existing.name === updateDto.name) {
+          throw new ConflictException('Role name already exists');
+        }
+        throw new ConflictException('Role key already exists');
+      }
+    }
+
     const updatedRole = await this.roleModel
       .findOneAndUpdate({ _id: id }, updateDto, { returnDocument: 'after' })
       .exec();
@@ -41,6 +86,7 @@ export class RolesService {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
 
+    await this.clearMenuCache();
     return updatedRole;
   }
 
@@ -49,5 +95,6 @@ export class RolesService {
     if (result.matchedCount === 0) {
       throw new NotFoundException(`Role with ID ${id} not found`);
     }
+    await this.clearMenuCache();
   }
 }

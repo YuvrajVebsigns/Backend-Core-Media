@@ -73,12 +73,12 @@ export class AuthController {
     return this.authService.logout(req.user.id);
   }
 
-  @Get('profile')
+  @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile data including role and permissions' })
   @ApiStandardResponse({ status: 200, description: 'User profile fetched successfully', type: SystemUserResponseDto })
-  async getProfile(@Request() req: any) {
-    return this.authService.getProfile(req.user.id);
+  async getMe(@Request() req: any) {
+    return this.authService.getMe(req.user.id);
   }
 }

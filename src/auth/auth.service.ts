@@ -28,7 +28,12 @@ export class AuthService {
   }
 
   async login(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role?.name };
+    const payload = { 
+      email: user.email, 
+      sub: user.id, 
+      roleKey: user.role?.roleKey,
+      permissions: user.role?.permissions || []
+    };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
@@ -68,7 +73,12 @@ export class AuthService {
   }
 
   private async generateNewTokens(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role?.name };
+    const payload = { 
+      email: user.email, 
+      sub: user.id, 
+      roleKey: user.role?.roleKey,
+      permissions: user.role?.permissions || []
+    };
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign({ sub: user.id }, { expiresIn: '7d' });
 
@@ -87,7 +97,7 @@ export class AuthService {
   }
 
   async signup(signupDto: any) {
-    const role = await this.rolesService.findByName(SystemUserRole.STAFF);
+    const role = await this.rolesService.findByRoleKey(SystemUserRole.STAFF);
     if (!role) {
       throw new NotFoundException('Default role STAFF not found');
     }
@@ -154,7 +164,7 @@ export class AuthService {
     }
   }
 
-  async getProfile(userId: string) {
+  async getMe(userId: string) {
     return this.systemUsersService.findOne(userId);
   }
 }
