@@ -59,9 +59,8 @@ export class SidebarMenuController {
   @ApiOperation({ summary: 'Get all sidebarMenus (paginated list for admin)' })
   @ApiStandardResponse({ status: 200, description: 'All sidebarMenus fetched', type: PaginatedSidebarMenuResponseDto, isArray: false })
   findAll(@Request() req: any, @Query() query: SidebarMenuPaginationQueryDto) {
-    const roleName = req.user?.role?.name || 'unknown';
-    const normalizedRole = roleName.toUpperCase().replace(/['"]/g, '');
-    const isSuperAdmin = normalizedRole === SystemUserRole.SUPER_ADMIN;
+    const roleKey = req.user?.role?.roleKey || 'unknown';
+    const isSuperAdmin = roleKey === SystemUserRole.SUPER_ADMIN;
 
     return this.sidebarMenuService.getAllSidebarMenus(isSuperAdmin, query);
   }
@@ -73,8 +72,8 @@ export class SidebarMenuController {
     const user = req.user;
     const role = user?.role;
     const permissions = Array.isArray(role?.permissions) ? role.permissions : [];
-    const roleName = role?.name || 'unknown';
+    const roleKey = role?.roleKey || 'unknown';
 
-    return this.sidebarMenuService.getUserSidebarMenus(permissions, roleName);
+    return this.sidebarMenuService.getUserSidebarMenus(permissions, roleKey);
   }
 }

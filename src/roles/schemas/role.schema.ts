@@ -9,6 +9,9 @@ export class Role extends BaseSchema {
   @Prop({ required: true, unique: true, trim: true })
   name: string;
 
+  @Prop({ required: true, unique: true, trim: true, lowercase: true })
+  roleKey: string;
+
   @Prop({ type: [String], default: [] })
   permissions: string[];
 

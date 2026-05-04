@@ -43,7 +43,7 @@ export class SystemUsersSeeder implements OnApplicationBootstrap {
     for (const userData of users) {
       const existingUser = await this.systemUsersService.findByEmail(userData.email);
       if (!existingUser) {
-        const role = await this.rolesService.findByName(userData.roleName);
+        const role = await this.rolesService.findByRoleKey(userData.roleName);
         if (role) {
           await this.systemUsersService.create({
             email: userData.email,

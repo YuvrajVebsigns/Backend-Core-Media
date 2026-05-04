@@ -13,19 +13,22 @@ export class RolesSeeder implements OnApplicationBootstrap {
   async seed() {
     const roles = [
       {
-        name: SystemUserRole.SUPER_ADMIN,
+        name: 'Super Admin',
+        roleKey: SystemUserRole.SUPER_ADMIN,
         permissions: ['*'], // All permissions
         isActive: true,
         isShow: false,
       },
       {
-        name: SystemUserRole.ADMIN,
+        name: 'Admin',
+        roleKey: SystemUserRole.ADMIN,
         permissions: ['*'],
         isActive: true,
         isShow: true,
       },
       {
-        name: SystemUserRole.STAFF,
+        name: 'Staff',
+        roleKey: SystemUserRole.STAFF,
         permissions: [],
         isActive: true,
         isShow: true,
@@ -34,14 +37,14 @@ export class RolesSeeder implements OnApplicationBootstrap {
 
     for (const roleData of roles) {
       try {
-        const existingRole = await this.rolesService.findByName(roleData.name);
+        const existingRole = await this.rolesService.findByRoleKey(roleData.roleKey);
         if (!existingRole) {
           await this.rolesService.create(roleData);
-          console.log(`✅ Role seeded: ${roleData.name}`);
+          console.log(`✅ Role seeded: ${roleData.name} (${roleData.roleKey})`);
         }
       } catch (error) {
         // Handle race conditions during parallel tests
-        if (error.code !== 11000) {
+        if ((error as any).code !== 11000) {
           throw error;
         }
       }

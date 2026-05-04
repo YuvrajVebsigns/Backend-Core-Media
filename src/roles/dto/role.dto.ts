@@ -7,6 +7,11 @@ export class CreateRoleDto {
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({ example: 'editor' })
+  @IsString()
+  @IsNotEmpty()
+  roleKey: string;
+
   @ApiProperty({ example: ['view_posts', 'edit_posts'], type: [String] })
   @IsArray()
   @IsString({ each: true })
@@ -28,6 +33,11 @@ export class UpdateRoleDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @ApiPropertyOptional({ example: 'moderator' })
+  @IsOptional()
+  @IsString()
+  roleKey?: string;
 
   @ApiPropertyOptional({ example: ['view_posts'], type: [String] })
   @IsOptional()
@@ -51,7 +61,12 @@ export class RoleResponseDto {
   id: string;
 
   @ApiProperty({ example: 'ADMIN' })
+  @IsString()
   name: string;
+
+  @ApiProperty({ example: 'admin' })
+  @IsString()
+  roleKey: string;
 
   @ApiProperty({ example: ['*'] })
   permissions: string[];
