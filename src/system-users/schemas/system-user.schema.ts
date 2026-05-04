@@ -31,9 +31,6 @@ export class SystemUser extends BaseSchema {
   refreshToken: string;
 
   @Prop()
-  phoneNumber: string;
-
-  @Prop()
   profileImage: string;
 
   @Prop()

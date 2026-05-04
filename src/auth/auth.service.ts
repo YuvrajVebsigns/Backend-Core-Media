@@ -21,6 +21,9 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.systemUsersService.findByEmail(email);
     if (user && (await bcrypt.compare(pass, user.password))) {
+      if (user.isActive === false) {
+        throw new UnauthorizedException('Your account is inactive. You are not allowed to login.');
+      }
       const { password, ...result } = user.toObject();
       return result;
     }
@@ -59,6 +62,10 @@ export class AuthService {
 
       if (!user || !user.refreshToken) {
         throw new UnauthorizedException('Access Denied');
+      }
+
+      if (user.isActive === false) {
+        throw new UnauthorizedException('Your account is inactive. You are not allowed to login.');
       }
 
       const refreshTokenMatches = await bcrypt.compare(token, user.refreshToken);

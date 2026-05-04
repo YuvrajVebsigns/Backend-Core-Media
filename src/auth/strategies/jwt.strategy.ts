@@ -21,7 +21,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const user = await this.systemUsersService.findOne(payload.sub);
     
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      throw new UnauthorizedException('Your account is inactive. You have been logged out.');
     }
 
     // Return the full user object (including role and permissions)
