@@ -1,11 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ApiStandardResponse } from '../common/decorators/api-standard-response.decorator';
 import { SystemUsersService } from './system-users.service';
-import { CreateSystemUserDto, UpdateSystemUserDto, SystemUserResponseDto } from './dto/system-user.dto';
+import { CreateSystemUserDto, UpdateSystemUserDto, SystemUserResponseDto, QuerySystemUserDto } from './dto/system-user.dto';
+import { Query } from '@nestjs/common';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Admin | System Users')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('admin/system-users')
 export class SystemUsersController {
   constructor(private readonly systemUsersService: SystemUsersService) {}
@@ -18,10 +23,15 @@ export class SystemUsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all system users' })
-  @ApiStandardResponse({ status: 200, description: 'List of users', type: SystemUserResponseDto, isArray: true })
-  findAll() {
-    return this.systemUsersService.findAll();
+  @ApiOperation({ summary: 'Get all system users with pagination, search and filters' })
+  @ApiStandardResponse({ 
+    status: 200, 
+    description: 'List of users with pagination', 
+    type: SystemUserResponseDto, 
+    isPaginated: true 
+  })
+  findAll(@Query() query: QuerySystemUserDto, @CurrentUser() user: any) {
+    return this.systemUsersService.findAll(query, user);
   }
 
   @Get(':id')

@@ -6,6 +6,7 @@ export interface ApiStandardResponseOptions {
   description?: string;
   type?: Type<any> | any;
   isArray?: boolean;
+  isPaginated?: boolean;
 }
 
 export const RESPONSE_MESSAGE_METADATA = 'response_message';
@@ -14,6 +15,7 @@ export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
   const status = options.status || 200;
   const description = options.description || 'Operation successful';
   const isArray = options.isArray || false;
+  const isPaginated = options.isPaginated || false;
   const model = options.type;
 
   const decorators: any[] = [];
@@ -43,7 +45,25 @@ export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
             properties: {
               success: { type: 'boolean', example: true },
               message: { type: 'string', example: description },
-              data: dataProperty,
+              data: isPaginated
+                ? {
+                  type: 'object',
+                  properties: {
+                    data: { type: 'array', items: dataProperty },
+                    meta: {
+                      type: 'object',
+                      properties: {
+                        total: { type: 'number' },
+                        page: { type: 'number' },
+                        limit: { type: 'number' },
+                        totalPages: { type: 'number' },
+                        hasNextPage: { type: 'boolean' },
+                        hasPreviousPage: { type: 'boolean' },
+                      },
+                    },
+                  },
+                }
+                : dataProperty,
             },
           },
         ],

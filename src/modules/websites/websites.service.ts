@@ -1,0 +1,115 @@
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Website } from './schemas/website.schema';
+import { CreateWebsiteDto, UpdateWebsiteDto, QueryWebsiteDto } from './dto/website.dto';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+
+@Injectable()
+export class WebsitesService {
+  constructor(
+    @InjectModel(Website.name) private websiteModel: Model<Website>,
+  ) {}
+
+  async create(createDto: CreateWebsiteDto): Promise<Website> {
+    const { slug, domain } = createDto;
+
+    const existingSlug = await this.websiteModel.findOne({ slug });
+    if (existingSlug) {
+      throw new ConflictException('Website with this slug already exists');
+    }
+
+    const existingDomain = await this.websiteModel.findOne({ domain });
+    if (existingDomain) {
+      throw new ConflictException('Website with this domain already exists');
+    }
+
+    const newWebsite = new this.websiteModel(createDto);
+    return newWebsite.save();
+  }
+
+  async findAll(queryDto: QueryWebsiteDto): Promise<PaginatedResponseDto<Website>> {
+    const { page = 1, limit = 10, search, isActive, sort } = queryDto;
+    const skip = (page - 1) * limit;
+
+    const matchQuery: any = { isDeleted: null };
+
+    if (isActive !== undefined) {
+      matchQuery.isActive = isActive;
+    }
+
+    if (search) {
+      matchQuery.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { domain: { $regex: search, $options: 'i' } },
+        { slug: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const sortOption: any = {};
+    if (sort) {
+      const [field, order] = sort.split(':');
+      sortOption[field] = order === 'desc' ? -1 : 1;
+    } else {
+      sortOption.createdAt = -1;
+    }
+
+    const [data, total] = await Promise.all([
+      this.websiteModel
+        .find(matchQuery)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.websiteModel.countDocuments(matchQuery).exec(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  async findOne(id: string): Promise<Website> {
+    const website = await this.websiteModel.findOne({ _id: id, isDeleted: null }).exec();
+    if (!website) {
+      throw new NotFoundException(`Website with ID ${id} not found`);
+    }
+    return website;
+  }
+
+  async update(id: string, updateDto: UpdateWebsiteDto): Promise<Website> {
+    const website = await this.websiteModel
+      .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, { new: true })
+      .exec();
+
+    if (!website) {
+      throw new NotFoundException(`Website with ID ${id} not found`);
+    }
+
+    return website;
+  }
+
+  async remove(id: string): Promise<void> {
+    const result = await this.websiteModel
+      .updateOne({ _id: id }, { isDeleted: new Date() })
+      .exec();
+
+    if (result.matchedCount === 0) {
+      throw new NotFoundException(`Website with ID ${id} not found`);
+    }
+  }
+
+  async findBySlug(slug: string): Promise<Website | null> {
+    return this.websiteModel.findOne({ slug, isDeleted: null }).exec();
+  }
+}

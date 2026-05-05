@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString, IsOptional, IsEnum, IsArray } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { RoleResponseDto } from '../../roles/dto/role.dto';
 
 export class CreateSystemUserDto {
@@ -27,15 +28,14 @@ export class CreateSystemUserDto {
   @IsOptional()
   acceptTerms?: boolean;
 
-  @ApiPropertyOptional({ example: '1234567890' })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
   @ApiPropertyOptional({ example: 'https://example.com/avatar.png' })
   @IsOptional()
   @IsString()
   profileImage?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class UpdateSystemUserDto {
@@ -44,15 +44,15 @@ export class UpdateSystemUserDto {
   @IsString()
   fullName?: string;
 
+  @ApiPropertyOptional({ example: 'NewPassword123!' })
+  @IsOptional()
+  @IsString()
+  password?: string;
+
   @ApiPropertyOptional({ example: '6448... (Role ObjectId)' })
   @IsOptional()
   @IsString()
   role?: string;
-
-  @ApiPropertyOptional({ example: '1234567890' })
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
 
   @ApiPropertyOptional({ example: 'https://example.com/avatar.png' })
   @IsOptional()
@@ -83,9 +83,6 @@ export class SystemUserResponseDto {
   @ApiProperty({ example: true })
   acceptTerms: boolean;
 
-  @ApiPropertyOptional({ example: '1234567890' })
-  phoneNumber?: string;
-
   @ApiPropertyOptional({ example: 'https://example.com/avatar.png' })
   profileImage?: string;
 
@@ -97,4 +94,23 @@ export class SystemUserResponseDto {
 
   @ApiPropertyOptional()
   lastLogin?: Date;
+}
+
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+
+export class QuerySystemUserDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ description: 'Search by name or email' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by role ID' })
+  @IsOptional()
+  @IsString()
+  roleId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by active status' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isActive?: boolean;
 }
