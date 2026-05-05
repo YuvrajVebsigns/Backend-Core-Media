@@ -25,7 +25,7 @@ export class WebsitesSeeder implements OnApplicationBootstrap {
       { name: 'LeaderNext', domain: 'https://leader-next.com', logo: 'http://leader-next.com/wp-content/uploads/2025/11/logo1.png' },
       { name: 'CIO Dialogues', domain: 'https://ciodialogues.com', logo: 'https://ciodialogues.com/wp-content/uploads/2019/01/cio-dialogues.png' },
       { name: 'CIO Powerlist', domain: 'https://ciopowerlist.com', logo: 'https://www.ciopowerlist.com/wp-content/uploads/2023/04/cio-powerlist_logo.png' },
-      { name: 'CORE Media Group', domain: 'https://coremediagroup.com' },
+      { name: 'CORE Media Group', domain: 'https://coremediagroup.com', logo: '' },
     ];
 
     for (const site of websites) {
@@ -42,6 +42,7 @@ export class WebsitesSeeder implements OnApplicationBootstrap {
           slug,
           domain: site.domain,
           isActive: true,
+          logo: site.logo,
           seo: {
             metaTitle: site.name,
             metaDescription: `Official website of ${site.name}`,
