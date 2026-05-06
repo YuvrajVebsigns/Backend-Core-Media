@@ -26,8 +26,8 @@ export class RolesService {
   }
 
   async create(createDto: any, currentUser?: any): Promise<Role> {
-    // Check for protected permissions if not super_admin
-    if (currentUser?.role?.roleKey !== 'super_admin' && createDto.permissions) {
+    // Check for protected permissions if not super_admin (only for requests with a user context)
+    if (currentUser && currentUser.role?.roleKey !== 'super_admin' && createDto.permissions) {
       const permissions = createDto.permissions;
       
       if (permissions.includes('*')) {
@@ -105,8 +105,8 @@ export class RolesService {
       throw new ForbiddenException('Cannot change a role to Super Admin');
     }
 
-    // Check for protected permissions if not super_admin
-    if (currentUser?.role?.roleKey !== 'super_admin' && updateDto.permissions) {
+    // Check for protected permissions if not super_admin (only for requests with a user context)
+    if (currentUser && currentUser.role?.roleKey !== 'super_admin' && updateDto.permissions) {
       const currentPermissions = role.permissions || [];
       const newPermissions = updateDto.permissions;
       
