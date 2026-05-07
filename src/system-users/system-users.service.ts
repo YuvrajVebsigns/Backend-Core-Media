@@ -16,9 +16,10 @@ export class SystemUsersService {
   async create(createDto: any): Promise<SystemUser> {
     const { email, password } = createDto;
     
+    // Check for existing email including soft-deleted users
     const existingUser = await this.systemUserModel.findOne({ email });
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('This email already exists in the database');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -28,9 +29,17 @@ export class SystemUsersService {
       password: hashedPassword,
     });
 
-    const savedUser = await newUser.save();
-    return savedUser.populate('role');
+    try {
+      const savedUser = await newUser.save();
+      return savedUser.populate('role');
+    } catch (error: any) {
+      if (error.code === 11000) {
+        throw new ConflictException('This email already exists in the database');
+      }
+      throw error;
+    }
   }
+
 
   async findAll(queryDto: QuerySystemUserDto, currentUser: any): Promise<PaginatedResponseDto<SystemUser>> {
     const { page = 1, limit = 10, search, roleId, isActive, sort, filters } = queryDto;

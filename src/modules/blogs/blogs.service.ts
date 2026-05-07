@@ -9,7 +9,7 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 export class BlogsService {
   constructor(
     @InjectModel(Blog.name) private blogModel: Model<Blog>,
-  ) {}
+  ) { }
 
   async create(createDto: CreateBlogDto, authorId: string): Promise<Blog> {
     const { slug } = createDto;
