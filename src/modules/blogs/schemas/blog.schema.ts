@@ -27,7 +27,7 @@ export class Blog extends BaseSchema {
   @Prop({ required: true, trim: true })
   title: string;
 
-  @Prop({ required: true, unique: true, trim: true, lowercase: true })
+  @Prop({ required: true, trim: true, lowercase: true })
   slug: string;
 
   @Prop({ type: MongooseSchema.Types.Mixed, required: true })

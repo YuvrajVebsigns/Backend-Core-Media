@@ -22,6 +22,7 @@ import { DatabaseModule } from './database/database.module';
 import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
 import { WebsitesModule } from './modules/websites/websites.module';
 import { BlogsModule } from './modules/blogs/blogs.module';
+import { FilesModule } from './modules/files/files.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
@@ -116,6 +117,7 @@ const redisQueueImports = isProd || useRedis ? [
     SidebarMenuModule,
     WebsitesModule,
     BlogsModule,
+    FilesModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],
