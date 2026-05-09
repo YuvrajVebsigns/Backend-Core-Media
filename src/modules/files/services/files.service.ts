@@ -16,6 +16,7 @@ import { MetadataService } from './metadata.service.js';
 import { UrlService } from './url.service.js';
 import { UploadFileDto } from '../dto/upload-file.dto.js';
 import { UpdateFileDto } from '../dto/update-file.dto.js';
+import { QueryFileDto } from '../dto/query-file.dto.js';
 import { FileVisibility } from '../enums/visibility.enum.js';
 import { ImageVariant } from '../enums/image-variant.enum.js';
 import { StorageProvider } from '../enums/storage-provider.enum.js';
@@ -71,16 +72,54 @@ export class FilesService {
   // ─── Upload ────────────────────────────────────────────────────────────────
 
   async upload(
-    file: Express.Multer.File,
+    file: Express.Multer.File | undefined,
     dto: UploadFileDto,
     uploadedBy: string,
   ): Promise<File> {
+    let activeFile = file;
+
+    // 1. Handle URL upload if no file buffer is provided
+    if (!activeFile && dto.url) {
+      try {
+        const response = await fetch(dto.url, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          },
+        });
+        if (!response.ok) throw new Error(`Failed to fetch from URL: ${response.statusText}`);
+        
+        const buffer = Buffer.from(await response.arrayBuffer());
+        const contentType = response.headers.get('content-type') || 'application/octet-stream';
+        const originalName = dto.url.split('/').pop()?.split('?')[0] || 'external-file';
+
+        activeFile = {
+          buffer,
+          mimetype: contentType,
+          originalname: originalName,
+          size: buffer.length,
+          fieldname: 'file',
+          encoding: '7bit',
+          stream: null as any,
+          destination: '',
+          filename: '',
+          path: '',
+        } as Express.Multer.File;
+      } catch (error) {
+        this.logger.error(`Error fetching file from URL: ${dto.url}`, error.stack);
+        throw new BadRequestException(`Could not download file from the provided URL: ${error.message}`);
+      }
+    }
+
+    if (!activeFile) {
+      throw new BadRequestException('No file buffer or valid URL provided.');
+    }
+
     // 1. Validate
-    validateFile(file.mimetype, file.size, dto.module);
+    validateFile(activeFile.mimetype, activeFile.size, dto.module);
 
     // 2. Derive metadata
-    const extension = extractExtension(file.originalname, file.mimetype);
-    const fileType = mimeToFileType(file.mimetype);
+    const extension = extractExtension(activeFile.originalname, activeFile.mimetype);
+    const fileType = mimeToFileType(activeFile.mimetype);
     const filename = generateUniqueFilename(extension);
     const visibility = dto.visibility ?? FileVisibility.PUBLIC;
 
@@ -97,16 +136,16 @@ export class FilesService {
     // 4. Upload to storage provider
     const uploadResult = await this.storageService.upload(
       key,
-      file.buffer,
-      file.mimetype,
+      activeFile.buffer,
+      activeFile.mimetype,
       visibility,
     );
 
     // 5. Extract image metadata (non-blocking for non-images)
     let metadata: any = { alt: dto.alt ?? '', width: null, height: null, blurhash: null };
-    if (isImageMime(file.mimetype)) {
+    if (isImageMime(activeFile.mimetype)) {
       const imgMeta =
-        await this.metadataService.extractImageMetadata(file.buffer);
+        await this.metadataService.extractImageMetadata(activeFile.buffer);
       if (imgMeta) {
         metadata.width = imgMeta.width;
         metadata.height = imgMeta.height;
@@ -114,7 +153,7 @@ export class FilesService {
     }
 
     // 6. Determine initial status — images get processed, others are ready immediately
-    const status = isImageMime(file.mimetype)
+    const status = isImageMime(activeFile.mimetype)
       ? FileStatus.PROCESSING
       : FileStatus.READY;
 
@@ -127,9 +166,9 @@ export class FilesService {
       module: dto.module,
       entityType: dto.entityType,
       entityId: dto.entityId,
-      originalName: file.originalname,
+      originalName: activeFile.originalname,
       filename,
-      mimeType: file.mimetype,
+      mimeType: activeFile.mimetype,
       extension,
       fileType,
       size: uploadResult.size,
@@ -137,6 +176,7 @@ export class FilesService {
       uploadedBy,
       metadata,
       status,
+      keywords: dto.keywords || [],
     });
 
     const saved = await fileDoc.save();
@@ -145,7 +185,7 @@ export class FilesService {
     );
 
     // 8. Queue variant generation for images
-    if (isImageMime(file.mimetype)) {
+    if (isImageMime(activeFile.mimetype)) {
       await this.fileQueue.add(
         'process-variants',
         { fileId: saved.id },
@@ -159,7 +199,90 @@ export class FilesService {
       this.logger.debug(`Queued variant processing for file ${saved.id}`);
     }
 
-    return saved;
+    return this.mapToResponse(saved);
+  }
+
+  // ─── Read ──────────────────────────────────────────────────────────────────
+
+  async findAll(query: QueryFileDto): Promise<{ files: File[]; meta: any }> {
+    const { 
+      page = 1, 
+      limit = 10, 
+      search, 
+      module, 
+      visibility, 
+      fileType, 
+      sort,
+      startDate,
+      endDate 
+    } = query;
+    const skip = (page - 1) * limit;
+
+    const filter: any = { isDeleted: null };
+
+    if (search) {
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(search);
+      if (isObjectId) {
+        filter.$or = [{ _id: search }];
+      } else {
+        filter.$or = [
+          { originalName: { $regex: search, $options: 'i' } },
+          { filename: { $regex: search, $options: 'i' } },
+          { 'metadata.alt': { $regex: search, $options: 'i' } },
+          { keywords: { $regex: search, $options: 'i' } },
+        ];
+      }
+    }
+
+    if (module) {
+      filter.module = module;
+    }
+
+    if (visibility) {
+      filter.visibility = visibility;
+    }
+
+    if (fileType) {
+      filter.fileType = fileType;
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) {
+        filter.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        filter.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    let sortOption: any = { createdAt: -1 };
+    if (sort) {
+      const [field, order] = sort.split(':');
+      sortOption = { [field]: order === 'desc' ? -1 : 1 };
+    }
+
+    const [filesRaw, total] = await Promise.all([
+      this.fileModel
+        .find(filter)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.fileModel.countDocuments(filter).exec(),
+    ]);
+
+    const files = filesRaw.map((f) => this.mapToResponse(f));
+
+    return {
+      files,
+      meta: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // ─── Read ──────────────────────────────────────────────────────────────────
@@ -189,16 +312,22 @@ export class FilesService {
     if (dto.entityId !== undefined) {
       updatePayload.entityId = dto.entityId;
     }
+    if (dto.module !== undefined) {
+      updatePayload.module = dto.module;
+    }
+    if (dto.keywords !== undefined) {
+      updatePayload.keywords = dto.keywords;
+    }
 
     const file = await this.fileModel
-      .findByIdAndUpdate(id, { $set: updatePayload }, { new: true })
+      .findByIdAndUpdate(id, { $set: updatePayload }, { returnDocument: 'after' })
       .exec();
 
     if (!file) {
       throw new NotFoundException(`File with ID "${id}" not found`);
     }
 
-    return file;
+    return this.mapToResponse(file);
   }
 
   // ─── Delete ────────────────────────────────────────────────────────────────
@@ -236,6 +365,36 @@ export class FilesService {
   }
 
   // ─── URL generation ────────────────────────────────────────────────────────
+
+  // ─── Response Mapping ──────────────────────────────────────────────────────
+
+  /**
+   * Transforms a MongoDB File document into a lean Response DTO.
+   * Includes full CDN URLs for previews and removes internal storage details.
+   */
+  public mapToResponse(file: File): any {
+    const { url, variants: urlVariants } = this.getUrl(file);
+
+    return {
+      id: (file as any)._id || (file as any).id,
+      module: file.module,
+      entityType: file.entityType,
+      entityId: file.entityId,
+      originalName: file.originalName,
+      mimeType: file.mimeType,
+      fileType: file.fileType,
+      size: file.size,
+      visibility: file.visibility,
+      metadata: file.metadata,
+      keywords: file.keywords,
+      status: file.status,
+      url,
+      urlVariants,
+      variants: file.variants instanceof Map ? Object.fromEntries(file.variants) : file.variants,
+      createdAt: (file as any).createdAt,
+      updatedAt: (file as any).updatedAt,
+    };
+  }
 
   getUrl(file: File): { url: string; variants: Record<string, string> } {
     return {

@@ -21,7 +21,7 @@ import { UrlService } from './services/url.service.js';
 import { FileProcessingWorker } from './workers/file-processing.worker.js';
 
 // Strategies
-import { ZataCloudStrategy } from './strategies/zatacloud.strategy.js';
+import { S3Strategy } from './strategies/s3.strategy.js';
 import { LocalStrategy } from './strategies/local.strategy.js';
 
 // Interfaces
@@ -58,7 +58,7 @@ import { StorageProvider } from './enums/storage-provider.enum.js';
     FileProcessingWorker,
 
     // ── Strategies (all registered, but only one is injected) ─
-    ZataCloudStrategy,
+    S3Strategy,
     LocalStrategy,
 
     // ── Dynamic provider resolution ─────────────────────────
@@ -66,7 +66,7 @@ import { StorageProvider } from './enums/storage-provider.enum.js';
       provide: STORAGE_PROVIDER_TOKEN,
       useFactory: (
         configService: ConfigService,
-        zataCloudStrategy: ZataCloudStrategy,
+        s3Strategy: S3Strategy,
         localStrategy: LocalStrategy,
       ) => {
         const provider = configService.get<string>(
@@ -75,15 +75,14 @@ import { StorageProvider } from './enums/storage-provider.enum.js';
         );
 
         switch (provider) {
-          case StorageProvider.ZATACLOUD:
-          case StorageProvider.AWS_S3:
-            return zataCloudStrategy;
+          case StorageProvider.S3:
+            return s3Strategy;
           case StorageProvider.LOCAL:
           default:
             return localStrategy;
         }
       },
-      inject: [ConfigService, ZataCloudStrategy, LocalStrategy],
+      inject: [ConfigService, S3Strategy, LocalStrategy],
     },
   ],
   exports: [FilesService, UrlService, StorageService],

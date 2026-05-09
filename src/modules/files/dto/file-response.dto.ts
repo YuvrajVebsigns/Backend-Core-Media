@@ -9,17 +9,6 @@ export class FileResponseDto {
   @ApiProperty({ example: '665abc1234567890abcdef12' })
   id: string;
 
-  @ApiProperty({ example: 'zatacloud' })
-  provider: string;
-
-  @ApiProperty({ example: 'core-media' })
-  bucket: string;
-
-  @ApiProperty({
-    example: 'prod/blogs/post/abc123/original/550e8400.webp',
-  })
-  key: string;
-
   @ApiProperty({ example: 'blogs' })
   module: string;
 
@@ -32,14 +21,8 @@ export class FileResponseDto {
   @ApiProperty({ example: 'hero-banner.png' })
   originalName: string;
 
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000.webp' })
-  filename: string;
-
   @ApiProperty({ example: 'image/webp' })
   mimeType: string;
-
-  @ApiProperty({ example: 'webp' })
-  extension: string;
 
   @ApiProperty({ example: 'image' })
   fileType: string;
@@ -49,9 +32,6 @@ export class FileResponseDto {
 
   @ApiProperty({ example: 'public' })
   visibility: string;
-
-  @ApiProperty({ example: '665abc1234567890abcdef00' })
-  uploadedBy: string;
 
   @ApiProperty({
     example: { width: 1920, height: 1080, alt: 'Hero banner', blurhash: null },
@@ -63,25 +43,29 @@ export class FileResponseDto {
     blurhash: string | null;
   };
 
-  @ApiProperty({ example: 'processing' })
+  @ApiProperty({
+    description: 'Keywords for easy searching',
+    example: ['hero', 'banner', 'launch'],
+  })
+  keywords: string[];
+
+  @ApiProperty({
+    example: 'ready',
+  })
   status: string;
 
-  @ApiPropertyOptional({
-    description: 'Generated CDN URL (only returned from /url endpoint)',
+  @ApiProperty({
+    description: 'Full public CDN URL for the original file',
     example: 'https://cdn.coremedia.com/prod/blogs/post/abc123/original/550e8400.webp',
   })
-  url?: string;
+  url: string;
 
-  @ApiPropertyOptional({
-    description: 'Variant map (populated after processing completes)',
+  @ApiProperty({
+    description: 'Transformed URLs for all processed variants (thumbnail, large, etc)',
     example: {
-      thumbnail: {
-        key: 'prod/blogs/post/abc123/thumbnail/550e8400.webp',
-        width: 150,
-        height: 84,
-        size: 4096,
-      },
+      thumbnail: 'https://cdn.coremedia.com/prod/blogs/post/abc123/thumbnail/550e8400.webp',
+      large: 'https://cdn.coremedia.com/prod/blogs/post/abc123/large/550e8400.webp',
     },
   })
-  variants?: Record<string, { key: string; width: number; height: number; size: number }>;
+  variants: Record<string, string>;
 }

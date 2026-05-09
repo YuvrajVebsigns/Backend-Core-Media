@@ -15,28 +15,28 @@ import {
 import { FileVisibility } from '../enums/visibility.enum.js';
 
 /**
- * ZataCloud storage strategy — uses S3-compatible SDK.
+ * S3 storage strategy — uses S3-compatible SDK.
  *
- * All ZataCloud-specific configuration is injected via `ConfigService`
+ * All S3-specific configuration is injected via `ConfigService`
  * so no hardcoded values leak into business logic.
  */
 @Injectable()
-export class ZataCloudStrategy implements IStorageProvider {
-  private readonly logger = new Logger(ZataCloudStrategy.name);
+export class S3Strategy implements IStorageProvider {
+  private readonly logger = new Logger(S3Strategy.name);
   private readonly s3: S3Client;
   private readonly bucket: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.bucket = this.configService.get<string>('ZATACLOUD_BUCKET', 'core-media');
+    this.bucket = this.configService.get<string>('S3_BUCKET', 'core-media');
 
     this.s3 = new S3Client({
-      region: this.configService.get<string>('ZATACLOUD_REGION', 'auto'),
-      endpoint: this.configService.get<string>('ZATACLOUD_API_URL'),
+      region: this.configService.get<string>('S3_REGION', 'auto'),
+      endpoint: this.configService.get<string>('S3_ENDPOINT'),
       credentials: {
-        accessKeyId: this.configService.get<string>('ZATACLOUD_ACCESS_KEY_ID', ''),
-        secretAccessKey: this.configService.get<string>('ZATACLOUD_SECRET_ACCESS_KEY', ''),
+        accessKeyId: this.configService.get<string>('S3_ACCESS_KEY_ID', ''),
+        secretAccessKey: this.configService.get<string>('S3_SECRET_ACCESS_KEY', ''),
       },
-      forcePathStyle: this.configService.get<boolean>('ZATACLOUD_FORCE_PATH_STYLE', true),
+      forcePathStyle: this.configService.get<boolean>('S3_FORCE_PATH_STYLE', true),
     });
   }
 
@@ -56,7 +56,7 @@ export class ZataCloudStrategy implements IStorageProvider {
 
     const response = await this.s3.send(command);
 
-    this.logger.log(`Uploaded to ZataCloud: ${key}`);
+    this.logger.log(`Uploaded to S3: ${key}`);
 
     return {
       key,
@@ -73,7 +73,7 @@ export class ZataCloudStrategy implements IStorageProvider {
     });
 
     await this.s3.send(command);
-    this.logger.log(`Deleted from ZataCloud: ${key}`);
+    this.logger.log(`Deleted from S3: ${key}`);
   }
 
   async exists(key: string): Promise<boolean> {

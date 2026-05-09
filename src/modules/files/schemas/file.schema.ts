@@ -19,11 +19,11 @@ export class FileMetadata {
   @Prop({ type: Number, default: null })
   height: number | null;
 
-  @Prop({ type: String, trim: true, default: '' })
-  alt: string;
-
   @Prop({ type: String, default: null })
   blurhash: string | null;
+
+  @Prop({ type: String, trim: true, default: '' })
+  alt: string;
 }
 
 @Schema({ _id: false })
@@ -145,9 +145,12 @@ export class File extends BaseSchema {
   @Prop({
     type: String,
     enum: Object.values(FileStatus),
-    default: FileStatus.PROCESSING,
+    default: FileStatus.READY,
   })
   status: FileStatus;
+
+  @Prop({ type: [String], default: [], index: true })
+  keywords: string[];
 }
 
 export const FileSchema = SchemaFactory.createForClass(File);

@@ -3,9 +3,8 @@
  * The active provider is resolved at runtime from STORAGE_PROVIDER env var.
  */
 export enum StorageProvider {
-  ZATACLOUD = 'zatacloud',
+  S3 = 's3',
   LOCAL = 'local',
-  AWS_S3 = 's3',
   CLOUDINARY = 'cloudinary',
   MINIO = 'minio',
 }

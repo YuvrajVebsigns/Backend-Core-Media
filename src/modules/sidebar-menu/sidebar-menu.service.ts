@@ -86,7 +86,7 @@ export class SidebarMenuService {
     }
 
     const updated = await this.sidebarMenuModel
-      .findByIdAndUpdate(id, dto, { new: true })
+      .findByIdAndUpdate(id, dto, { returnDocument: 'after' })
       .lean()
       .exec();
     if (!updated) throw new NotFoundException('SidebarMenu not found');

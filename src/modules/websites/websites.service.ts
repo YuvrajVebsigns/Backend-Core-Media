@@ -89,7 +89,7 @@ export class WebsitesService {
 
   async update(id: string, updateDto: UpdateWebsiteDto): Promise<Website> {
     const website = await this.websiteModel
-      .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, { new: true })
+      .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!website) {

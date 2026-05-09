@@ -54,4 +54,19 @@ export class UploadFileDto {
   @IsString()
   @IsOptional()
   alt?: string;
+
+  @ApiPropertyOptional({
+    description: 'External URL of the file (if not uploading a buffer)',
+    example: 'https://example.com/image.jpg',
+  })
+  @IsString()
+  @IsOptional()
+  url?: string;
+
+  @ApiPropertyOptional({
+    description: 'Keywords for easy searching',
+    example: ['hero', 'banner', 'launch'],
+  })
+  @IsOptional()
+  keywords?: string[];
 }

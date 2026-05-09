@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { FileVisibility } from '../enums/visibility.enum.js';
+import { FileModule } from '../enums/file-module.enum.js';
 
 /**
  * Fields that can be updated after upload.
@@ -38,4 +39,19 @@ export class UpdateFileDto {
   @IsString()
   @IsOptional()
   entityId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Update keywords for easy searching',
+    example: ['modern', 'minimal'],
+  })
+  @IsOptional()
+  keywords?: string[];
+
+  @ApiPropertyOptional({
+    enum: FileModule,
+    description: 'Re-assign file to a different CMS module',
+  })
+  @IsEnum(FileModule)
+  @IsOptional()
+  module?: FileModule;
 }
