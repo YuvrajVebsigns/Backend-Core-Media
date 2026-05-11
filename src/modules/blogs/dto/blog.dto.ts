@@ -1,6 +1,9 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsEnum, IsMongoId, ValidateNested } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsEnum, IsMongoId, ValidateNested, IsDateString } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
+import { BlogStatus } from '../enums/blog-status.enum';
+import { AutoArchiveDuration } from '../enums/auto-archive-duration.enum';
+import { CommentStrategy } from '../enums/comment-strategy.enum';
 
 export class BlogSeoDto {
   @IsString()
@@ -19,6 +22,16 @@ export class BlogSeoDto {
   @IsString()
   @IsOptional()
   ogImage?: string;
+
+  @IsMongoId()
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (typeof value === 'string' && value.startsWith('http')) return null;
+    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    return value;
+  })
+  ogImageId?: string;
 }
 
 export class CreateBlogDto {
@@ -41,6 +54,16 @@ export class CreateBlogDto {
   @IsOptional()
   featureImage?: string;
 
+  @IsMongoId()
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (typeof value === 'string' && value.startsWith('http')) return null;
+    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    return value;
+  })
+  featureImageId?: string;
+
   @IsArray()
   @IsMongoId({ each: true })
   @IsNotEmpty()
@@ -54,10 +77,40 @@ export class CreateBlogDto {
   @IsOptional()
   isActive?: boolean;
 
+  @IsEnum(BlogStatus)
+  @IsOptional()
+  status?: BlogStatus;
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  scheduledAt?: Date;
+
+  @IsEnum(AutoArchiveDuration)
+  @IsOptional()
+  autoArchiveDuration?: AutoArchiveDuration;
+
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   tags?: string[];
+
+  @IsEnum(CommentStrategy)
+  @IsOptional()
+  commentStrategy?: CommentStrategy;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  invitedEmails?: string[];
+
+  @IsBoolean()
+  @IsOptional()
+  isHyperlinked?: boolean;
+
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsOptional()
+  hyperlinkWebsites?: string[];
 
   @IsOptional()
   @ValidateNested()
@@ -88,6 +141,10 @@ export class QueryBlogDto {
   @IsBoolean()
   @Transform(({ value }) => value === 'true' || value === true)
   isActive?: boolean;
+
+  @IsEnum(BlogStatus)
+  @IsOptional()
+  status?: BlogStatus;
 
   @IsOptional()
   @IsString()

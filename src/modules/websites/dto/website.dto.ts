@@ -23,6 +23,11 @@ class SeoMetadataDto {
   @IsOptional()
   @IsString()
   ogImage?: string;
+
+  @ApiPropertyOptional({ example: '665abc1234567890abcdef12' })
+  @IsOptional()
+  @IsString()
+  ogImageId?: string;
 }
 
 export class CreateWebsiteDto {
@@ -45,6 +50,11 @@ export class CreateWebsiteDto {
   @IsOptional()
   @IsString()
   logo?: string;
+
+  @ApiPropertyOptional({ example: '665abc1234567890abcdef12' })
+  @IsOptional()
+  @IsString()
+  logoId?: string;
 
   @ApiPropertyOptional({ example: 'A brief description of the website' })
   @IsOptional()

@@ -33,6 +33,9 @@ export class SystemUser extends BaseSchema {
   @Prop()
   profileImage: string;
 
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
+  profileImageId: MongooseSchema.Types.ObjectId;
+
   @Prop()
   lastLogin: Date;
 

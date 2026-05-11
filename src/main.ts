@@ -97,9 +97,9 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
   const reflector = app.get(Reflector);
-  app.useGlobalInterceptors(new ResponseInterceptor(reflector));
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });
 
   const configService = app.get(ConfigService);
 

@@ -22,9 +22,11 @@ import { DatabaseModule } from './database/database.module';
 import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
 import { WebsitesModule } from './modules/websites/websites.module';
 import { BlogsModule } from './modules/blogs/blogs.module';
+import { FilesModule } from './modules/files/files.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const envFilePath = fs.existsSync(`.env.${nodeEnv}`) 
@@ -66,6 +68,14 @@ const redisQueueImports = isProd || useRedis ? [
         USE_REDIS: Joi.boolean().default(false),
         REDIS_HOST: Joi.string().optional(),
         REDIS_PORT: Joi.number().optional(),
+        STORAGE_PROVIDER: Joi.string().optional().default('local'),
+        S3_ENDPOINT: Joi.string().optional(),
+        S3_ACCESS_KEY_ID: Joi.string().optional(),
+        S3_SECRET_ACCESS_KEY: Joi.string().optional(),
+        S3_BUCKET: Joi.string().optional(),
+        S3_REGION: Joi.string().optional(),
+        S3_FORCE_PATH_STYLE: Joi.boolean().optional(),
+        CDN_URL: Joi.string().optional(),
       }),
     }),
     ClsModule.forRoot({
@@ -116,6 +126,7 @@ const redisQueueImports = isProd || useRedis ? [
     SidebarMenuModule,
     WebsitesModule,
     BlogsModule,
+    FilesModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],
@@ -124,6 +135,10 @@ const redisQueueImports = isProd || useRedis ? [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

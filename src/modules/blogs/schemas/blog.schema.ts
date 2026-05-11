@@ -3,6 +3,9 @@ import { Schema as MongooseSchema } from 'mongoose';
 import { BaseSchema, applySoftDeleteMiddleware } from '../../../common/schemas/base.schema';
 import { Website } from '../../websites/schemas/website.schema';
 import { SystemUser } from '../../../system-users/schemas/system-user.schema';
+import { BlogStatus } from '../enums/blog-status.enum';
+import { AutoArchiveDuration } from '../enums/auto-archive-duration.enum';
+import { CommentStrategy } from '../enums/comment-strategy.enum';
 
 @Schema({ _id: false })
 export class BlogSeo {
@@ -17,6 +20,9 @@ export class BlogSeo {
 
   @Prop({ trim: true })
   ogImage: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
+  ogImageId: MongooseSchema.Types.ObjectId;
 }
 
 @Schema({
@@ -27,7 +33,7 @@ export class Blog extends BaseSchema {
   @Prop({ required: true, trim: true })
   title: string;
 
-  @Prop({ required: true, unique: true, trim: true, lowercase: true })
+  @Prop({ required: true, trim: true, lowercase: true })
   slug: string;
 
   @Prop({ type: MongooseSchema.Types.Mixed, required: true })
@@ -38,6 +44,9 @@ export class Blog extends BaseSchema {
 
   @Prop({ trim: true })
   featureImage: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
+  featureImageId: MongooseSchema.Types.ObjectId;
 
   @Prop({
     type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Website' }],
@@ -57,6 +66,49 @@ export class Blog extends BaseSchema {
 
   @Prop({ type: [String], default: [] })
   tags: string[];
+
+  @Prop({
+    type: String,
+    enum: Object.values(BlogStatus),
+    default: BlogStatus.DRAFT,
+    index: true,
+  })
+  status: BlogStatus;
+
+  @Prop({ type: Date, default: null })
+  scheduledAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  publishedAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  autoArchiveAt: Date | null;
+
+  @Prop({
+    type: String,
+    enum: Object.values(AutoArchiveDuration),
+    default: null,
+  })
+  autoArchiveDuration: AutoArchiveDuration | null;
+
+  @Prop({
+    type: String,
+    enum: Object.values(CommentStrategy),
+    default: CommentStrategy.PUBLIC,
+  })
+  commentStrategy: CommentStrategy;
+
+  @Prop({ type: [String], default: [] })
+  invitedEmails: string[];
+
+  @Prop({ default: false })
+  isHyperlinked: boolean;
+
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Website' }],
+    default: [],
+  })
+  hyperlinkWebsites: Website[];
 
   @Prop({ type: BlogSeo, default: () => ({}) })
   seo: BlogSeo;

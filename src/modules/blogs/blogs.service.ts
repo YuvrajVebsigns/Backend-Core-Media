@@ -4,12 +4,65 @@ import { Model } from 'mongoose';
 import { Blog } from './schemas/blog.schema';
 import { CreateBlogDto, UpdateBlogDto, QueryBlogDto } from './dto/blog.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { BlogStatus } from './enums/blog-status.enum';
+import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
 
 @Injectable()
 export class BlogsService {
   constructor(
     @InjectModel(Blog.name) private blogModel: Model<Blog>,
   ) { }
+
+  private sanitizeImageUrls(dto: any) {
+    if (dto.featureImageId && dto.featureImage?.startsWith('http')) {
+      delete dto.featureImage;
+    }
+    if (dto.seo?.ogImageId && dto.seo?.ogImage?.startsWith('http')) {
+      delete dto.seo.ogImage;
+    }
+  }
+
+  private calculateArchiveDate(publishedAt: Date, duration: AutoArchiveDuration): Date {
+    const date = new Date(publishedAt);
+    switch (duration) {
+      case AutoArchiveDuration.THREE_MONTHS:
+        date.setMonth(date.getMonth() + 3);
+        break;
+      case AutoArchiveDuration.SIX_MONTHS:
+        date.setMonth(date.getMonth() + 6);
+        break;
+      case AutoArchiveDuration.ONE_YEAR:
+        date.setFullYear(date.getFullYear() + 1);
+        break;
+      case AutoArchiveDuration.THREE_YEARS:
+        date.setFullYear(date.getFullYear() + 3);
+        break;
+    }
+    return date;
+  }
+
+  private handleStatusTransitions(dto: any, existingBlog?: Blog) {
+    // If status is not provided, we don't change isActive unless it's a new blog
+    if (dto.status) {
+      if (dto.status === BlogStatus.PUBLISHED) {
+        dto.isActive = true;
+        if (!existingBlog?.publishedAt && !dto.publishedAt) {
+          dto.publishedAt = new Date();
+        }
+      } else {
+        dto.isActive = false;
+      }
+    }
+
+    const publishedAt = dto.publishedAt || existingBlog?.publishedAt;
+    const duration = dto.autoArchiveDuration || (dto.autoArchiveDuration === null ? null : existingBlog?.autoArchiveDuration);
+
+    if (publishedAt && duration) {
+      dto.autoArchiveAt = this.calculateArchiveDate(publishedAt, duration);
+    } else if (dto.autoArchiveDuration === null) {
+      dto.autoArchiveAt = null;
+    }
+  }
 
   async create(createDto: CreateBlogDto, authorId: string): Promise<Blog> {
     const { slug } = createDto;
@@ -18,6 +71,9 @@ export class BlogsService {
     if (existingBlog) {
       throw new ConflictException('Blog with this slug already exists');
     }
+
+    this.handleStatusTransitions(createDto);
+    this.sanitizeImageUrls(createDto);
 
     const newBlog = new this.blogModel({
       ...createDto,
@@ -34,6 +90,10 @@ export class BlogsService {
 
     if (isActive !== undefined) {
       matchQuery.isActive = isActive;
+    }
+
+    if (queryDto.status) {
+      matchQuery.status = queryDto.status;
     }
 
     if (websiteId) {
@@ -71,6 +131,8 @@ export class BlogsService {
         .find(matchQuery)
         .populate('author', 'fullName email profileImage')
         .populate('websites', 'name domain logo')
+        .populate('featureImageId')
+        .populate('seo.ogImageId')
         .sort(sortOption)
         .skip(skip)
         .limit(limit)
@@ -98,6 +160,8 @@ export class BlogsService {
       .findById(id)
       .populate('author', 'fullName email profileImage')
       .populate('websites', 'name domain logo')
+      .populate('featureImageId')
+      .populate('seo.ogImageId')
       .exec();
 
     if (!blog) {
@@ -111,8 +175,16 @@ export class BlogsService {
   }
 
   async update(id: string, updateDto: UpdateBlogDto): Promise<Blog> {
+    const existingBlog = await this.blogModel.findById(id).exec();
+    if (!existingBlog) {
+      throw new NotFoundException(`Blog with ID ${id} not found`);
+    }
+
+    this.handleStatusTransitions(updateDto, existingBlog);
+    this.sanitizeImageUrls(updateDto);
+
     const blog = await this.blogModel
-      .findByIdAndUpdate(id, updateDto, { new: true })
+      .findByIdAndUpdate(id, updateDto, { returnDocument: 'after' })
       .exec();
 
     if (!blog) {
