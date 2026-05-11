@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
 import { BaseSchema, applySoftDeleteMiddleware } from '../../../common/schemas/base.schema';
 
 @Schema({ _id: false })
@@ -14,6 +15,9 @@ class SeoMetadata {
 
   @Prop({ trim: true })
   ogImage: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
+  ogImageId: MongooseSchema.Types.ObjectId;
 }
 
 @Schema({
@@ -32,6 +36,9 @@ export class Website extends BaseSchema {
 
   @Prop({ trim: true })
   logo: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
+  logoId: MongooseSchema.Types.ObjectId;
 
   @Prop({ trim: true })
   description: string;

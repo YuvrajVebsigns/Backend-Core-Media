@@ -13,6 +13,12 @@ export class SystemUsersService {
     @InjectModel(SystemUser.name) private systemUserModel: Model<SystemUser>,
   ) {}
 
+  private sanitizeImageUrls(dto: any) {
+    if (dto.profileImageId && dto.profileImage?.startsWith('http')) {
+      delete dto.profileImage;
+    }
+  }
+
   async create(createDto: any): Promise<SystemUser> {
     const { email, password } = createDto;
     
@@ -24,6 +30,8 @@ export class SystemUsersService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
+    this.sanitizeImageUrls(createDto);
+
     const newUser = new this.systemUserModel({
       ...createDto,
       password: hashedPassword,
@@ -31,7 +39,7 @@ export class SystemUsersService {
 
     try {
       const savedUser = await newUser.save();
-      return savedUser.populate('role');
+      return savedUser.populate(['role', 'profileImageId']);
     } catch (error: any) {
       if (error.code === 11000) {
         throw new ConflictException('This email already exists in the database');
@@ -73,6 +81,19 @@ export class SystemUsersService {
         },
       },
       { $unwind: { path: '$roleInfo', preserveNullAndEmptyArrays: true } },
+    );
+
+    // Join with Files for profileImageId
+    pipeline.push(
+      {
+        $lookup: {
+          from: 'files',
+          localField: 'profileImageId',
+          foreignField: '_id',
+          as: 'profileImageInfo',
+        },
+      },
+      { $unwind: { path: '$profileImageInfo', preserveNullAndEmptyArrays: true } },
     );
 
     // Conditionally exclude Super Admins:
@@ -131,6 +152,7 @@ export class SystemUsersService {
       ...user,
       id: user._id.toString(),
       role: user.roleInfo ? { ...user.roleInfo, id: user.roleInfo._id.toString() } : null,
+      profileImageId: user.profileImageInfo ? { ...user.profileImageInfo, id: user.profileImageInfo._id.toString() } : null,
     }));
 
     return {
@@ -149,7 +171,7 @@ export class SystemUsersService {
   async findOne(id: string): Promise<SystemUser> {
     const user = await this.systemUserModel
       .findOne({ _id: id })
-      .populate('role')
+      .populate(['role', 'profileImageId'])
       .exec();
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
@@ -161,7 +183,7 @@ export class SystemUsersService {
     return this.systemUserModel
       .findOne({ _id: id })
       .select('+refreshToken')
-      .populate('role')
+      .populate(['role', 'profileImageId'])
       .exec();
   }
 
@@ -173,6 +195,8 @@ export class SystemUsersService {
     if (updateDto.password) {
       updateDto.password = await bcrypt.hash(updateDto.password, 10);
     }
+
+    this.sanitizeImageUrls(updateDto);
 
     const updatedUser = await this.systemUserModel
       .findOneAndUpdate({ _id: id }, updateDto, { returnDocument: 'after' })

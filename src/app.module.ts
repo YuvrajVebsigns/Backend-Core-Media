@@ -26,6 +26,7 @@ import { FilesModule } from './modules/files/files.module';
 import { ClsModule } from 'nestjs-cls';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 const envFilePath = fs.existsSync(`.env.${nodeEnv}`) 
@@ -134,6 +135,10 @@ const redisQueueImports = isProd || useRedis ? [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,

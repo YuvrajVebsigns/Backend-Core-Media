@@ -1,6 +1,6 @@
 import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsEnum, IsMongoId, ValidateNested, IsDateString } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { BlogStatus } from '../enums/blog-status.enum';
 import { AutoArchiveDuration } from '../enums/auto-archive-duration.enum';
 import { CommentStrategy } from '../enums/comment-strategy.enum';
@@ -25,6 +25,12 @@ export class BlogSeoDto {
 
   @IsMongoId()
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (typeof value === 'string' && value.startsWith('http')) return null;
+    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    return value;
+  })
   ogImageId?: string;
 }
 
@@ -50,6 +56,12 @@ export class CreateBlogDto {
 
   @IsMongoId()
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (typeof value === 'string' && value.startsWith('http')) return null;
+    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    return value;
+  })
   featureImageId?: string;
 
   @IsArray()
@@ -69,9 +81,9 @@ export class CreateBlogDto {
   @IsOptional()
   status?: BlogStatus;
 
-  @IsDateString()
   @IsOptional()
-  scheduledAt?: string;
+  @Transform(({ value }) => (value ? new Date(value) : null))
+  scheduledAt?: Date;
 
   @IsEnum(AutoArchiveDuration)
   @IsOptional()
@@ -90,6 +102,15 @@ export class CreateBlogDto {
   @IsString({ each: true })
   @IsOptional()
   invitedEmails?: string[];
+
+  @IsBoolean()
+  @IsOptional()
+  isHyperlinked?: boolean;
+
+  @IsArray()
+  @IsMongoId({ each: true })
+  @IsOptional()
+  hyperlinkWebsites?: string[];
 
   @IsOptional()
   @ValidateNested()

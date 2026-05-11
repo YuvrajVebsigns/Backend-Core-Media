@@ -101,6 +101,15 @@ export class Blog extends BaseSchema {
   @Prop({ type: [String], default: [] })
   invitedEmails: string[];
 
+  @Prop({ default: false })
+  isHyperlinked: boolean;
+
+  @Prop({
+    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Website' }],
+    default: [],
+  })
+  hyperlinkWebsites: Website[];
+
   @Prop({ type: BlogSeo, default: () => ({}) })
   seo: BlogSeo;
 }

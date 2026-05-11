@@ -13,6 +13,15 @@ export class BlogsService {
     @InjectModel(Blog.name) private blogModel: Model<Blog>,
   ) { }
 
+  private sanitizeImageUrls(dto: any) {
+    if (dto.featureImageId && dto.featureImage?.startsWith('http')) {
+      delete dto.featureImage;
+    }
+    if (dto.seo?.ogImageId && dto.seo?.ogImage?.startsWith('http')) {
+      delete dto.seo.ogImage;
+    }
+  }
+
   private calculateArchiveDate(publishedAt: Date, duration: AutoArchiveDuration): Date {
     const date = new Date(publishedAt);
     switch (duration) {
@@ -64,6 +73,7 @@ export class BlogsService {
     }
 
     this.handleStatusTransitions(createDto);
+    this.sanitizeImageUrls(createDto);
 
     const newBlog = new this.blogModel({
       ...createDto,
@@ -121,6 +131,8 @@ export class BlogsService {
         .find(matchQuery)
         .populate('author', 'fullName email profileImage')
         .populate('websites', 'name domain logo')
+        .populate('featureImageId')
+        .populate('seo.ogImageId')
         .sort(sortOption)
         .skip(skip)
         .limit(limit)
@@ -148,6 +160,8 @@ export class BlogsService {
       .findById(id)
       .populate('author', 'fullName email profileImage')
       .populate('websites', 'name domain logo')
+      .populate('featureImageId')
+      .populate('seo.ogImageId')
       .exec();
 
     if (!blog) {
@@ -167,6 +181,7 @@ export class BlogsService {
     }
 
     this.handleStatusTransitions(updateDto, existingBlog);
+    this.sanitizeImageUrls(updateDto);
 
     const blog = await this.blogModel
       .findByIdAndUpdate(id, updateDto, { returnDocument: 'after' })

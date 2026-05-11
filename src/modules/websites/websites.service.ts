@@ -11,6 +11,15 @@ export class WebsitesService {
     @InjectModel(Website.name) private websiteModel: Model<Website>,
   ) {}
 
+  private sanitizeImageUrls(dto: any) {
+    if (dto.logoId && dto.logo?.startsWith('http')) {
+      delete dto.logo;
+    }
+    if (dto.seo?.ogImageId && dto.seo?.ogImage?.startsWith('http')) {
+      delete dto.seo.ogImage;
+    }
+  }
+
   async create(createDto: CreateWebsiteDto): Promise<Website> {
     const { slug, domain } = createDto;
 
@@ -23,6 +32,8 @@ export class WebsitesService {
     if (existingDomain) {
       throw new ConflictException('Website with this domain already exists');
     }
+
+    this.sanitizeImageUrls(createDto);
 
     const newWebsite = new this.websiteModel(createDto);
     return newWebsite.save();
@@ -57,6 +68,8 @@ export class WebsitesService {
     const [data, total] = await Promise.all([
       this.websiteModel
         .find(matchQuery)
+        .populate('logoId')
+        .populate('seo.ogImageId')
         .sort(sortOption)
         .skip(skip)
         .limit(limit)
@@ -80,7 +93,11 @@ export class WebsitesService {
   }
 
   async findOne(id: string): Promise<Website> {
-    const website = await this.websiteModel.findOne({ _id: id, isDeleted: null }).exec();
+    const website = await this.websiteModel
+      .findOne({ _id: id, isDeleted: null })
+      .populate('logoId')
+      .populate('seo.ogImageId')
+      .exec();
     if (!website) {
       throw new NotFoundException(`Website with ID ${id} not found`);
     }
@@ -88,6 +105,8 @@ export class WebsitesService {
   }
 
   async update(id: string, updateDto: UpdateWebsiteDto): Promise<Website> {
+    this.sanitizeImageUrls(updateDto);
+
     const website = await this.websiteModel
       .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, { returnDocument: 'after' })
       .exec();
