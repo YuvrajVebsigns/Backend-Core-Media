@@ -17,7 +17,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SystemUserRole } from '../../common/enums/role.enum';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Blogs')
 @ApiBearerAuth()
@@ -35,6 +35,7 @@ export class BlogsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all blogs with pagination and filters' })
+  @ApiQuery({ name: 'showMetadata', required: false, type: Boolean, description: 'Whether to show creation and update timestamps' })
   findAll(@Query() queryDto: QueryBlogDto) {
     return this.blogsService.findAll(queryDto);
   }
@@ -79,6 +80,8 @@ export class BlogsController {
 
   @Get(':id/comments')
   @ApiOperation({ summary: 'Get comments for a blog' })
+  @ApiQuery({ name: 'admin', required: false, type: Boolean, description: 'Whether to show all comments including pending ones' })
+  @ApiQuery({ name: 'showMetadata', required: false, type: Boolean, description: 'Whether to show creation and update timestamps' })
   getComments(@Param('id') id: string, @Query('admin') admin: string) {
     return this.blogsService.getComments(id, admin === 'true');
   }
