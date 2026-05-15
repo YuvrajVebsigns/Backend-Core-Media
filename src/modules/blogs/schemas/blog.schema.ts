@@ -25,6 +25,18 @@ export class BlogSeo {
   ogImageId: MongooseSchema.Types.ObjectId;
 }
 
+@Schema({ _id: false })
+export class BlogEngagement {
+  @Prop({ default: 0 })
+  likes: number;
+
+  @Prop({ default: 0 })
+  views: number;
+
+  @Prop({ default: 0 })
+  commentsCount: number;
+}
+
 @Schema({
   collection: 'blogs',
   timestamps: true,
@@ -112,6 +124,9 @@ export class Blog extends BaseSchema {
 
   @Prop({ type: BlogSeo, default: () => ({}) })
   seo: BlogSeo;
+
+  @Prop({ type: BlogEngagement, default: () => ({}) })
+  engagement: BlogEngagement;
 }
 
 export const BlogSchema = SchemaFactory.createForClass(Blog);
@@ -124,6 +139,8 @@ BlogSchema.set('toJSON', {
   virtuals: true,
   transform: (doc, ret: any) => {
     if (ret._id) ret.id = ret._id.toString();
+    if (doc.createdAt) ret.createdAt = doc.createdAt;
+    if (doc.updatedAt) ret.updatedAt = doc.updatedAt;
     delete ret._id;
     delete ret.__v;
     return ret;

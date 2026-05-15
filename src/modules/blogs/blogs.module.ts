@@ -1,16 +1,25 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BullModule } from '@nestjs/bull';
 import { BlogsService } from './blogs.service';
 import { BlogsController } from './blogs.controller';
 import { Blog, BlogSchema } from './schemas/blog.schema';
+import { BlogComment, BlogCommentSchema } from './schemas/comment.schema';
 import { BlogMaintenanceService } from './services/blog-maintenance.service';
+import { BlogEngagementProcessor } from './processors/blog-engagement.processor';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Blog.name, schema: BlogSchema }]),
+    MongooseModule.forFeature([
+      { name: Blog.name, schema: BlogSchema },
+      { name: BlogComment.name, schema: BlogCommentSchema },
+    ]),
+    BullModule.registerQueue({
+      name: 'blog-engagement',
+    }),
   ],
   controllers: [BlogsController],
-  providers: [BlogsService, BlogMaintenanceService],
+  providers: [BlogsService, BlogMaintenanceService, BlogEngagementProcessor],
   exports: [BlogsService],
 })
-export class BlogsModule {}
+export class BlogsModule { }

@@ -30,7 +30,10 @@ export class BaseSchema extends Document {
   @Prop({ default: null, type: Date })
   isDeleted: Date | null;
 
+  @Prop()
   createdAt: Date;
+
+  @Prop()
   updatedAt: Date;
 }
 
