@@ -84,4 +84,13 @@ export class LocalStrategy implements IStorageProvider {
   readFile(key: string): Buffer {
     return readFileSync(join(this.uploadsDir, key));
   }
+
+  async checkHealth(): Promise<boolean> {
+    try {
+      return existsSync(this.uploadsDir);
+    } catch (error) {
+      this.logger.error(`Local Storage Health Check Failed: ${error.message}`);
+      return false;
+    }
+  }
 }

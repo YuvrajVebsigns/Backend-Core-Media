@@ -7,6 +7,7 @@ import {
 } from '@nestjs/terminus';
 import { RedisHealthIndicator } from './redis.health';
 import { SystemHealthIndicator } from './system.health';
+import { StorageHealthIndicator } from './storage.health';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('System')
@@ -18,11 +19,12 @@ export class HealthController {
     private redisHealth: RedisHealthIndicator,
     private mongoose: MongooseHealthIndicator,
     private system: SystemHealthIndicator,
+    private storage: StorageHealthIndicator,
   ) { }
 
   @Get()
   @HealthCheck()
-  @ApiOperation({ summary: 'Check API, Database, Redis, and System Metrics' })
+  @ApiOperation({ summary: 'Check API, Database, Redis, Storage and System Metrics' })
   check() {
     return this.health.check([
       // Check if memory heap usage exceeds 512MB
@@ -33,6 +35,9 @@ export class HealthController {
 
       // Ping Redis/Cache via Cache Manager
       () => this.redisHealth.isHealthy('cache'),
+
+      // Ping Storage (Bucket)
+      () => this.storage.isHealthy('storage'),
 
       // Detailed System & Memory usage
       () => this.system.check('system'),

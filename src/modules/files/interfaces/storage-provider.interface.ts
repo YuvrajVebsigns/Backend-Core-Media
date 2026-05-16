@@ -54,6 +54,11 @@ export interface IStorageProvider {
    * @param expiresInSeconds TTL for the signed URL (default: 3600)
    */
   getSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
+
+  /**
+   * Check whether the storage service is healthy and reachable.
+   */
+  checkHealth(): Promise<boolean>;
 }
 
 /**

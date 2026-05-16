@@ -6,6 +6,7 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import {
@@ -94,5 +95,15 @@ export class S3Strategy implements IStorageProvider {
     });
 
     return getSignedUrl(this.s3, command, { expiresIn: expiresInSeconds });
+  }
+
+  async checkHealth(): Promise<boolean> {
+    try {
+      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return true;
+    } catch (error) {
+      this.logger.error(`S3 Health Check Failed: ${error.message}`);
+      return false;
+    }
   }
 }

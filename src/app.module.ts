@@ -37,7 +37,7 @@ const envFilePath = fs.existsSync(`.env.${nodeEnv}`)
 
 const envConfig = fs.existsSync(envFilePath) ? dotenv.parse(fs.readFileSync(envFilePath)) : {};
 const isProd = (process.env.NODE_ENV || envConfig.NODE_ENV) === 'production';
-const useRedis = (process.env.USE_REDIS || envConfig.USE_REDIS) === 'true';
+const useRedis = process.env.USE_REDIS === 'true' || envConfig.USE_REDIS === 'true' || isProd;
 
 const redisQueueImports = isProd || useRedis ? [
   BullModule.forRootAsync({
@@ -96,17 +96,23 @@ const redisQueueImports = isProd || useRedis ? [
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
-        const useRedis = configService.get<boolean>('USE_REDIS') === true;
+        const useRedisEnv = configService.get('USE_REDIS');
+        const useRedis = useRedisEnv === true || useRedisEnv === 'true' || isProd;
 
-        if (isProd || useRedis) {
-          const store = await redisStore({
-            socket: {
-              host: configService.get<string>('REDIS_HOST') || 'localhost',
-              port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
-            },
-            ttl: 60 * 1000,
-          });
-          return { store };
+        if (useRedis) {
+          try {
+            const store = await redisStore({
+              socket: {
+                host: configService.get<string>('REDIS_HOST') || 'localhost',
+                port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+              },
+              ttl: 60 * 1000,
+            });
+            return { store };
+          } catch (error) {
+            console.error('Failed to initialize Redis store:', error.message);
+            // Fallback will happen below if we don't return here
+          }
         }
 
         // Fallback to in-memory cache for local development
