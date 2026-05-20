@@ -19,11 +19,15 @@ import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
 import { DatabaseModule } from './database/database.module';
+import { EventManagementModule } from './modules/events/event-management.module';
+import { AttendeesModule } from './modules/attendees/attendees.module';
 import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
 import { WebsitesModule } from './modules/websites/websites.module';
 import { BlogsModule } from './modules/blogs/blogs.module';
 import { FilesModule } from './modules/files/files.module';
+import { SponsorsModule } from './modules/sponsors/sponsors.module';
 import { ClsModule } from 'nestjs-cls';
+import { WebhookModule } from './webhook/webhook.module';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -128,11 +132,15 @@ const redisQueueImports = isProd || useRedis ? [
     SeedModule,
     HealthModule,
     EventsModule,
+    EventManagementModule,
+    AttendeesModule,
     FeatureFlagModule,
     SidebarMenuModule,
     WebsitesModule,
     BlogsModule,
     FilesModule,
+    SponsorsModule,
+    WebhookModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],

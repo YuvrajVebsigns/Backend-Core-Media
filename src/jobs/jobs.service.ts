@@ -26,4 +26,11 @@ export class JobsService {
   async processImage(imageId: string) {
     await this.imageProcessingQueue.add('resize', { imageId });
   }
+
+  async addJob(queueName: 'emails' | 'notifications' | 'image-processing', jobName: string, data: any) {
+    const queue = this[`${queueName}Queue`];
+    if (queue) {
+      await queue.add(jobName, data, { attempts: 3, backoff: 5000 });
+    }
+  }
 }
