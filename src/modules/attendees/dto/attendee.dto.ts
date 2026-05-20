@@ -1,0 +1,28 @@
+import { IsString, IsEmail, IsOptional, IsMongoId, IsEnum } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { AttendeeStatus } from '../schemas/attendee.schema';
+
+export class RegisterAttendeeDto {
+  @ApiProperty({ example: '507f1f77bcf86cd799439011' })
+  @IsMongoId()
+  eventId: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: '+1234567890', required: false })
+  @IsString()
+  @IsOptional()
+  phone?: string;
+}
+
+export class UpdateAttendeeStatusDto {
+  @ApiProperty({ enum: AttendeeStatus })
+  @IsEnum(AttendeeStatus)
+  status: AttendeeStatus;
+}

@@ -85,6 +85,6 @@ import { StorageProvider } from './enums/storage-provider.enum.js';
       inject: [ConfigService, S3Strategy, LocalStrategy],
     },
   ],
-  exports: [FilesService, UrlService, StorageService],
+  exports: [FilesService, UrlService, StorageService, STORAGE_PROVIDER_TOKEN],
 })
 export class FilesModule {}

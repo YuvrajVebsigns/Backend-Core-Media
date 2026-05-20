@@ -65,6 +65,7 @@ async function bootstrap() {
     logger: WinstonModule.createLogger({
       instance,
     }),
+    rawBody: true,
   });
 
   // Set Global Prefix (e.g., /api/v1/...)

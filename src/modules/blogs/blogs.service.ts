@@ -1,8 +1,14 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Model } from 'mongoose';
 import { Blog } from './schemas/blog.schema';
+import { BlogComment, BlogCommentDocument } from './schemas/comment.schema';
 import { CreateBlogDto, UpdateBlogDto, QueryBlogDto } from './dto/blog.dto';
+import { CreateCommentDto, UpdateCommentStatusDto } from './dto/comment.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 import { BlogStatus } from './enums/blog-status.enum';
 import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
@@ -11,6 +17,9 @@ import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
 export class BlogsService {
   constructor(
     @InjectModel(Blog.name) private blogModel: Model<Blog>,
+    @InjectModel(BlogComment.name) private commentModel: Model<BlogCommentDocument>,
+    @InjectQueue('blog-engagement') private engagementQueue: Queue,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   private sanitizeImageUrls(dto: any) {
@@ -202,5 +211,94 @@ export class BlogsService {
     if (result.matchedCount === 0) {
       throw new NotFoundException(`Blog with ID ${id} not found`);
     }
+  }
+
+  private async bufferEngagement(blogId: string, type: 'likes' | 'views' | 'comments') {
+    const key = `blog:engagement:${blogId}:${type}`;
+    const currentValue = await this.cacheManager.get<number>(key) || 0;
+    await this.cacheManager.set(key, currentValue + 1, 3600000); // 1 hour TTL
+
+    // Schedule sync job if not already scheduled
+    // Use blogId as jobId to ensure only one sync job per blog is active
+    await this.engagementQueue.add(
+      'sync-engagement',
+      { blogId },
+      {
+        delay: 30000, // 30 seconds
+        jobId: `sync:${blogId}`,
+        removeOnComplete: true,
+      }
+    ).catch(() => {
+      // Ignore errors if job with same ID already exists
+    });
+  }
+
+  async like(id: string) {
+    // We still return the blog, but the count might be slightly stale or we can optimisticly increment
+    const blog = await this.blogModel.findById(id).exec();
+    if (!blog) {
+      throw new NotFoundException(`Blog with ID "${id}" not found`);
+    }
+
+    await this.bufferEngagement(id, 'likes');
+
+    // Optimistic return (optional: we can fetch current buffered value to return more accurate count)
+    const bufferedLikes = await this.cacheManager.get<number>(`blog:engagement:${id}:likes`) || 0;
+    blog.engagement.likes += 1; // For immediate UI feedback if returned
+    return blog;
+  }
+
+  async incrementViews(id: string) {
+    const blog = await this.blogModel.findById(id).exec();
+    if (!blog) return null;
+
+    await this.bufferEngagement(id, 'views');
+    return blog;
+  }
+
+  async addComment(blogId: string, createCommentDto: CreateCommentDto) {
+    const blog = await this.blogModel.findById(blogId).exec();
+    if (!blog) {
+      throw new NotFoundException(`Blog with ID "${blogId}" not found`);
+    }
+
+    const comment = new this.commentModel({
+      ...createCommentDto,
+      blogId,
+      status: 'Pending',
+    });
+
+    await comment.save();
+
+    // Buffer the comment count increment
+    await this.bufferEngagement(blogId, 'comments');
+
+    return comment;
+  }
+
+  async getComments(blogId: string, admin = false) {
+    const filter: any = { blogId };
+    if (!admin) {
+      filter.status = 'Approved';
+    }
+    return this.commentModel
+      .find(filter)
+      .populate('blogId', 'title createdAt')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async updateCommentStatus(commentId: string, updateStatusDto: UpdateCommentStatusDto) {
+    const comment = await this.commentModel.findByIdAndUpdate(
+      commentId,
+      { status: updateStatusDto.status },
+      { new: true },
+    ).exec();
+
+    if (!comment) {
+      throw new NotFoundException(`Comment with ID "${commentId}" not found`);
+    }
+
+    return comment;
   }
 }

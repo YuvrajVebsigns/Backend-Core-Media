@@ -19,11 +19,15 @@ import { JobsModule } from './jobs/jobs.module';
 import { EventsModule } from './events/events.module';
 import { FeatureFlagModule } from './feature-flags/feature-flag.module';
 import { DatabaseModule } from './database/database.module';
+import { EventManagementModule } from './modules/events/event-management.module';
+import { AttendeesModule } from './modules/attendees/attendees.module';
 import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
 import { WebsitesModule } from './modules/websites/websites.module';
 import { BlogsModule } from './modules/blogs/blogs.module';
 import { FilesModule } from './modules/files/files.module';
+import { SponsorsModule } from './modules/sponsors/sponsors.module';
 import { ClsModule } from 'nestjs-cls';
+import { WebhookModule } from './webhook/webhook.module';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -37,7 +41,7 @@ const envFilePath = fs.existsSync(`.env.${nodeEnv}`)
 
 const envConfig = fs.existsSync(envFilePath) ? dotenv.parse(fs.readFileSync(envFilePath)) : {};
 const isProd = (process.env.NODE_ENV || envConfig.NODE_ENV) === 'production';
-const useRedis = (process.env.USE_REDIS || envConfig.USE_REDIS) === 'true';
+const useRedis = process.env.USE_REDIS === 'true' || envConfig.USE_REDIS === 'true' || isProd;
 
 const redisQueueImports = isProd || useRedis ? [
   BullModule.forRootAsync({
@@ -96,17 +100,23 @@ const redisQueueImports = isProd || useRedis ? [
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
-        const useRedis = configService.get<boolean>('USE_REDIS') === true;
+        const useRedisEnv = configService.get('USE_REDIS');
+        const useRedis = useRedisEnv === true || useRedisEnv === 'true' || isProd;
 
-        if (isProd || useRedis) {
-          const store = await redisStore({
-            socket: {
-              host: configService.get<string>('REDIS_HOST') || 'localhost',
-              port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
-            },
-            ttl: 60 * 1000,
-          });
-          return { store };
+        if (useRedis) {
+          try {
+            const store = await redisStore({
+              socket: {
+                host: configService.get<string>('REDIS_HOST') || 'localhost',
+                port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+              },
+              ttl: 60 * 1000,
+            });
+            return { store };
+          } catch (error) {
+            console.error('Failed to initialize Redis store:', error.message);
+            // Fallback will happen below if we don't return here
+          }
         }
 
         // Fallback to in-memory cache for local development
@@ -122,11 +132,15 @@ const redisQueueImports = isProd || useRedis ? [
     SeedModule,
     HealthModule,
     EventsModule,
+    EventManagementModule,
+    AttendeesModule,
     FeatureFlagModule,
     SidebarMenuModule,
     WebsitesModule,
     BlogsModule,
     FilesModule,
+    SponsorsModule,
+    WebhookModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],

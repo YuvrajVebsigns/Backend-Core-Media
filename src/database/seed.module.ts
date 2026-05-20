@@ -9,9 +9,11 @@ import { SystemUsersSeeder } from './seeds/system-users.seeder';
 import { SidebarMenusSeeder } from './seeds/sidebar-menus.seeder';
 import { WebsitesSeeder } from './seeds/websites.seeder';
 import { BlogsSeeder } from './seeds/blogs.seeder';
+import { EventsSeeder } from './seeds/events.seeder';
+import { EventManagementModule } from '../modules/events/event-management.module';
 
 @Module({
-  imports: [RolesModule, SystemUsersModule, SidebarMenuModule, WebsitesModule, BlogsModule],
-  providers: [RolesSeeder, SystemUsersSeeder, SidebarMenusSeeder, WebsitesSeeder, BlogsSeeder],
+  imports: [RolesModule, SystemUsersModule, SidebarMenuModule, WebsitesModule, BlogsModule, EventManagementModule],
+  providers: [RolesSeeder, SystemUsersSeeder, SidebarMenusSeeder, WebsitesSeeder, BlogsSeeder, EventsSeeder],
 })
 export class SeedModule { }

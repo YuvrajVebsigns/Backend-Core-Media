@@ -12,18 +12,19 @@ import {
 } from '@nestjs/common';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto, UpdateBlogDto, QueryBlogDto } from './dto/blog.dto';
+import { CreateCommentDto, UpdateCommentStatusDto } from './dto/comment.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SystemUserRole } from '../../common/enums/role.enum';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Blogs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/blogs')
 export class BlogsController {
-  constructor(private readonly blogsService: BlogsService) {}
+  constructor(private readonly blogsService: BlogsService) { }
 
   @Post()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
@@ -34,6 +35,7 @@ export class BlogsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all blogs with pagination and filters' })
+  @ApiQuery({ name: 'showMetadata', required: false, type: Boolean, description: 'Whether to show creation and update timestamps' })
   findAll(@Query() queryDto: QueryBlogDto) {
     return this.blogsService.findAll(queryDto);
   }
@@ -56,5 +58,38 @@ export class BlogsController {
   @ApiOperation({ summary: 'Delete a blog (soft delete)' })
   remove(@Param('id') id: string) {
     return this.blogsService.remove(id);
+  }
+
+  @Patch(':id/like')
+  @ApiOperation({ summary: 'Like a blog' })
+  like(@Param('id') id: string) {
+    return this.blogsService.like(id);
+  }
+
+  @Post(':id/view')
+  @ApiOperation({ summary: 'Increment blog views' })
+  incrementViews(@Param('id') id: string) {
+    return this.blogsService.incrementViews(id);
+  }
+
+  @Post(':id/comments')
+  @ApiOperation({ summary: 'Add a comment to a blog' })
+  addComment(@Param('id') id: string, @Body() createCommentDto: CreateCommentDto) {
+    return this.blogsService.addComment(id, createCommentDto);
+  }
+
+  @Get(':id/comments')
+  @ApiOperation({ summary: 'Get comments for a blog' })
+  @ApiQuery({ name: 'admin', required: false, type: Boolean, description: 'Whether to show all comments including pending ones' })
+  @ApiQuery({ name: 'showMetadata', required: false, type: Boolean, description: 'Whether to show creation and update timestamps' })
+  getComments(@Param('id') id: string, @Query('admin') admin: string) {
+    return this.blogsService.getComments(id, admin === 'true');
+  }
+
+  @Patch('comments/:commentId/status')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @ApiOperation({ summary: 'Update comment status (moderate)' })
+  updateCommentStatus(@Param('commentId') commentId: string, @Body() updateStatusDto: UpdateCommentStatusDto) {
+    return this.blogsService.updateCommentStatus(commentId, updateStatusDto);
   }
 }
