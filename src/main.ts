@@ -109,6 +109,17 @@ async function bootstrap() {
     .setDescription('The Core Media API documentation (Version 1)')
     .setVersion('1.0')
     .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter Website JWT token',
+        in: 'header',
+      },
+      'website-token',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
