@@ -1,6 +1,7 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { JwtService } from '@nestjs/jwt';
 import { Website } from './schemas/website.schema';
 import { CreateWebsiteDto, UpdateWebsiteDto, QueryWebsiteDto } from './dto/website.dto';
 import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
@@ -9,6 +10,7 @@ import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 export class WebsitesService {
   constructor(
     @InjectModel(Website.name) private websiteModel: Model<Website>,
+    private readonly jwtService: JwtService,
   ) {}
 
   private sanitizeImageUrls(dto: any) {
@@ -130,5 +132,50 @@ export class WebsitesService {
 
   async findBySlug(slug: string): Promise<Website | null> {
     return this.websiteModel.findOne({ slug, isDeleted: null }).exec();
+  }
+
+  async generateWebsiteToken(origin: string, fallbackDomain?: string): Promise<{ token: string; website: Website }> {
+    const normalizeDomain = (input: string): string => {
+      if (!input) return '';
+      let cleaned = input.trim().toLowerCase();
+      cleaned = cleaned.replace(/^https?:\/\//i, '');
+      cleaned = cleaned.split(':')[0];
+      cleaned = cleaned.split('/')[0];
+      cleaned = cleaned.replace(/^www\./i, '');
+      return cleaned;
+    };
+
+    const normalizedOrigin = normalizeDomain(origin);
+    let targetDomain = normalizedOrigin;
+
+    // Support both checking the actual origin and allowing header/query/body fallbacks for local development
+    if ((normalizedOrigin === 'localhost' || normalizedOrigin === '127.0.0.1' || !normalizedOrigin) && fallbackDomain) {
+      targetDomain = normalizeDomain(fallbackDomain);
+    }
+
+    if (!targetDomain) {
+      throw new BadRequestException('Origin domain could not be identified');
+    }
+
+    const websites = await this.websiteModel.find({ isDeleted: null, isActive: true }).exec();
+    const matchedWebsite = websites.find(w => normalizeDomain(w.domain) === targetDomain);
+
+    if (!matchedWebsite) {
+      throw new UnauthorizedException(`Domain "${targetDomain}" is not registered or active`);
+    }
+
+    const payload = {
+      websiteId: matchedWebsite._id.toString(),
+      domain: matchedWebsite.domain,
+      slug: matchedWebsite.slug,
+      type: 'website',
+    };
+
+    const token = this.jwtService.sign(payload, { expiresIn: '1d' });
+
+    return {
+      token,
+      website: matchedWebsite,
+    };
   }
 }
