@@ -54,10 +54,13 @@ export class FilesService {
     private readonly urlService: UrlService,
     private readonly configService: ConfigService,
   ) {
-    this.environment =
-      this.configService.get<string>('NODE_ENV') === 'production'
-        ? 'prod'
-        : 'dev';
+    const storageEnv = this.configService.get<string>('STORAGE_ENV');
+    if (storageEnv) {
+      this.environment = storageEnv;
+    } else {
+      const nodeEnv = this.configService.get<string>('NODE_ENV');
+      this.environment = nodeEnv === 'production' ? 'prod' : (nodeEnv === 'test' ? 'test' : 'dev');
+    }
 
     this.provider =
       (this.configService.get<string>('STORAGE_PROVIDER') as StorageProvider) ??

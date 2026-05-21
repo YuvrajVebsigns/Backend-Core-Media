@@ -51,6 +51,7 @@ const redisQueueImports = isProd || useRedis ? [
       redis: {
         host: configService.get<string>('REDIS_HOST') || 'localhost',
         port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+        maxRetriesPerRequest: null,
       },
     }),
   }),
@@ -73,6 +74,7 @@ const redisQueueImports = isProd || useRedis ? [
         REDIS_HOST: Joi.string().optional(),
         REDIS_PORT: Joi.number().optional(),
         STORAGE_PROVIDER: Joi.string().optional().default('local'),
+        STORAGE_ENV: Joi.string().optional(),
         S3_ENDPOINT: Joi.string().optional(),
         S3_ACCESS_KEY_ID: Joi.string().optional(),
         S3_SECRET_ACCESS_KEY: Joi.string().optional(),
