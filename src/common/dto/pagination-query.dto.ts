@@ -10,21 +10,30 @@ export class PaginationQueryDto {
   @IsOptional()
   page?: number = 1;
 
-  @ApiPropertyOptional({ description: 'Number of items per page', default: 10, minimum: 1 })
+  @ApiPropertyOptional({
+    description: 'Number of items per page',
+    default: 10,
+    minimum: 1,
+  })
   @Type(() => Number)
   @IsInt()
   @Min(1)
   @IsOptional()
   limit?: number = 10;
 
-  @ApiPropertyOptional({ description: 'Sort criteria. Format: field:order (e.g., createdAt:desc, name:asc)', example: 'createdAt:desc' })
+  @ApiPropertyOptional({
+    description:
+      'Sort criteria. Format: field:order (e.g., createdAt:desc, name:asc)',
+    example: 'createdAt:desc',
+  })
   @IsString()
   @IsOptional()
   sort?: string;
 
-  @ApiPropertyOptional({ 
-    description: 'JSON stringified filters or standard nested query. Example: {"status":"active"}', 
-    example: '{"status":"active"}' 
+  @ApiPropertyOptional({
+    description:
+      'JSON stringified filters or standard nested query. Example: {"status":"active"}',
+    example: '{"status":"active"}',
   })
   @IsOptional()
   @Transform(({ value }) => {

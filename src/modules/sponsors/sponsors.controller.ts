@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { SponsorsService } from './sponsors.service';
 import { CreateSponsorDto, UpdateSponsorDto } from './dto/sponsor.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 
 @ApiTags('Sponsors')
 @Controller('sponsors')

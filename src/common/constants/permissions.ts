@@ -88,7 +88,7 @@ export const PERMISSIONS = {
   NOMINEES_DELETE: 'nominees.delete',
 };
 
-export type Permission = typeof PERMISSIONS[keyof typeof PERMISSIONS];
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 export const PROTECTED_PERMISSIONS = [
   PERMISSIONS.SIDEBAR_MENU_VIEW,

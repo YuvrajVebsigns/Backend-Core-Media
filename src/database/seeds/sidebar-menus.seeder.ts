@@ -1,9 +1,9 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { SidebarMenuService } from '../../modules/sidebar-menu/sidebar-menu.service';
+import { SidebarMenuService } from '@core/sidebar-menu/sidebar-menu.service';
 
 @Injectable()
 export class SidebarMenusSeeder implements OnApplicationBootstrap {
-  constructor(private readonly sidebarMenuService: SidebarMenuService) { }
+  constructor(private readonly sidebarMenuService: SidebarMenuService) {}
 
   async onApplicationBootstrap() {
     await this.seed();
@@ -149,16 +149,23 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
       },
     ];
 
-    const existingSidebarMenus = await this.sidebarMenuService.getAllSidebarMenus(true, { page: 1, limit: 10 });
+    const existingSidebarMenus =
+      await this.sidebarMenuService.getAllSidebarMenus(true, {
+        page: 1,
+        limit: 10,
+      });
 
     for (const menuData of menus) {
       try {
         // Check if menu exists by name (simplistic but works for seeds)
-        const existing = await this.sidebarMenuService.getAllSidebarMenus(true, {
-          page: 1,
-          limit: 1,
-          search: menuData.name
-        });
+        const existing = await this.sidebarMenuService.getAllSidebarMenus(
+          true,
+          {
+            page: 1,
+            limit: 1,
+            search: menuData.name,
+          },
+        );
 
         if (existing.data.length === 0) {
           await this.sidebarMenuService.createSidebarMenu(menuData as any);
@@ -168,7 +175,10 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
           // await this.sidebarMenuService.updateSidebarMenu(existing.data[0].id, menuData as any);
         }
       } catch (error) {
-        console.error(`❌ Failed to seed menu ${menuData.name}:`, error.message);
+        console.error(
+          `❌ Failed to seed menu ${menuData.name}:`,
+          error.message,
+        );
       }
     }
   }

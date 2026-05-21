@@ -1,9 +1,21 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsEnum, IsMongoId, ValidateNested, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsEnum,
+  IsMongoId,
+  ValidateNested,
+  IsDateString,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { PartialType } from '@nestjs/swagger';
-import { BlogStatus } from '../enums/blog-status.enum';
-import { AutoArchiveDuration } from '../enums/auto-archive-duration.enum';
-import { CommentStrategy } from '../enums/comment-strategy.enum';
+import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
+import { BlogStatus } from '@modules/blogs/enums/blog-status.enum';
+import { AutoArchiveDuration } from '@modules/blogs/enums/auto-archive-duration.enum';
+import { CommentStrategy } from '@modules/blogs/enums/comment-strategy.enum';
+import { ImageLinksDto } from '@common/dto/image-links.dto';
 
 export class BlogSeoDto {
   @IsString()
@@ -19,16 +31,23 @@ export class BlogSeoDto {
   @IsOptional()
   keywords?: string[];
 
-  @IsString()
+  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
   @IsOptional()
-  ogImage?: string;
+  ogImage?: ImageLinksDto;
 
   @IsMongoId()
   @IsOptional()
   @Transform(({ value }) => {
-    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (
+      value === '' ||
+      value === null ||
+      value === undefined ||
+      value === 'null'
+    )
+      return null;
     if (typeof value === 'string' && value.startsWith('http')) return null;
-    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    if (typeof value === 'object')
+      return value._id?.toString() || value.id?.toString() || value;
     return value;
   })
   ogImageId?: string;
@@ -50,16 +69,23 @@ export class CreateBlogDto {
   @IsOptional()
   excerpt?: string;
 
-  @IsString()
+  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
   @IsOptional()
-  featureImage?: string;
+  featureImage?: ImageLinksDto;
 
   @IsMongoId()
   @IsOptional()
   @Transform(({ value }) => {
-    if (value === '' || value === null || value === undefined || value === 'null') return null;
+    if (
+      value === '' ||
+      value === null ||
+      value === undefined ||
+      value === 'null'
+    )
+      return null;
     if (typeof value === 'string' && value.startsWith('http')) return null;
-    if (typeof value === 'object') return value._id?.toString() || value.id?.toString() || value;
+    if (typeof value === 'object')
+      return value._id?.toString() || value.id?.toString() || value;
     return value;
   })
   featureImageId?: string;
@@ -120,15 +146,7 @@ export class CreateBlogDto {
 
 export class UpdateBlogDto extends PartialType(CreateBlogDto) {}
 
-export class QueryBlogDto {
-  @IsOptional()
-  @Transform(({ value }) => parseInt(value))
-  page?: number;
-
-  @IsOptional()
-  @Transform(({ value }) => parseInt(value))
-  limit?: number;
-
+export class QueryBlogDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
@@ -147,6 +165,7 @@ export class QueryBlogDto {
   status?: BlogStatus;
 
   @IsOptional()
-  @IsString()
-  sort?: string;
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  showMetadata?: boolean;
 }

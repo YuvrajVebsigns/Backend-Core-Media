@@ -1,6 +1,16 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsBoolean, IsArray, IsObject, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsObject,
+  ValidateNested,
+} from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { ImageLinksDto } from '@common/dto/image-links.dto';
+import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 
 class SeoMetadataDto {
   @ApiPropertyOptional({ example: 'My Awesome Website' })
@@ -19,10 +29,9 @@ class SeoMetadataDto {
   @IsString({ each: true })
   metaKeywords?: string[];
 
-  @ApiPropertyOptional({ example: 'https://example.com/og-image.png' })
+  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
   @IsOptional()
-  @IsString()
-  ogImage?: string;
+  ogImage?: ImageLinksDto;
 
   @ApiPropertyOptional({ example: '665abc1234567890abcdef12' })
   @IsOptional()
@@ -46,10 +55,9 @@ export class CreateWebsiteDto {
   @IsString()
   domain: string;
 
-  @ApiPropertyOptional({ example: 'https://example.com/logo.png' })
+  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
   @IsOptional()
-  @IsString()
-  logo?: string;
+  logo?: ImageLinksDto;
 
   @ApiPropertyOptional({ example: '665abc1234567890abcdef12' })
   @IsOptional()
@@ -80,22 +88,10 @@ export class CreateWebsiteDto {
 
 export class UpdateWebsiteDto extends PartialType(CreateWebsiteDto) {}
 
-export class QueryWebsiteDto {
+export class QueryWebsiteDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
-
-  @IsOptional()
-  @Type(() => Number)
-  page?: number = 1;
-
-  @IsOptional()
-  @Type(() => Number)
-  limit?: number = 10;
-
-  @IsOptional()
-  @IsString()
-  sort?: string;
 
   @IsOptional()
   @IsBoolean()

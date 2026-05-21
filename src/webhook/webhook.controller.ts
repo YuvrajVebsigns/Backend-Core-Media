@@ -1,6 +1,28 @@
-import { Controller, Post, Body, Req, Headers, UnauthorizedException, HttpCode, HttpStatus, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiBody, ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, ValidateNested, IsObject } from 'class-validator';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Headers,
+  UnauthorizedException,
+  HttpCode,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiHeader,
+  ApiBody,
+  ApiProperty,
+} from '@nestjs/swagger';
+import {
+  IsString,
+  IsNotEmpty,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
@@ -42,30 +64,39 @@ export class WebhookController {
   constructor(
     private readonly webhookService: WebhookService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Post('github')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'GitHub Webhook endpoint for Auto-Deployment',
-    description: 'Processes incoming GitHub Webhook events (push/ping), validates the HMAC-SHA256 signature, and runs deployment script.',
+    description:
+      'Processes incoming GitHub Webhook events (push/ping), validates the HMAC-SHA256 signature, and runs deployment script.',
   })
   @ApiHeader({
     name: 'x-hub-signature-256',
-    description: 'The HMAC-SHA256 signature of the payload (e.g., sha256=xxx) generated using the webhook secret.',
+    description:
+      'The HMAC-SHA256 signature of the payload (e.g., sha256=xxx) generated using the webhook secret.',
     required: true,
   })
   @ApiHeader({
     name: 'x-github-event',
-    description: 'The GitHub event that triggered the webhook (e.g., "push" or "ping").',
+    description:
+      'The GitHub event that triggered the webhook (e.g., "push" or "ping").',
     required: true,
   })
   @ApiBody({
     type: GitHubWebhookDto,
     description: 'GitHub Webhook payload containing push details.',
   })
-  @ApiResponse({ status: 200, description: 'Webhook event processed successfully.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized request - Invalid or missing HMAC signature.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook event processed successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized request - Invalid or missing HMAC signature.',
+  })
   async handleGitHubWebhook(
     @Req() req: any,
     @Headers('x-hub-signature-256') signature: string,
@@ -76,14 +107,21 @@ export class WebhookController {
 
     // 1. Support GitHub's initial ping connection check
     if (event === 'ping') {
-      this.logger.log('GitHub Webhook handshake "ping" received. Responding with pong.');
+      this.logger.log(
+        'GitHub Webhook handshake "ping" received. Responding with pong.',
+      );
       return { status: 'success', message: 'pong' };
     }
 
     // 2. Perform HMAC-SHA256 signature verification
-    const isSignatureValid = this.webhookService.verifySignature(req.rawBody, signature);
+    const isSignatureValid = this.webhookService.verifySignature(
+      req.rawBody,
+      signature,
+    );
     if (!isSignatureValid) {
-      this.logger.error('Webhook signature verification failed. Rejecting request.');
+      this.logger.error(
+        'Webhook signature verification failed. Rejecting request.',
+      );
       throw new UnauthorizedException('Invalid webhook signature');
     }
 
@@ -93,10 +131,16 @@ export class WebhookController {
       const ref = gitHubPayload.ref; // e.g. refs/heads/main
       const repoName = gitHubPayload.repository?.name; // e.g. Backend-Core-Media or Admin-Panel-Frontend
 
-      this.logger.log(`Push event details: Repository = ${repoName}, Branch = ${ref}`);
+      this.logger.log(
+        `Push event details: Repository = ${repoName}, Branch = ${ref}`,
+      );
 
-      const backendBranch = this.configService.get<string>('DEPLOY_BACKEND_BRANCH') || 'refs/heads/main';
-      const frontendBranch = this.configService.get<string>('DEPLOY_FRONTEND_BRANCH') || 'refs/heads/main';
+      const backendBranch =
+        this.configService.get<string>('DEPLOY_BACKEND_BRANCH') ||
+        'refs/heads/main';
+      const frontendBranch =
+        this.configService.get<string>('DEPLOY_FRONTEND_BRANCH') ||
+        'refs/heads/main';
 
       let triggered = false;
 
@@ -106,7 +150,9 @@ export class WebhookController {
           // Spawn deployment asynchronously (non-blocking)
           this.webhookService.deploy('backend');
         } else {
-          this.logger.warn(`Push to branch ${ref} does not match backend target branch ${backendBranch}. Skipping deployment.`);
+          this.logger.warn(
+            `Push to branch ${ref} does not match backend target branch ${backendBranch}. Skipping deployment.`,
+          );
         }
       } else if (repoName === 'Admin-Panel-Frontend') {
         if (ref === frontendBranch) {
@@ -114,10 +160,14 @@ export class WebhookController {
           // Spawn deployment asynchronously (non-blocking)
           this.webhookService.deploy('frontend');
         } else {
-          this.logger.warn(`Push to branch ${ref} does not match frontend target branch ${frontendBranch}. Skipping deployment.`);
+          this.logger.warn(
+            `Push to branch ${ref} does not match frontend target branch ${frontendBranch}. Skipping deployment.`,
+          );
         }
       } else {
-        this.logger.warn(`Push event from unknown or unsupported repository: "${repoName}". Skipping.`);
+        this.logger.warn(
+          `Push event from unknown or unsupported repository: "${repoName}". Skipping.`,
+        );
       }
 
       return {

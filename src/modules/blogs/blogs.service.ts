@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  Inject,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
@@ -9,7 +14,7 @@ import { Blog } from './schemas/blog.schema';
 import { BlogComment, BlogCommentDocument } from './schemas/comment.schema';
 import { CreateBlogDto, UpdateBlogDto, QueryBlogDto } from './dto/blog.dto';
 import { CreateCommentDto, UpdateCommentStatusDto } from './dto/comment.dto';
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 import { BlogStatus } from './enums/blog-status.enum';
 import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
 
@@ -17,10 +22,11 @@ import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
 export class BlogsService {
   constructor(
     @InjectModel(Blog.name) private blogModel: Model<Blog>,
-    @InjectModel(BlogComment.name) private commentModel: Model<BlogCommentDocument>,
+    @InjectModel(BlogComment.name)
+    private commentModel: Model<BlogCommentDocument>,
     @InjectQueue('blog-engagement') private engagementQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) {}
 
   private sanitizeImageUrls(dto: any) {
     if (dto.featureImageId && dto.featureImage?.startsWith('http')) {
@@ -31,7 +37,10 @@ export class BlogsService {
     }
   }
 
-  private calculateArchiveDate(publishedAt: Date, duration: AutoArchiveDuration): Date {
+  private calculateArchiveDate(
+    publishedAt: Date,
+    duration: AutoArchiveDuration,
+  ): Date {
     const date = new Date(publishedAt);
     switch (duration) {
       case AutoArchiveDuration.THREE_MONTHS:
@@ -64,7 +73,11 @@ export class BlogsService {
     }
 
     const publishedAt = dto.publishedAt || existingBlog?.publishedAt;
-    const duration = dto.autoArchiveDuration || (dto.autoArchiveDuration === null ? null : existingBlog?.autoArchiveDuration);
+    const duration =
+      dto.autoArchiveDuration ||
+      (dto.autoArchiveDuration === null
+        ? null
+        : existingBlog?.autoArchiveDuration);
 
     if (publishedAt && duration) {
       dto.autoArchiveAt = this.calculateArchiveDate(publishedAt, duration);
@@ -92,7 +105,14 @@ export class BlogsService {
   }
 
   async findAll(queryDto: QueryBlogDto): Promise<PaginatedResponseDto<Blog>> {
-    const { page = 1, limit = 10, search, isActive, websiteId, sort } = queryDto;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      isActive,
+      websiteId,
+      sort,
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const matchQuery: any = {};
@@ -120,7 +140,11 @@ export class BlogsService {
       const lowerSearch = search.toLowerCase();
       if (lowerSearch === 'published' || lowerSearch === 'active') {
         orConditions.push({ isActive: true });
-      } else if (lowerSearch === 'draft' || lowerSearch === 'drafts' || lowerSearch === 'inactive') {
+      } else if (
+        lowerSearch === 'draft' ||
+        lowerSearch === 'drafts' ||
+        lowerSearch === 'inactive'
+      ) {
         orConditions.push({ isActive: false });
       }
 
@@ -213,24 +237,29 @@ export class BlogsService {
     }
   }
 
-  private async bufferEngagement(blogId: string, type: 'likes' | 'views' | 'comments') {
+  private async bufferEngagement(
+    blogId: string,
+    type: 'likes' | 'views' | 'comments',
+  ) {
     const key = `blog:engagement:${blogId}:${type}`;
-    const currentValue = await this.cacheManager.get<number>(key) || 0;
+    const currentValue = (await this.cacheManager.get<number>(key)) || 0;
     await this.cacheManager.set(key, currentValue + 1, 3600000); // 1 hour TTL
 
     // Schedule sync job if not already scheduled
     // Use blogId as jobId to ensure only one sync job per blog is active
-    await this.engagementQueue.add(
-      'sync-engagement',
-      { blogId },
-      {
-        delay: 30000, // 30 seconds
-        jobId: `sync:${blogId}`,
-        removeOnComplete: true,
-      }
-    ).catch(() => {
-      // Ignore errors if job with same ID already exists
-    });
+    await this.engagementQueue
+      .add(
+        'sync-engagement',
+        { blogId },
+        {
+          delay: 30000, // 30 seconds
+          jobId: `sync:${blogId}`,
+          removeOnComplete: true,
+        },
+      )
+      .catch(() => {
+        // Ignore errors if job with same ID already exists
+      });
   }
 
   async like(id: string) {
@@ -243,7 +272,8 @@ export class BlogsService {
     await this.bufferEngagement(id, 'likes');
 
     // Optimistic return (optional: we can fetch current buffered value to return more accurate count)
-    const bufferedLikes = await this.cacheManager.get<number>(`blog:engagement:${id}:likes`) || 0;
+    const bufferedLikes =
+      (await this.cacheManager.get<number>(`blog:engagement:${id}:likes`)) || 0;
     blog.engagement.likes += 1; // For immediate UI feedback if returned
     return blog;
   }
@@ -278,7 +308,12 @@ export class BlogsService {
 
   async getComments(
     blogId: string,
-    query: { admin?: boolean; status?: string; page?: number; limit?: number } = {},
+    query: {
+      admin?: boolean;
+      status?: string;
+      page?: number;
+      limit?: number;
+    } = {},
   ) {
     const { admin = false, status, page = 1, limit = 10 } = query;
     const skip = (page - 1) * limit;
@@ -316,12 +351,17 @@ export class BlogsService {
     };
   }
 
-  async updateCommentStatus(commentId: string, updateStatusDto: UpdateCommentStatusDto) {
-    const comment = await this.commentModel.findByIdAndUpdate(
-      commentId,
-      { status: updateStatusDto.status },
-      { new: true },
-    ).exec();
+  async updateCommentStatus(
+    commentId: string,
+    updateStatusDto: UpdateCommentStatusDto,
+  ) {
+    const comment = await this.commentModel
+      .findByIdAndUpdate(
+        commentId,
+        { status: updateStatusDto.status },
+        { new: true },
+      )
+      .exec();
 
     if (!comment) {
       throw new NotFoundException(`Comment with ID "${commentId}" not found`);

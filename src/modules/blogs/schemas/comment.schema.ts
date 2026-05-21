@@ -1,13 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema, Document } from 'mongoose';
-import { BaseSchema, applySoftDeleteMiddleware } from '../../../common/schemas/base.schema';
+import {
+  BaseSchema,
+  applySoftDeleteMiddleware,
+} from '@common/schemas/base.schema';
 
 @Schema({
   collection: 'blog_comments',
   timestamps: true,
 })
 export class BlogComment extends BaseSchema {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Blog', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Blog',
+    required: true,
+    index: true,
+  })
   blogId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, trim: true })

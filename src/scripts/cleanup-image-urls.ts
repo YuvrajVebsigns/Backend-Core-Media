@@ -5,7 +5,8 @@ import * as path from 'path';
 // Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/core-media-local';
+const MONGODB_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/core-media-local';
 
 async function runCleanup() {
   console.log('Connecting to MongoDB...');
@@ -20,22 +21,30 @@ async function runCleanup() {
   // 1. Cleanup Blogs
   console.log('\n--- Cleaning up Blogs ---');
   const blogsCollection = db.collection('blogs');
-  const blogsWithIds = await blogsCollection.find({
-    $or: [
-      { featureImage: { $regex: '^http' }, featureImageId: { $exists: true, $ne: null } },
-      { 'seo.ogImage': { $regex: '^http' }, 'seo.ogImageId': { $exists: true, $ne: null } }
-    ]
-  }).toArray();
+  const blogsWithIds = await blogsCollection
+    .find({
+      $or: [
+        {
+          featureImage: { $regex: '^http' },
+          featureImageId: { $exists: true, $ne: null },
+        },
+        {
+          'seo.ogImage': { $regex: '^http' },
+          'seo.ogImageId': { $exists: true, $ne: null },
+        },
+      ],
+    })
+    .toArray();
 
   console.log(`Found ${blogsWithIds.length} blogs to clean up.`);
 
   for (const blog of blogsWithIds) {
     const update: any = {};
     if (blog.featureImage?.startsWith('http') && blog.featureImageId) {
-      update.featureImage = "";
+      update.featureImage = '';
     }
     if (blog.seo?.ogImage?.startsWith('http') && blog.seo?.ogImageId) {
-      update['seo.ogImage'] = "";
+      update['seo.ogImage'] = '';
     }
 
     if (Object.keys(update).length > 0) {
@@ -47,26 +56,34 @@ async function runCleanup() {
   // 2. Cleanup Websites
   console.log('\n--- Cleaning up Websites ---');
   const websitesCollection = db.collection('websites');
-  const websitesWithIds = await websitesCollection.find({
-    $or: [
-      { logo: { $regex: '^http' }, logoId: { $exists: true, $ne: null } },
-      { 'seo.ogImage': { $regex: '^http' }, 'seo.ogImageId': { $exists: true, $ne: null } }
-    ]
-  }).toArray();
+  const websitesWithIds = await websitesCollection
+    .find({
+      $or: [
+        { logo: { $regex: '^http' }, logoId: { $exists: true, $ne: null } },
+        {
+          'seo.ogImage': { $regex: '^http' },
+          'seo.ogImageId': { $exists: true, $ne: null },
+        },
+      ],
+    })
+    .toArray();
 
   console.log(`Found ${websitesWithIds.length} websites to clean up.`);
 
   for (const website of websitesWithIds) {
     const update: any = {};
     if (website.logo?.startsWith('http') && website.logoId) {
-      update.logo = "";
+      update.logo = '';
     }
     if (website.seo?.ogImage?.startsWith('http') && website.seo?.ogImageId) {
-      update['seo.ogImage'] = "";
+      update['seo.ogImage'] = '';
     }
 
     if (Object.keys(update).length > 0) {
-      await websitesCollection.updateOne({ _id: website._id }, { $set: update });
+      await websitesCollection.updateOne(
+        { _id: website._id },
+        { $set: update },
+      );
       console.log(`Updated website: ${website.slug}`);
     }
   }
@@ -74,17 +91,19 @@ async function runCleanup() {
   // 3. Cleanup System Users
   console.log('\n--- Cleaning up System Users ---');
   const usersCollection = db.collection('system_users');
-  const usersWithIds = await usersCollection.find({
-    profileImage: { $regex: '^http' },
-    profileImageId: { $exists: true, $ne: null }
-  }).toArray();
+  const usersWithIds = await usersCollection
+    .find({
+      profileImage: { $regex: '^http' },
+      profileImageId: { $exists: true, $ne: null },
+    })
+    .toArray();
 
   console.log(`Found ${usersWithIds.length} users to clean up.`);
 
   for (const user of usersWithIds) {
     await usersCollection.updateOne(
       { _id: user._id },
-      { $set: { profileImage: "" } }
+      { $set: { profileImage: '' } },
     );
     console.log(`Updated user: ${user.email}`);
   }
@@ -93,7 +112,7 @@ async function runCleanup() {
   await mongoose.disconnect();
 }
 
-runCleanup().catch(err => {
+runCleanup().catch((err) => {
   console.error('Cleanup failed:', err);
   process.exit(1);
 });

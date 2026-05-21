@@ -10,53 +10,62 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthModule } from './auth/auth.module';
-import { SystemUsersModule } from './system-users/system-users.module';
-import { RolesModule } from './roles/roles.module';
-import { SeedModule } from './database/seed.module';
-import { HealthModule } from './health/health.module';
-import { JobsModule } from './jobs/jobs.module';
-import { EventsModule } from './events/events.module';
-import { FeatureFlagModule } from './feature-flags/feature-flag.module';
-import { DatabaseModule } from './database/database.module';
-import { EventManagementModule } from './modules/events/event-management.module';
-import { AttendeesModule } from './modules/attendees/attendees.module';
-import { SidebarMenuModule } from './modules/sidebar-menu/sidebar-menu.module';
-import { WebsitesModule } from './modules/websites/websites.module';
-import { BlogsModule } from './modules/blogs/blogs.module';
-import { FilesModule } from './modules/files/files.module';
-import { SponsorsModule } from './modules/sponsors/sponsors.module';
+import { AuthModule } from '@core/auth/auth.module';
+import { SystemUsersModule } from '@core/system-users/system-users.module';
+import { RolesModule } from '@core/roles/roles.module';
+import { SeedModule } from '@database/seed.module';
+import { HealthModule } from '@core/health/health.module';
+import { JobsModule } from '@core/jobs/jobs.module';
+import { EventsModule } from '@modules/events/events.module';
+import { FeatureFlagModule } from '@core/feature-flags/feature-flag.module';
+import { DatabaseModule } from '@database/database.module';
+import { EventManagementModule } from '@modules/event-management/event-management.module';
+import { AttendeesModule } from '@modules/attendees/attendees.module';
+import { SidebarMenuModule } from '@core/sidebar-menu/sidebar-menu.module';
+import { WebsitesModule } from '@modules/websites/websites.module';
+import { BlogsModule } from '@modules/blogs/blogs.module';
+import { FilesModule } from '@core/files/files.module';
+import { SponsorsModule } from '@modules/sponsors/sponsors.module';
 import { ClsModule } from 'nestjs-cls';
 import { WebhookModule } from './webhook/webhook.module';
 import { randomUUID } from 'crypto';
-import { RoleCacheInterceptor } from './common/interceptors/role-cache.interceptor';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { RoleCacheInterceptor } from '@common/interceptors/role-cache.interceptor';
+import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
 
 const nodeEnv = process.env.NODE_ENV || 'development';
-const envFilePath = fs.existsSync(`.env.${nodeEnv}`) 
-  ? `.env.${nodeEnv}` 
-  : fs.existsSync('.env.local') 
-    ? '.env.local' 
+const envFilePath = fs.existsSync(`.env.${nodeEnv}`)
+  ? `.env.${nodeEnv}`
+  : fs.existsSync('.env.local')
+    ? '.env.local'
     : '.env';
 
-const envConfig = fs.existsSync(envFilePath) ? dotenv.parse(fs.readFileSync(envFilePath)) : {};
+const envConfig = fs.existsSync(envFilePath)
+  ? dotenv.parse(fs.readFileSync(envFilePath))
+  : {};
 const isProd = (process.env.NODE_ENV || envConfig.NODE_ENV) === 'production';
-const useRedis = process.env.USE_REDIS === 'true' || envConfig.USE_REDIS === 'true' || isProd;
+const useRedis =
+  process.env.USE_REDIS === 'true' || envConfig.USE_REDIS === 'true' || isProd;
 
-const redisQueueImports = isProd || useRedis ? [
-  BullModule.forRootAsync({
-    imports: [ConfigModule],
-    inject: [ConfigService],
-    useFactory: async (configService: ConfigService) => ({
-      redis: {
-        host: configService.get<string>('REDIS_HOST') || 'localhost',
-        port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
-        maxRetriesPerRequest: null,
-      },
-    }),
-  }),
-  JobsModule,
-] : [];
+const redisQueueImports =
+  isProd || useRedis
+    ? [
+        BullModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: async (configService: ConfigService) => ({
+            redis: {
+              host: configService.get<string>('REDIS_HOST') || 'localhost',
+              port: parseInt(
+                configService.get<string>('REDIS_PORT') || '6379',
+                10,
+              ),
+              maxRetriesPerRequest: null,
+            },
+          }),
+        }),
+        JobsModule,
+      ]
+    : [];
 
 @Module({
   imports: [
@@ -89,13 +98,16 @@ const redisQueueImports = isProd || useRedis ? [
       middleware: {
         mount: true,
         generateId: true,
-        idGenerator: (req: any) => req.headers['x-correlation-id'] || randomUUID(),
+        idGenerator: (req: any) =>
+          req.headers['x-correlation-id'] || randomUUID(),
       },
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
@@ -103,14 +115,18 @@ const redisQueueImports = isProd || useRedis ? [
       useFactory: async (configService: ConfigService) => {
         const isProd = configService.get<string>('NODE_ENV') === 'production';
         const useRedisEnv = configService.get('USE_REDIS');
-        const useRedis = useRedisEnv === true || useRedisEnv === 'true' || isProd;
+        const useRedis =
+          useRedisEnv === true || useRedisEnv === 'true' || isProd;
 
         if (useRedis) {
           try {
             const store = await redisStore({
               socket: {
                 host: configService.get<string>('REDIS_HOST') || 'localhost',
-                port: parseInt(configService.get<string>('REDIS_PORT') || '6379', 10),
+                port: parseInt(
+                  configService.get<string>('REDIS_PORT') || '6379',
+                  10,
+                ),
               },
               ttl: 60 * 1000,
             });
@@ -162,4 +178,4 @@ const redisQueueImports = isProd || useRedis ? [
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

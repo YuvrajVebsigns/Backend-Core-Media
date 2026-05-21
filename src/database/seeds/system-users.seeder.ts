@@ -1,14 +1,14 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { SystemUsersService } from '../../system-users/system-users.service';
-import { RolesService } from '../../roles/roles.service';
-import { SystemUserRole } from '../../common/enums/role.enum';
+import { SystemUsersService } from '@core/system-users/system-users.service';
+import { RolesService } from '@core/roles/roles.service';
+import { SystemUserRole } from '@common/enums/role.enum';
 
 @Injectable()
 export class SystemUsersSeeder implements OnApplicationBootstrap {
   constructor(
     private readonly systemUsersService: SystemUsersService,
     private readonly rolesService: RolesService,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     // Add a small delay to ensure RolesSeeder finishes first if they run in parallel
@@ -41,7 +41,9 @@ export class SystemUsersSeeder implements OnApplicationBootstrap {
     ];
 
     for (const userData of users) {
-      const existingUser = await this.systemUsersService.findByEmail(userData.email);
+      const existingUser = await this.systemUsersService.findByEmail(
+        userData.email,
+      );
       if (!existingUser) {
         const role = await this.rolesService.findByRoleKey(userData.roleName);
         if (role) {
@@ -52,9 +54,13 @@ export class SystemUsersSeeder implements OnApplicationBootstrap {
             role: role._id,
             isActive: true,
           });
-          console.log(`✅ System User seeded: ${userData.email} (${userData.roleName})`);
+          console.log(
+            `✅ System User seeded: ${userData.email} (${userData.roleName})`,
+          );
         } else {
-          console.warn(`⚠️ Could not seed user ${userData.email}: Role ${userData.roleName} not found`);
+          console.warn(
+            `⚠️ Could not seed user ${userData.email}: Role ${userData.roleName} not found`,
+          );
         }
       }
     }

@@ -1,5 +1,12 @@
-import { IsString, IsOptional, IsBoolean, IsUrl, IsMongoId } from 'class-validator';
-import { ApiProperty, PartialType } from '@nestjs/swagger';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsUrl,
+  IsMongoId,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ImageLinksDto } from '@common/dto/image-links.dto';
 
 export class CreateSponsorDto {
   @ApiProperty({ example: 'John Doe' })
@@ -19,6 +26,10 @@ export class CreateSponsorDto {
   @IsString()
   @IsOptional()
   valuation?: string;
+
+  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @IsOptional()
+  logo?: ImageLinksDto;
 
   @ApiProperty({ example: '507f1f77bcf86cd799439011', required: false })
   @IsMongoId()

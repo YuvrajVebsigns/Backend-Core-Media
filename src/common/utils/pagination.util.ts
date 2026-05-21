@@ -1,4 +1,7 @@
-import { PaginatedMetaDto, PaginatedResponseDto } from '../dto/paginated-response.dto';
+import {
+  PaginatedMetaDto,
+  PaginatedResponseDto,
+} from '@common/dto/paginated-response.dto';
 
 export function createPaginatedResponse<T>(
   data: T[],
