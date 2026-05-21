@@ -9,7 +9,7 @@ import * as path from 'path';
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Verifies the GitHub signature of incoming webhooks to ensure authenticity.
@@ -17,18 +17,24 @@ export class WebhookService {
   verifySignature(rawBody: Buffer, signatureHeader: string): boolean {
     const secret = this.configService.get<string>('DEPLOY_WEBHOOK_SECRET');
     if (!secret) {
-      this.logger.error('DEPLOY_WEBHOOK_SECRET is not configured in the environment.');
+      this.logger.error(
+        'DEPLOY_WEBHOOK_SECRET is not configured in the environment.',
+      );
       return false;
     }
 
     if (!signatureHeader) {
-      this.logger.warn('Webhook request is missing X-Hub-Signature-256 header.');
+      this.logger.warn(
+        'Webhook request is missing X-Hub-Signature-256 header.',
+      );
       return false;
     }
 
     const parts = signatureHeader.split('=');
     if (parts.length !== 2 || parts[0] !== 'sha256') {
-      this.logger.warn('Invalid signature header format. Expected "sha256=signature"');
+      this.logger.warn(
+        'Invalid signature header format. Expected "sha256=signature"',
+      );
       return false;
     }
 
@@ -52,11 +58,17 @@ export class WebhookService {
    */
   deploy(repo: 'backend' | 'frontend'): void {
     const isBackend = repo === 'backend';
-    const targetDir = this.configService.get<string>(isBackend ? 'DEPLOY_BACKEND_DIR' : 'DEPLOY_FRONTEND_DIR');
-    const command = this.configService.get<string>(isBackend ? 'DEPLOY_BACKEND_CMD' : 'DEPLOY_FRONTEND_CMD');
+    const targetDir = this.configService.get<string>(
+      isBackend ? 'DEPLOY_BACKEND_DIR' : 'DEPLOY_FRONTEND_DIR',
+    );
+    const command = this.configService.get<string>(
+      isBackend ? 'DEPLOY_BACKEND_CMD' : 'DEPLOY_FRONTEND_CMD',
+    );
 
     if (!targetDir || !command) {
-      this.logger.error(`Deployment configurations for ${repo} are incomplete in the environment settings.`);
+      this.logger.error(
+        `Deployment configurations for ${repo} are incomplete in the environment settings.`,
+      );
       return;
     }
 
@@ -74,10 +86,10 @@ export class WebhookService {
     fs.appendFileSync(
       logFilePath,
       `\n\n==================================================\n` +
-      `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
-      `📁 Directory: ${targetDir}\n` +
-      `💻 Command: ${command}\n` +
-      `==================================================\n`
+        `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
+        `📁 Directory: ${targetDir}\n` +
+        `💻 Command: ${command}\n` +
+        `==================================================\n`,
     );
 
     // Asynchronously spawn shell to execute git pull and build commands
@@ -96,15 +108,17 @@ export class WebhookService {
       if (code === 0) {
         fs.appendFileSync(
           logFilePath,
-          `\n✅ DEPLOYMENT SUCCESSFUL AT ${finishTime} (Exit Code: 0)\n`
+          `\n✅ DEPLOYMENT SUCCESSFUL AT ${finishTime} (Exit Code: 0)\n`,
         );
         this.logger.log(`Deployment for ${repo} completed successfully.`);
       } else {
         fs.appendFileSync(
           logFilePath,
-          `\n❌ DEPLOYMENT FAILED AT ${finishTime} (Exit Code: ${code})\n`
+          `\n❌ DEPLOYMENT FAILED AT ${finishTime} (Exit Code: ${code})\n`,
         );
-        this.logger.error(`Deployment for ${repo} failed with code ${code}. Check logs/deploy-${repo}.log for details.`);
+        this.logger.error(
+          `Deployment for ${repo} failed with code ${code}. Check logs/deploy-${repo}.log for details.`,
+        );
       }
     });
   }

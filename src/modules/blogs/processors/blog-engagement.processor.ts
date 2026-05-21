@@ -5,7 +5,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
-import { Blog } from '../schemas/blog.schema';
+import { Blog } from '@modules/blogs/schemas/blog.schema';
 
 @Processor('blog-engagement')
 export class BlogEngagementProcessor {
@@ -19,7 +19,7 @@ export class BlogEngagementProcessor {
   @Process('sync-engagement')
   async handleSyncEngagement(job: Job<{ blogId: string }>) {
     const { blogId } = job.data;
-    
+
     try {
       // Keys for buffered engagement
       const likesKey = `blog:engagement:${blogId}:likes`;
@@ -57,9 +57,14 @@ export class BlogEngagementProcessor {
         this.cacheManager.del(commentsKey),
       ]);
 
-      this.logger.log(`Synced engagement for blog ${blogId}: Likes +${likes}, Views +${views}, Comments +${commentsCount}`);
+      this.logger.log(
+        `Synced engagement for blog ${blogId}: Likes +${likes}, Views +${views}, Comments +${commentsCount}`,
+      );
     } catch (error) {
-      this.logger.error(`Failed to sync engagement for blog ${blogId}`, error.stack);
+      this.logger.error(
+        `Failed to sync engagement for blog ${blogId}`,
+        error.stack,
+      );
       throw error;
     }
   }

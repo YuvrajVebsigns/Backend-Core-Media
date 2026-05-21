@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -12,20 +16,20 @@ describe('AppController (e2e)', () => {
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     process.env.JWT_SECRET = 'test_secret_key_for_e2e';
-    
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     // Replicate main.ts environment
     app.setGlobalPrefix('api');
     app.enableVersioning({
       type: VersioningType.URI,
       defaultVersion: '1',
     });
-    
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -53,7 +57,7 @@ describe('AppController (e2e)', () => {
 
   it('GET /api/v1 - App root should be responsive (not prefixed anymore for root)', () => {
     // This test might fail if there's no handler at /api/v1 after prefixing and versioning
-    // But since AppController is at / and global prefix is 'api', 
+    // But since AppController is at / and global prefix is 'api',
     // the previous test 'GET /api/v1' might have worked because of how Nest handles it.
     // Let's see if we can still reach it or if we should just test /api/v1/health.
   });

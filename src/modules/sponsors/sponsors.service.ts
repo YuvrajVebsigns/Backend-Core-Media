@@ -27,7 +27,10 @@ export class SponsorsService {
     return sponsor;
   }
 
-  async update(id: string, updateSponsorDto: UpdateSponsorDto): Promise<Sponsor> {
+  async update(
+    id: string,
+    updateSponsorDto: UpdateSponsorDto,
+  ): Promise<Sponsor> {
     const updatedSponsor = await this.sponsorModel
       .findByIdAndUpdate(id, updateSponsorDto, { new: true })
       .exec();
@@ -38,7 +41,9 @@ export class SponsorsService {
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.sponsorModel.findByIdAndUpdate(id, { isDeleted: true }).exec();
+    const result = await this.sponsorModel
+      .findByIdAndUpdate(id, { isDeleted: true })
+      .exec();
     if (!result) {
       throw new NotFoundException(`Sponsor with ID ${id} not found`);
     }

@@ -5,10 +5,10 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RESPONSE_MESSAGE_METADATA } from '../decorators/api-standard-response.decorator';
+import { RESPONSE_MESSAGE_METADATA } from '@common/decorators/api-standard-response.decorator';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { UrlService } from '../../modules/files/services/url.service';
+import { UrlService } from '@core/files/services/url.service';
 
 export interface StandardResponse<T> {
   success: boolean;
@@ -17,12 +17,14 @@ export interface StandardResponse<T> {
 }
 
 @Injectable()
-export class ResponseInterceptor<T>
-  implements NestInterceptor<T, StandardResponse<T>> {
+export class ResponseInterceptor<T> implements NestInterceptor<
+  T,
+  StandardResponse<T>
+> {
   constructor(
     private reflector: Reflector,
     private urlService: UrlService,
-  ) { }
+  ) {}
 
   intercept(
     context: ExecutionContext,
@@ -39,8 +41,10 @@ export class ResponseInterceptor<T>
     return next.handle().pipe(
       map((res) => {
         // If the controller already returned a formatted response, use it
-        const message = res?.message || responseMessage || 'Operation successful';
-        let data = res?.data !== undefined && !res?.meta ? res.data : (res ?? null);
+        const message =
+          res?.message || responseMessage || 'Operation successful';
+        let data =
+          res?.data !== undefined && !res?.meta ? res.data : (res ?? null);
 
         if (!showMetadata) {
           data = this.stripMetadata(data);
@@ -59,7 +63,7 @@ export class ResponseInterceptor<T>
   }
 
   /**
-   * Recursively finds populated File objects and moves their 'url' 
+   * Recursively finds populated File objects and moves their 'url'
    * to the parent object's corresponding field (e.g. featureImageId.url -> featureImage).
    */
   private resolveImageUrls(data: any): any {
@@ -74,7 +78,8 @@ export class ResponseInterceptor<T>
       }
 
       // Handle Mongoose documents or POJOs
-      let result = typeof data.toObject === 'function' ? data.toObject() : { ...data };
+      let result =
+        typeof data.toObject === 'function' ? data.toObject() : { ...data };
 
       // If this object looks like a populated File, ensure it has a URL
       if (result.key && (result.id || result._id)) {
@@ -92,11 +97,23 @@ export class ResponseInterceptor<T>
         result[key] = this.resolveImageUrls(result[key]);
 
         // If field ends in 'Id' and its value is now an object with a 'url' (populated File)
-        if (key.endsWith('Id') && result[key] && typeof result[key] === 'object' && result[key].url) {
+        if (
+          key.endsWith('Id') &&
+          result[key] &&
+          typeof result[key] === 'object' &&
+          result[key].url
+        ) {
           const baseName = key.slice(0, -2); // 'featureImageId' -> 'featureImage'
           // Only override if the baseName field is empty or doesn't exist
-          if (!result[baseName] || typeof result[baseName] !== 'string' || result[baseName].startsWith('http')) {
-            result[baseName] = result[key].url;
+          if (
+            !result[baseName] ||
+            typeof result[baseName] !== 'string' ||
+            result[baseName].startsWith('http')
+          ) {
+            result[baseName] = {
+              original: result[key].url,
+              ...(result[key].urlVariants || {}),
+            };
           }
         }
       }
@@ -118,7 +135,8 @@ export class ResponseInterceptor<T>
       }
 
       // Handle Mongoose documents or POJOs
-      let obj = typeof data.toObject === 'function' ? data.toObject() : { ...data };
+      let obj =
+        typeof data.toObject === 'function' ? data.toObject() : { ...data };
 
       // Standardize ID and remove internal Mongoose fields
       if (obj._id) {
@@ -127,7 +145,11 @@ export class ResponseInterceptor<T>
       }
 
       // Ensure id is a string if it exists (might be a buffer from elsewhere)
-      if (obj.id && typeof obj.id !== 'string' && typeof obj.id.toString === 'function') {
+      if (
+        obj.id &&
+        typeof obj.id !== 'string' &&
+        typeof obj.id.toString === 'function'
+      ) {
         obj.id = obj.id.toString();
       }
 

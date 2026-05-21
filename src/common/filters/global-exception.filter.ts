@@ -42,7 +42,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {
       this.logger.error(
-        `${request.method} ${request.url} - ${exception instanceof Error ? exception.stack : JSON.stringify(exception)
+        `${request.method} ${request.url} - ${
+          exception instanceof Error
+            ? exception.stack
+            : JSON.stringify(exception)
         }`,
       );
     } else {

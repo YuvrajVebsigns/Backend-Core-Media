@@ -5,12 +5,15 @@ import { join } from 'path';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { useContainer } from 'class-validator';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { GlobalExceptionFilter } from '@common/filters/global-exception.filter';
+import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { WinstonModule, utilities as nestWinstonModuleUtilities } from 'nest-winston';
+import {
+  WinstonModule,
+  utilities as nestWinstonModuleUtilities,
+} from 'nest-winston';
 import * as winston from 'winston';
 import 'winston-daily-rotate-file';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -48,7 +51,11 @@ async function bootstrap() {
         maxSize: '20m',
         maxFiles: '14d',
         level: 'error',
-        format: winston.format.combine(traceFormat(), winston.format.timestamp(), winston.format.json()),
+        format: winston.format.combine(
+          traceFormat(),
+          winston.format.timestamp(),
+          winston.format.json(),
+        ),
       }),
       new winston.transports.DailyRotateFile({
         filename: 'logs/combined-%DATE%.log',
@@ -56,7 +63,11 @@ async function bootstrap() {
         zippedArchive: true,
         maxSize: '20m',
         maxFiles: '14d',
-        format: winston.format.combine(traceFormat(), winston.format.timestamp(), winston.format.json()),
+        format: winston.format.combine(
+          traceFormat(),
+          winston.format.timestamp(),
+          winston.format.json(),
+        ),
       }),
     ],
   });
@@ -147,11 +158,13 @@ async function bootstrap() {
       res.redirect(301, '/api/docs#');
     });
   } else {
-    app.use(morgan('combined', {
-      stream: {
-        write: (message) => instance.info(message.trim()),
-      }
-    }));
+    app.use(
+      morgan('combined', {
+        stream: {
+          write: (message) => instance.info(message.trim()),
+        },
+      }),
+    );
   }
 
   const port = configService.get<number>('PORT') || 3000;
@@ -173,7 +186,9 @@ async function bootstrap() {
   console.log('├────────────────────────────────────────────────────────┤');
   console.log('│           🍃  MongoDB Connection Status                │');
   console.log('├────────────────────────────────────────────────────────┤');
-  console.log(`│  URI      : ${uri?.replace(/:\/\/([^:]+):([^@]+)@/, '://<user>:<pass>@').padEnd(40)} │`);
+  console.log(
+    `│  URI      : ${uri?.replace(/:\/\/([^:]+):([^@]+)@/, '://<user>:<pass>@').padEnd(40)} │`,
+  );
 
   if (useRedis) {
     console.log('├────────────────────────────────────────────────────────┤');
@@ -186,7 +201,9 @@ async function bootstrap() {
     console.log('├────────────────────────────────────────────────────────┤');
     console.log('│           ⚪️  Redis Connection Status                  │');
     console.log('├────────────────────────────────────────────────────────┤');
-    console.log(`│  STATUS   : ${'Disabled (In-Memory Fallback)'.padEnd(40)}   │`);
+    console.log(
+      `│  STATUS   : ${'Disabled (In-Memory Fallback)'.padEnd(40)}   │`,
+    );
   }
   console.log('└────────────────────────────────────────────────────────┘\n');
 }

@@ -1,11 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { BaseSchema, applySoftDeleteMiddleware } from '../../../common/schemas/base.schema';
-import { Website } from '../../websites/schemas/website.schema';
-import { SystemUser } from '../../../system-users/schemas/system-user.schema';
-import { BlogStatus } from '../enums/blog-status.enum';
-import { AutoArchiveDuration } from '../enums/auto-archive-duration.enum';
-import { CommentStrategy } from '../enums/comment-strategy.enum';
+import {
+  BaseSchema,
+  applySoftDeleteMiddleware,
+} from '@common/schemas/base.schema';
+import { Website } from '@modules/websites/schemas/website.schema';
+import { SystemUser } from '@core/system-users/schemas/system-user.schema';
+import { BlogStatus } from '@modules/blogs/enums/blog-status.enum';
+import { AutoArchiveDuration } from '@modules/blogs/enums/auto-archive-duration.enum';
+import { CommentStrategy } from '@modules/blogs/enums/comment-strategy.enum';
 
 @Schema({ _id: false })
 export class BlogSeo {

@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import {
+  INestApplication,
+  ValidationPipe,
+  VersioningType,
+} from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
@@ -12,19 +16,19 @@ describe('AuthController (e2e)', () => {
   beforeAll(async () => {
     process.env.NODE_ENV = 'test';
     process.env.JWT_SECRET = 'test_secret_key_for_e2e';
-    
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     app.setGlobalPrefix('api', { exclude: ['/'] });
     app.enableVersioning({
       type: VersioningType.URI,
       defaultVersion: '1',
     });
-    
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -32,7 +36,7 @@ describe('AuthController (e2e)', () => {
         transform: true,
       }),
     );
-    
+
     app.useGlobalInterceptors(new ResponseInterceptor());
     app.useGlobalFilters(new GlobalExceptionFilter());
 

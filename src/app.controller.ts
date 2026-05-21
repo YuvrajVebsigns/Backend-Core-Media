@@ -2,8 +2,8 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiExcludeController, ApiOperation } from '@nestjs/swagger';
 import { AppService } from './app.service';
 import { MongooseHealthIndicator } from '@nestjs/terminus';
-import { RedisHealthIndicator } from './health/redis.health';
-import { StorageHealthIndicator } from './health/storage.health';
+import { RedisHealthIndicator } from '@core/health/redis.health';
+import { StorageHealthIndicator } from '@core/health/storage.health';
 
 @ApiExcludeController()
 @Controller()
@@ -13,7 +13,7 @@ export class AppController {
     private readonly mongoose: MongooseHealthIndicator,
     private readonly redis: RedisHealthIndicator,
     private readonly storage: StorageHealthIndicator,
-  ) { }
+  ) {}
 
   @Get()
   getHello(): string {
@@ -21,7 +21,9 @@ export class AppController {
   }
 
   @Get('test-connection')
-  @ApiOperation({ summary: 'Test backend connection and all dependent services' })
+  @ApiOperation({
+    summary: 'Test backend connection and all dependent services',
+  })
   async testConnection() {
     const services: any = {};
     const nodeEnv = process.env.NODE_ENV || 'development';
@@ -30,13 +32,14 @@ export class AppController {
     try {
       await this.mongoose.pingCheck('database');
       const mongoUri = process.env.MONGODB_URI || '';
-      const isLocal = mongoUri.includes('localhost') || mongoUri.includes('127.0.0.1');
+      const isLocal =
+        mongoUri.includes('localhost') || mongoUri.includes('127.0.0.1');
       const isAtlas = mongoUri.includes('mongodb.net');
-      
-      services.database = { 
+
+      services.database = {
         status: 'up',
-        type: isLocal ? 'local' : (isAtlas ? 'atlas-cluster' : 'custom-server'),
-        environment: nodeEnv
+        type: isLocal ? 'local' : isAtlas ? 'atlas-cluster' : 'custom-server',
+        environment: nodeEnv,
       };
     } catch (e) {
       services.database = { status: 'down', message: e.message };
@@ -45,22 +48,25 @@ export class AppController {
     // Check Redis
     try {
       const redisStatus: any = await this.redis.isHealthy('redis');
-      services.redis = { 
-        status: 'up', 
+      services.redis = {
+        status: 'up',
         type: redisStatus.redis.type,
-        message: redisStatus.redis.message 
+        message: redisStatus.redis.message,
       };
     } catch (e) {
-      services.redis = { status: 'down', message: e.message || 'Redis connection failed' };
+      services.redis = {
+        status: 'down',
+        message: e.message || 'Redis connection failed',
+      };
     }
 
     // Check Storage (Bucket)
     try {
       await this.storage.isHealthy('storage');
       const storageProvider = process.env.STORAGE_PROVIDER || 'local';
-      services.storage = { 
+      services.storage = {
         status: 'up',
-        type: storageProvider.toLowerCase()
+        type: storageProvider.toLowerCase(),
       };
     } catch (e) {
       services.storage = { status: 'down', message: e.message };
@@ -76,7 +82,7 @@ export class AppController {
       services,
       serverTime: new Date().toISOString(),
       environment: nodeEnv,
-      connectivity: true
+      connectivity: true,
     };
   }
 }

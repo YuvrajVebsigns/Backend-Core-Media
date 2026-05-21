@@ -21,7 +21,10 @@ export class PaginatedMetaDto {
 }
 
 export class PaginatedResponseDto<T> {
-  @ApiProperty({ description: 'The array of data items for the current page', isArray: true })
+  @ApiProperty({
+    description: 'The array of data items for the current page',
+    isArray: true,
+  })
   data: T[];
 
   @ApiProperty({ description: 'Pagination metadata', type: PaginatedMetaDto })

@@ -8,7 +8,7 @@ import { Blog, BlogSchema } from './schemas/blog.schema';
 import { BlogComment, BlogCommentSchema } from './schemas/comment.schema';
 import { BlogMaintenanceService } from './services/blog-maintenance.service';
 import { BlogEngagementProcessor } from './processors/blog-engagement.processor';
-import { AuthModule } from '../../auth/auth.module';
+import { AuthModule } from '@core/auth/auth.module';
 
 @Module({
   imports: [
@@ -25,4 +25,4 @@ import { AuthModule } from '../../auth/auth.module';
   providers: [BlogsService, BlogMaintenanceService, BlogEngagementProcessor],
   exports: [BlogsService],
 })
-export class BlogsModule { }
+export class BlogsModule {}

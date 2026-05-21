@@ -1,6 +1,12 @@
-import { IsString, IsEmail, IsOptional, IsMongoId, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsMongoId,
+  IsEnum,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { AttendeeStatus } from '../schemas/attendee.schema';
+import { AttendeeStatus } from '@modules/attendees/schemas/attendee.schema';
 
 export class RegisterAttendeeDto {
   @ApiProperty({ example: '507f1f77bcf86cd799439011' })

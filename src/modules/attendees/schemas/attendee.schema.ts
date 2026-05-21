@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { BaseSchema, applySoftDeleteMiddleware } from '../../../common/schemas/base.schema';
+import {
+  BaseSchema,
+  applySoftDeleteMiddleware,
+} from '@common/schemas/base.schema';
 
 export enum AttendeeStatus {
   INVITED = 'INVITED',
@@ -15,7 +18,11 @@ export enum AttendeeStatus {
   timestamps: true,
 })
 export class Attendee extends BaseSchema {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'EventManagement', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'EventManagement',
+    required: true,
+  })
   eventId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, trim: true })

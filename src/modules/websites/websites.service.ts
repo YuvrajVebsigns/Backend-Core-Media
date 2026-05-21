@@ -1,10 +1,20 @@
-import { Injectable, ConflictException, NotFoundException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { Website } from './schemas/website.schema';
-import { CreateWebsiteDto, UpdateWebsiteDto, QueryWebsiteDto } from './dto/website.dto';
-import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
+import {
+  CreateWebsiteDto,
+  UpdateWebsiteDto,
+  QueryWebsiteDto,
+} from './dto/website.dto';
+import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 
 @Injectable()
 export class WebsitesService {
@@ -41,7 +51,9 @@ export class WebsitesService {
     return newWebsite.save();
   }
 
-  async findAll(queryDto: QueryWebsiteDto): Promise<PaginatedResponseDto<Website>> {
+  async findAll(
+    queryDto: QueryWebsiteDto,
+  ): Promise<PaginatedResponseDto<Website>> {
     const { page = 1, limit = 10, search, isActive, sort } = queryDto;
     const skip = (page - 1) * limit;
 
@@ -110,7 +122,9 @@ export class WebsitesService {
     this.sanitizeImageUrls(updateDto);
 
     const website = await this.websiteModel
-      .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, { returnDocument: 'after' })
+      .findOneAndUpdate({ _id: id, isDeleted: null }, updateDto, {
+        returnDocument: 'after',
+      })
       .exec();
 
     if (!website) {
@@ -134,7 +148,10 @@ export class WebsitesService {
     return this.websiteModel.findOne({ slug, isDeleted: null }).exec();
   }
 
-  async generateWebsiteToken(origin: string, fallbackDomain?: string): Promise<{ token: string; website: Website }> {
+  async generateWebsiteToken(
+    origin: string,
+    fallbackDomain?: string,
+  ): Promise<{ token: string; website: Website }> {
     const normalizeDomain = (input: string): string => {
       if (!input) return '';
       let cleaned = input.trim().toLowerCase();
@@ -149,7 +166,12 @@ export class WebsitesService {
     let targetDomain = normalizedOrigin;
 
     // Support both checking the actual origin and allowing header/query/body fallbacks for local development
-    if ((normalizedOrigin === 'localhost' || normalizedOrigin === '127.0.0.1' || !normalizedOrigin) && fallbackDomain) {
+    if (
+      (normalizedOrigin === 'localhost' ||
+        normalizedOrigin === '127.0.0.1' ||
+        !normalizedOrigin) &&
+      fallbackDomain
+    ) {
       targetDomain = normalizeDomain(fallbackDomain);
     }
 
@@ -157,11 +179,17 @@ export class WebsitesService {
       throw new BadRequestException('Origin domain could not be identified');
     }
 
-    const websites = await this.websiteModel.find({ isDeleted: null, isActive: true }).exec();
-    const matchedWebsite = websites.find(w => normalizeDomain(w.domain) === targetDomain);
+    const websites = await this.websiteModel
+      .find({ isDeleted: null, isActive: true })
+      .exec();
+    const matchedWebsite = websites.find(
+      (w) => normalizeDomain(w.domain) === targetDomain,
+    );
 
     if (!matchedWebsite) {
-      throw new UnauthorizedException(`Domain "${targetDomain}" is not registered or active`);
+      throw new UnauthorizedException(
+        `Domain "${targetDomain}" is not registered or active`,
+      );
     }
 
     const payload = {

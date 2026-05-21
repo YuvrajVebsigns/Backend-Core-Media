@@ -11,7 +11,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import { RegisterAttendeeDto } from './dto/attendee.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 
 @ApiTags('Attendees')
 @Controller('attendees')

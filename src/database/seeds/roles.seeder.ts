@@ -1,10 +1,10 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { RolesService } from '../../roles/roles.service';
-import { SystemUserRole } from '../../common/enums/role.enum';
+import { RolesService } from '@core/roles/roles.service';
+import { SystemUserRole } from '@common/enums/role.enum';
 
 @Injectable()
 export class RolesSeeder implements OnApplicationBootstrap {
-  constructor(private readonly rolesService: RolesService) { }
+  constructor(private readonly rolesService: RolesService) {}
 
   async onApplicationBootstrap() {
     await this.seed();
@@ -37,7 +37,9 @@ export class RolesSeeder implements OnApplicationBootstrap {
 
     for (const roleData of roles) {
       try {
-        const existingRole = await this.rolesService.findByRoleKey(roleData.roleKey);
+        const existingRole = await this.rolesService.findByRoleKey(
+          roleData.roleKey,
+        );
         if (!existingRole) {
           await this.rolesService.create(roleData);
           console.log(`✅ Role seeded: ${roleData.name} (${roleData.roleKey})`);

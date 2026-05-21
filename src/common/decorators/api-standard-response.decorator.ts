@@ -30,7 +30,10 @@ export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
         : { $ref: getSchemaPath(model) };
     } else {
       dataProperty = isArray
-        ? { type: 'array', items: { type: typeof model === 'string' ? model : 'object' } }
+        ? {
+            type: 'array',
+            items: { type: typeof model === 'string' ? model : 'object' },
+          }
         : { type: typeof model === 'string' ? model : 'object' };
     }
   }
@@ -47,22 +50,22 @@ export const ApiStandardResponse = (options: ApiStandardResponseOptions) => {
               message: { type: 'string', example: description },
               data: isPaginated
                 ? {
-                  type: 'object',
-                  properties: {
-                    data: { type: 'array', items: dataProperty },
-                    meta: {
-                      type: 'object',
-                      properties: {
-                        total: { type: 'number' },
-                        page: { type: 'number' },
-                        limit: { type: 'number' },
-                        totalPages: { type: 'number' },
-                        hasNextPage: { type: 'boolean' },
-                        hasPreviousPage: { type: 'boolean' },
+                    type: 'object',
+                    properties: {
+                      data: { type: 'array', items: dataProperty },
+                      meta: {
+                        type: 'object',
+                        properties: {
+                          total: { type: 'number' },
+                          page: { type: 'number' },
+                          limit: { type: 'number' },
+                          totalPages: { type: 'number' },
+                          hasNextPage: { type: 'boolean' },
+                          hasPreviousPage: { type: 'boolean' },
+                        },
                       },
                     },
-                  },
-                }
+                  }
                 : dataProperty,
             },
           },

@@ -1,10 +1,5 @@
-import {
-  CacheInterceptor,
-} from '@nestjs/cache-manager';
-import {
-  ExecutionContext,
-  Injectable,
-} from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RoleCacheInterceptor extends CacheInterceptor {
@@ -27,7 +22,7 @@ export class RoleCacheInterceptor extends CacheInterceptor {
     }
 
     const url = httpAdapter.getRequestUrl(request);
-    
+
     // Disable global caching for ALL admin routes to ensure real-time data
     if (url.includes('/admin')) {
       return undefined;
