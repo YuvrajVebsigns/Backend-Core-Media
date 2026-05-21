@@ -70,7 +70,7 @@ export class WebhookController {
     @Req() req: any,
     @Headers('x-hub-signature-256') signature: string,
     @Headers('x-github-event') event: string,
-    @Body() payload: GitHubWebhookDto,
+    @Body() payload: any,
   ) {
     this.logger.log(`Received GitHub Webhook event: "${event}"`);
 
@@ -89,8 +89,9 @@ export class WebhookController {
 
     // 3. For push events, process branch & repository and trigger deploy
     if (event === 'push') {
-      const ref = payload.ref; // e.g. refs/heads/main
-      const repoName = payload.repository?.name; // e.g. Backend-Core-Media or Admin-Panel-Frontend
+      const gitHubPayload = payload as GitHubWebhookDto;
+      const ref = gitHubPayload.ref; // e.g. refs/heads/main
+      const repoName = gitHubPayload.repository?.name; // e.g. Backend-Core-Media or Admin-Panel-Frontend
 
       this.logger.log(`Push event details: Repository = ${repoName}, Branch = ${ref}`);
 
