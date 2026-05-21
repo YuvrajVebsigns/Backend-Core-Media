@@ -44,11 +44,19 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         group: 'content management',
       },
       {
+        name: 'Media',
+        path: '/media',
+        permissionKey: 'media.view',
+        icon: 'image',
+        order: 4,
+        group: 'content management',
+      },
+      {
         name: 'Events',
         path: '/events',
         permissionKey: 'events.view',
         icon: 'calendar',
-        order: 1,
+        order: 5,
         group: 'events management',
       },
       {
@@ -56,7 +64,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/sponsors',
         permissionKey: 'sponsors.view',
         icon: 'box',
-        order: 2,
+        order: 6,
         group: 'events management',
       },
       {
@@ -64,7 +72,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/registrations',
         permissionKey: 'registrations.view',
         icon: 'table-properties',
-        order: 3,
+        order: 7,
         group: 'events management',
       },
       {
@@ -72,7 +80,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/attendance',
         permissionKey: 'attendance.view',
         icon: 'calendar-check',
-        order: 4,
+        order: 8,
         group: 'events management',
       },
       {
@@ -80,7 +88,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/nominators',
         permissionKey: 'nominators.view',
         icon: 'user-circle',
-        order: 5,
+        order: 9,
         group: 'events management',
       },
       {
@@ -88,7 +96,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/nominees',
         permissionKey: 'nominees.view',
         icon: 'table-properties',
-        order: 6,
+        order: 10,
         group: 'events management',
       },
       {
@@ -96,7 +104,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/users',
         permissionKey: 'users.view',
         icon: 'users',
-        order: 1,
+        order: 11,
         group: 'user management',
       },
       {
@@ -104,7 +112,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/roles-permission',
         permissionKey: 'roles.view',
         icon: 'copy',
-        order: 2,
+        order: 12,
         group: 'user management',
       },
       {
@@ -112,7 +120,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/sidebar-menu',
         permissionKey: 'sidebar-menu.view',
         icon: 'menu',
-        order: 3,
+        order: 13,
         group: 'super admin controls',
       },
       {
@@ -120,7 +128,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/feature-toggle',
         permissionKey: 'feature-toggle.view',
         icon: 'toggle-right',
-        order: 5,
+        order: 14,
         group: 'super admin controls',
       },
       {
@@ -128,7 +136,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/settings',
         permissionKey: 'settings.view',
         icon: 'settings',
-        order: 6,
+        order: 15,
         group: 'super admin controls',
       },
       {
@@ -136,7 +144,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         path: '/support-ticket',
         permissionKey: 'support-ticket.view',
         icon: 'tickets',
-        order: 7,
+        order: 16,
         group: 'super admin controls',
       },
     ];

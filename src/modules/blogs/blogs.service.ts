@@ -276,16 +276,44 @@ export class BlogsService {
     return comment;
   }
 
-  async getComments(blogId: string, admin = false) {
+  async getComments(
+    blogId: string,
+    query: { admin?: boolean; status?: string; page?: number; limit?: number } = {},
+  ) {
+    const { admin = false, status, page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
     const filter: any = { blogId };
-    if (!admin) {
+    if (status && status !== 'All') {
+      filter.status = status;
+    } else if (!admin) {
       filter.status = 'Approved';
     }
-    return this.commentModel
-      .find(filter)
-      .populate('blogId', 'title createdAt')
-      .sort({ createdAt: -1 })
-      .exec();
+
+    const [data, total] = await Promise.all([
+      this.commentModel
+        .find(filter)
+        .populate('blogId', 'title createdAt')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.commentModel.countDocuments(filter).exec(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
   async updateCommentStatus(commentId: string, updateStatusDto: UpdateCommentStatusDto) {
