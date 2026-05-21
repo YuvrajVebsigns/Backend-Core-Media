@@ -82,8 +82,22 @@ export class BlogsController {
   @ApiOperation({ summary: 'Get comments for a blog' })
   @ApiQuery({ name: 'admin', required: false, type: Boolean, description: 'Whether to show all comments including pending ones' })
   @ApiQuery({ name: 'showMetadata', required: false, type: Boolean, description: 'Whether to show creation and update timestamps' })
-  getComments(@Param('id') id: string, @Query('admin') admin: string) {
-    return this.blogsService.getComments(id, admin === 'true');
+  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filter comments by status' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Limit number of comments per page' })
+  getComments(
+    @Param('id') id: string,
+    @Query('admin') admin: string,
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.blogsService.getComments(id, {
+      admin: admin === 'true',
+      status,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Patch('comments/:commentId/status')
