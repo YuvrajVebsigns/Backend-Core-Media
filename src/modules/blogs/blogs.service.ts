@@ -17,6 +17,10 @@ import { CreateCommentDto, UpdateCommentStatusDto } from './dto/comment.dto';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 import { BlogStatus } from './enums/blog-status.enum';
 import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
+import { UrlService } from '@core/files/services/url.service';
+
+/** Only fetch the fields we need from the File document when populating */
+const IMAGE_POPULATE_SELECT = '_id key variants metadata';
 
 @Injectable()
 export class BlogsService {
@@ -26,7 +30,66 @@ export class BlogsService {
     private commentModel: Model<BlogCommentDocument>,
     @InjectQueue('blog-engagement') private engagementQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly urlService: UrlService,
   ) { }
+
+  /**
+   * Transform populated File references into lean image objects:
+   * { id, metadata, url, urlVariants }
+   *
+   * Also enriches the `featureImage` field with variant URLs.
+   */
+  private transformImageFields(blog: any): any {
+    if (!blog) return blog;
+
+    const obj = blog.toJSON ? blog.toJSON() : { ...blog };
+
+    // Transform featureImageId — only if it was actually populated (has 'key')
+    if (obj.featureImageId && typeof obj.featureImageId === 'object' && obj.featureImageId.key) {
+      const file = obj.featureImageId;
+      const url = this.urlService.getPublicUrl(file.key);
+      const urlVariants = file.variants
+        ? this.urlService.getVariantUrls(file.variants)
+        : {};
+
+      obj.featureImageId = {
+        id: file.id || file._id,
+        metadata: file.metadata || {},
+        url,
+        urlVariants,
+      };
+
+      // Enrich featureImage with variant URLs
+      obj.featureImage = {
+        original: url,
+        ...urlVariants,
+      };
+    }
+
+    // Transform seo.ogImageId — only if it was actually populated (has 'key')
+    if (obj.seo?.ogImageId && typeof obj.seo.ogImageId === 'object' && obj.seo.ogImageId.key) {
+      const file = obj.seo.ogImageId;
+      const url = this.urlService.getPublicUrl(file.key);
+      const urlVariants = file.variants
+        ? this.urlService.getVariantUrls(file.variants)
+        : {};
+
+      obj.seo.ogImageId = {
+        id: file.id || file._id,
+        metadata: file.metadata || {},
+        url,
+        urlVariants,
+      };
+
+      // Enrich seo.ogImage with variant URLs
+      obj.seo.ogImage = {
+        original: url,
+        ...urlVariants,
+      };
+    }
+
+    return obj;
+  }
 
   private sanitizeImageUrls(dto: any) {
     if (dto.featureImageId && dto.featureImage?.startsWith('http')) {
@@ -163,19 +226,20 @@ export class BlogsService {
     const matchQuery = this.buildMatchQuery(queryDto);
     const sortOption = this.buildSortOption(sort);
 
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       this.blogModel
         .find(matchQuery)
         .populate('author', 'fullName email profileImage')
         .populate('websites', 'name domain logo')
-        .populate('featureImageId')
-        .populate('seo.ogImageId')
+        .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
         .sort(sortOption)
         .skip(skip)
         .limit(limit)
         .exec(),
       this.blogModel.countDocuments(matchQuery).exec(),
     ]);
+
+    const data = rawData.map((blog) => this.transformImageFields(blog));
 
     const totalPages = Math.ceil(total / limit);
 
@@ -222,19 +286,21 @@ export class BlogsService {
       publishedAt: 1,
     };
 
-    const [data, total] = await Promise.all([
+    const [rawData, total] = await Promise.all([
       this.blogModel
         .find(matchQuery, summaryProjection)
         .populate('author', 'fullName email profileImage')
         .populate('websites', 'name domain logo')
-        .populate('featureImageId')
-        .populate('seo.ogImageId')
+        .populate('featureImageId', IMAGE_POPULATE_SELECT)
+        .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
         .sort(sortOption)
         .skip(skip)
         .limit(limit)
         .exec(),
       this.blogModel.countDocuments(matchQuery).exec(),
     ]);
+
+    const data = rawData.map((blog) => this.transformImageFields(blog));
 
     const totalPages = Math.ceil(total / limit);
 
@@ -256,18 +322,27 @@ export class BlogsService {
       .findById(id)
       .populate('author', 'fullName email profileImage')
       .populate('websites', 'name domain logo')
-      .populate('featureImageId')
-      .populate('seo.ogImageId')
+      .populate('featureImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
       .exec();
 
     if (!blog) {
       throw new NotFoundException(`Blog with ID ${id} not found`);
     }
-    return blog;
+    return this.transformImageFields(blog);
   }
 
-  async findBySlug(slug: string): Promise<Blog | null> {
-    return this.blogModel.findOne({ slug }).exec();
+  async findBySlug(slug: string): Promise<any> {
+    const blog = await this.blogModel
+      .findOne({ slug })
+      .populate('author', 'fullName email profileImage')
+      .populate('websites', 'name domain logo')
+      .populate('featureImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
+      .exec();
+
+    if (!blog) return null;
+    return this.transformImageFields(blog);
   }
 
   async update(id: string, updateDto: UpdateBlogDto): Promise<Blog> {
