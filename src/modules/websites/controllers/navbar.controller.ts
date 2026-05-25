@@ -10,6 +10,8 @@ import {
   UseGuards,
   Request,
   BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
@@ -66,9 +68,26 @@ export class NavbarController {
             nested !== 'false',
           );
         }
+
+        // Try to decode as admin
+        if (decoded.sub && decoded.roleKey) {
+          const userPermissions: string[] = decoded.permissions || [];
+          const hasPermission = userPermissions.includes('*') || userPermissions.includes('website.manage_navbar');
+          if (!hasPermission) {
+            throw new ForbiddenException('Access denied: Insufficient permissions');
+          }
+          // Valid authenticated admin with permission
+        } else {
+          throw new UnauthorizedException('Access denied: Invalid credentials');
+        }
       } catch (e) {
-        // Continue to admin logic
+        if (e instanceof ForbiddenException || e instanceof UnauthorizedException) {
+          throw e;
+        }
+        throw new UnauthorizedException('Access denied: Invalid token');
       }
+    } else {
+      throw new UnauthorizedException('Access denied: No authorization header found');
     }
 
     if (!siteId) {

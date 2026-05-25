@@ -52,7 +52,7 @@ export class WebsitePageController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Roles(SystemUserRole.SUPER_ADMIN)
   @Permission('website.create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new website page' })
@@ -91,12 +91,17 @@ export class WebsitePageController {
     @Body() updateDto: UpdatePageDto,
     @Request() req: any,
   ) {
+    const isSuperAdmin = req.user?.role?.roleKey === SystemUserRole.SUPER_ADMIN;
+    if (!isSuperAdmin) {
+      delete updateDto.content;
+      delete updateDto.sections;
+    }
     return this.pageService.update(id, updateDto, req.user.id);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Roles(SystemUserRole.SUPER_ADMIN)
   @Permission('website.delete')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a website page' })
@@ -127,7 +132,7 @@ export class WebsitePageController {
 
   @Post(':id/duplicate')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Roles(SystemUserRole.SUPER_ADMIN)
   @Permission('website.create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Duplicate an existing website page' })
