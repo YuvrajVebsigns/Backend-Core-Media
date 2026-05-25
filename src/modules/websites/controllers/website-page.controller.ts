@@ -112,7 +112,7 @@ export class WebsitePageController {
 
   @Post(':id/publish')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Roles(SystemUserRole.SUPER_ADMIN)
   @Permission('website.publish')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Publish a website page' })
@@ -122,7 +122,7 @@ export class WebsitePageController {
 
   @Post(':id/unpublish')
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Roles(SystemUserRole.SUPER_ADMIN)
   @Permission('website.publish')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Unpublish a website page (set to DRAFT)' })

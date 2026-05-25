@@ -26,12 +26,18 @@ export const PERMISSIONS = {
   WEBSITES_CREATE: 'websites.create',
   WEBSITES_UPDATE: 'websites.update',
   WEBSITES_DELETE: 'websites.delete',
+  WEBSITES_MANAGE_NAVBAR: 'websites.manage_navbar',
+  WEBSITES_SEO_EDIT: 'websites.seo_edit',
+  WEBSITES_META_EDIT: 'websites.meta_edit',
 
   // Pages
   PAGES_VIEW: 'pages.view',
   PAGES_CREATE: 'pages.create',
   PAGES_UPDATE: 'pages.update',
   PAGES_DELETE: 'pages.delete',
+  PAGES_PUBLISH: 'pages.publish',
+  PAGES_SEO_EDIT: 'pages.seo_edit',
+  PAGES_META_EDIT: 'pages.meta_edit',
 
   // Feature Toggle
   FEATURE_TOGGLE_VIEW: 'feature-toggle.view',
@@ -50,6 +56,10 @@ export const PERMISSIONS = {
   BLOGS_CREATE: 'blogs.create',
   BLOGS_UPDATE: 'blogs.update',
   BLOGS_DELETE: 'blogs.delete',
+  BLOGS_PUBLISH: 'blogs.publish',
+  BLOGS_STATUS_UPDATE: 'blogs.status_update',
+  BLOGS_SEO_EDIT: 'blogs.seo_edit',
+  BLOGS_META_EDIT: 'blogs.meta_edit',
 
   // Events
   EVENTS_VIEW: 'events.view',
