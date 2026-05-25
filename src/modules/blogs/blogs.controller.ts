@@ -24,7 +24,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 
-@ApiTags('Blogs')
+@ApiTags('Admin | Blog')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/blogs')

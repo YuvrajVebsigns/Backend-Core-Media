@@ -65,6 +65,26 @@ export class CreateNavbarItemDto {
   @IsNotEmpty()
   title: string;
 
+  @ApiPropertyOptional({ example: '/about' })
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
+  @ApiPropertyOptional({ enum: MenuType, default: MenuType.INTERNAL_PAGE })
+  @IsOptional()
+  @IsEnum(MenuType)
+  menuType?: MenuType;
+
+  @ApiPropertyOptional({ example: '_blank' })
+  @IsOptional()
+  @IsString()
+  target?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsMongoId()
+  pageId?: string;
+
   @ApiPropertyOptional({ enum: NavbarPosition, default: NavbarPosition.HEADER })
   @IsEnum(NavbarPosition)
   @IsOptional()

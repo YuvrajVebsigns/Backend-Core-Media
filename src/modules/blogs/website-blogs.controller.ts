@@ -58,7 +58,7 @@ export class WebsiteBlogsController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
   ) {
-    return this.blogsService.findAll({
+    return this.blogsService.findAllForWebsite({
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
       search,

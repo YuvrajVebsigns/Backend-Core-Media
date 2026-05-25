@@ -104,17 +104,8 @@ export class BlogsService {
     return newBlog.save();
   }
 
-  async findAll(queryDto: QueryBlogDto): Promise<PaginatedResponseDto<Blog>> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      isActive,
-      websiteId,
-      sort,
-    } = queryDto;
-    const skip = (page - 1) * limit;
-
+  private buildMatchQuery(queryDto: QueryBlogDto): any {
+    const { search, isActive, websiteId } = queryDto;
     const matchQuery: any = {};
 
     if (isActive !== undefined) {
@@ -151,6 +142,10 @@ export class BlogsService {
       matchQuery.$or = orConditions;
     }
 
+    return matchQuery;
+  }
+
+  private buildSortOption(sort?: string): any {
     const sortOption: any = {};
     if (sort) {
       const [field, order] = sort.split(':');
@@ -158,10 +153,78 @@ export class BlogsService {
     } else {
       sortOption.createdAt = -1;
     }
+    return sortOption;
+  }
+
+  async findAll(queryDto: QueryBlogDto): Promise<PaginatedResponseDto<Blog>> {
+    const { page = 1, limit = 10, sort } = queryDto;
+    const skip = (page - 1) * limit;
+
+    const matchQuery = this.buildMatchQuery(queryDto);
+    const sortOption = this.buildSortOption(sort);
 
     const [data, total] = await Promise.all([
       this.blogModel
         .find(matchQuery)
+        .populate('author', 'fullName email profileImage')
+        .populate('websites', 'name domain logo')
+        .populate('featureImageId')
+        .populate('seo.ogImageId')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.blogModel.countDocuments(matchQuery).exec(),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
+  /**
+   * Website-facing findAll — returns only summary fields (no content/heavy data)
+   */
+  async findAllForWebsite(
+    queryDto: QueryBlogDto,
+  ): Promise<PaginatedResponseDto<Partial<Blog>>> {
+    const { page = 1, limit = 10, sort } = queryDto;
+    const skip = (page - 1) * limit;
+
+    const matchQuery = this.buildMatchQuery(queryDto);
+    const sortOption = this.buildSortOption(sort);
+
+    // Only select summary fields needed for listing
+    const summaryProjection = {
+      title: 1,
+      slug: 1,
+      excerpt: 1,
+      featureImage: 1,
+      featureImageId: 1,
+      tags: 1,
+      status: 1,
+      isActive: 1,
+      engagement: 1,
+      seo: 1,
+      author: 1,
+      websites: 1,
+      createdAt: 1,
+      publishedAt: 1,
+    };
+
+    const [data, total] = await Promise.all([
+      this.blogModel
+        .find(matchQuery, summaryProjection)
         .populate('author', 'fullName email profileImage')
         .populate('websites', 'name domain logo')
         .populate('featureImageId')

@@ -19,7 +19,7 @@ export class WebsitePageService {
     private readonly sectionService: SectionService,
     private readonly seoService: SeoService,
     private readonly cacheService: WebsiteCacheService,
-  ) {}
+  ) { }
 
   private async unsetHomepageForSite(siteId: string): Promise<void> {
     await this.pageModel.updateMany(
@@ -38,7 +38,7 @@ export class WebsitePageService {
       createDto.seo = this.seoService.processAndValidateSeo(createDto.seo);
     }
 
-    const slug = createDto.slug 
+    const slug = createDto.slug
       ? await this.slugService.generateUniqueSlug(createDto.siteId, createDto.slug)
       : await this.slugService.generateUniqueSlug(createDto.siteId, createDto.title);
 
