@@ -11,6 +11,7 @@ import { WebsitesSeeder } from '@database/seeds/websites.seeder';
 import { BlogsSeeder } from '@database/seeds/blogs.seeder';
 import { EventsSeeder } from '@database/seeds/events.seeder';
 import { EventManagementModule } from '@modules/event-management/event-management.module';
+import { WebsiteCmsSeeder } from '@database/seeds/website-cms.seeder';
 
 @Module({
   imports: [
@@ -28,6 +29,8 @@ import { EventManagementModule } from '@modules/event-management/event-managemen
     WebsitesSeeder,
     BlogsSeeder,
     EventsSeeder,
+    WebsiteCmsSeeder,
   ],
 })
 export class SeedModule {}
+
