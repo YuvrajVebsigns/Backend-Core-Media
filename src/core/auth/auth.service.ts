@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { SystemUsersService } from '@core/system-users/system-users.service';
 import * as bcrypt from 'bcrypt';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -20,8 +21,9 @@ export class AuthService {
     private readonly systemUsersService: SystemUsersService,
     private readonly rolesService: RolesService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.systemUsersService.findByEmail(email);
@@ -48,7 +50,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
       { sub: user.id },
-      { expiresIn: '7d' },
+      { expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any },
     );
 
     // Store hashed refresh token and update last login in database
@@ -106,7 +108,7 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
       { sub: user.id },
-      { expiresIn: '7d' },
+      { expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any },
     );
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -165,7 +167,7 @@ export class AuthService {
 
     // Generate a temporary token for password reset/creation
     const payload = { email, type: 'password_reset' };
-    const resetToken = this.jwtService.sign(payload, { expiresIn: '15m' });
+    const resetToken = this.jwtService.sign(payload, { expiresIn: (this.configService.get<string>('JWT_RESET_EXPIRES_IN') || '15m') as any });
 
     return {
       message: 'OTP verified successfully',

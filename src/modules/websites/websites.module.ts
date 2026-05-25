@@ -38,9 +38,12 @@ import { SectionService } from './services/section.service';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '7d' },
+        signOptions: {
+          expiresIn: (configService.get<string>('JWT_WEBSITE_EXPIRES_IN') ||
+            '1d') as any,
+        },
       }),
     }),
   ],

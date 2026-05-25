@@ -26,7 +26,7 @@ export class BlogsService {
     private commentModel: Model<BlogCommentDocument>,
     @InjectQueue('blog-engagement') private engagementQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) {}
+  ) { }
 
   private sanitizeImageUrls(dto: any) {
     if (dto.featureImageId && dto.featureImage?.startsWith('http')) {

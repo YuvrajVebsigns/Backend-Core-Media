@@ -8,6 +8,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { Website } from './schemas/website.schema';
 import {
   CreateWebsiteDto,
@@ -21,6 +22,7 @@ export class WebsitesService {
   constructor(
     @InjectModel(Website.name) private websiteModel: Model<Website>,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   private sanitizeImageUrls(dto: any) {
@@ -199,7 +201,9 @@ export class WebsitesService {
       type: 'website',
     };
 
-    const token = this.jwtService.sign(payload, { expiresIn: '1d' });
+    const token = this.jwtService.sign(payload, {
+      expiresIn: (this.configService.get<string>('JWT_WEBSITE_EXPIRES_IN') || '1d') as any,
+    });
 
     return {
       token,

@@ -26,7 +26,7 @@ import { CreateCommentDto } from './dto/comment.dto';
 @UseGuards(WebsiteAuthGuard)
 @Controller('website/blogs')
 export class WebsiteBlogsController {
-  constructor(private readonly blogsService: BlogsService) {}
+  constructor(private readonly blogsService: BlogsService) { }
 
   @Get()
   @ApiOperation({
