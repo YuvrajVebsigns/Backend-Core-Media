@@ -1,0 +1,681 @@
+{
+  "metadata": {
+    "testDate": "2026-05-26T21:12:31.632Z",
+    "targetUrl": "http://localhost:8080",
+    "concurrency": 20,
+    "requestsPerEndpoint": 120,
+    "throttleBurstCount": 150,
+    "throttleConfig": {
+      "ttl": 60000,
+      "limit": 100,
+      "description": "Global ThrottlerGuard: 100 requests per 60 seconds per IP"
+    }
+  },
+  "endpointResults": [
+    {
+      "group": "System / Health",
+      "label": "Health Check",
+      "method": "GET",
+      "path": "/health",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 10,
+      "connectionErrors": 0,
+      "statuses": {
+        "429": 110,
+        "503": 10
+      },
+      "latency": {
+        "min": "5.6",
+        "max": "557.4",
+        "avg": "70.4",
+        "p50": "28.2",
+        "p95": "534.6",
+        "p99": "555.9"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "System / Health",
+      "label": "Test Connection",
+      "method": "GET",
+      "path": "/test-connection",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 0,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "404": 120
+      },
+      "latency": {
+        "min": "6.1",
+        "max": "33.0",
+        "avg": "18.3",
+        "p50": "19.3",
+        "p95": "29.3",
+        "p99": "32.5"
+      },
+      "throttleRate": 0
+    },
+    {
+      "group": "Auth",
+      "label": "Login",
+      "method": "POST",
+      "path": "/admin/auth/login",
+      "auth": false,
+      "total": 120,
+      "success": 3,
+      "throttled": 117,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "201": 3,
+        "429": 117
+      },
+      "latency": {
+        "min": "31.9",
+        "max": "290.0",
+        "avg": "71.6",
+        "p50": "69.3",
+        "p95": "91.8",
+        "p99": "277.4"
+      },
+      "throttleRate": 97.5
+    },
+    {
+      "group": "Auth",
+      "label": "Signup (expected 409/400)",
+      "method": "POST",
+      "path": "/admin/auth/signup",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 119,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "400": 1,
+        "429": 119
+      },
+      "latency": {
+        "min": "49.3",
+        "max": "90.9",
+        "avg": "66.1",
+        "p50": "65.1",
+        "p95": "82.2",
+        "p99": "87.0"
+      },
+      "throttleRate": 99.2
+    },
+    {
+      "group": "Auth",
+      "label": "Forgot Password",
+      "method": "POST",
+      "path": "/admin/auth/forgot-password",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 119,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "404": 1,
+        "429": 119
+      },
+      "latency": {
+        "min": "44.5",
+        "max": "100.0",
+        "avg": "63.4",
+        "p50": "58.8",
+        "p95": "94.8",
+        "p99": "99.3"
+      },
+      "throttleRate": 99.2
+    },
+    {
+      "group": "Auth",
+      "label": "Refresh Token (invalid)",
+      "method": "POST",
+      "path": "/admin/auth/refresh",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 118,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 2,
+        "429": 118
+      },
+      "latency": {
+        "min": "15.2",
+        "max": "109.6",
+        "avg": "45.0",
+        "p50": "40.7",
+        "p95": "85.4",
+        "p99": "109.2"
+      },
+      "throttleRate": 98.3
+    },
+    {
+      "group": "Auth",
+      "label": "Get Current User",
+      "method": "GET",
+      "path": "/admin/auth/me",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "3.3",
+        "max": "37.3",
+        "avg": "20.2",
+        "p50": "20.7",
+        "p95": "34.1",
+        "p99": "36.2"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | System Users",
+      "label": "List System Users",
+      "method": "GET",
+      "path": "/admin/system-users",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "3.6",
+        "max": "25.1",
+        "avg": "14.9",
+        "p50": "15.0",
+        "p95": "23.2",
+        "p99": "24.7"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Roles",
+      "label": "List Roles",
+      "method": "GET",
+      "path": "/admin/roles",
+      "auth": true,
+      "total": 120,
+      "success": 10,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "200": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "3.8",
+        "max": "61.1",
+        "avg": "18.9",
+        "p50": "16.5",
+        "p95": "46.6",
+        "p99": "56.6"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Sidebar Menus",
+      "label": "Get User Sidebar Menus",
+      "method": "GET",
+      "path": "/admin/sidebar-menu",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "6.9",
+        "max": "38.9",
+        "avg": "21.0",
+        "p50": "19.6",
+        "p95": "36.0",
+        "p99": "38.3"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Sidebar Menus",
+      "label": "Get All Sidebar Menus",
+      "method": "GET",
+      "path": "/admin/sidebar-menu/all",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "4.3",
+        "max": "38.7",
+        "avg": "18.3",
+        "p50": "16.8",
+        "p95": "35.6",
+        "p99": "38.2"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Websites",
+      "label": "List Websites",
+      "method": "GET",
+      "path": "/admin/websites",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "7.2",
+        "max": "37.4",
+        "avg": "22.1",
+        "p50": "22.7",
+        "p95": "35.0",
+        "p99": "36.8"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Blogs",
+      "label": "List Blogs",
+      "method": "GET",
+      "path": "/admin/blogs",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "4.7",
+        "max": "26.1",
+        "avg": "15.1",
+        "p50": "15.7",
+        "p95": "23.6",
+        "p99": "25.4"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Sponsors",
+      "label": "List Sponsors",
+      "method": "GET",
+      "path": "/admin/sponsors",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "6.2",
+        "max": "41.2",
+        "avg": "20.4",
+        "p50": "19.3",
+        "p95": "37.4",
+        "p99": "40.8"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Files",
+      "label": "List Files",
+      "method": "GET",
+      "path": "/admin/files",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "5.0",
+        "max": "59.3",
+        "avg": "27.7",
+        "p50": "24.8",
+        "p95": "51.7",
+        "p99": "58.8"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Admin | Feature Flags",
+      "label": "Get All Feature Flags",
+      "method": "GET",
+      "path": "/admin/feature-flags",
+      "auth": false,
+      "total": 120,
+      "success": 10,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "200": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "3.8",
+        "max": "34.9",
+        "avg": "18.0",
+        "p50": "17.5",
+        "p95": "32.4",
+        "p99": "34.4"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Event Management",
+      "label": "List Events",
+      "method": "GET",
+      "path": "/event-management",
+      "auth": false,
+      "total": 120,
+      "success": 10,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "200": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "10.9",
+        "max": "398.8",
+        "avg": "58.4",
+        "p50": "36.6",
+        "p95": "332.6",
+        "p99": "388.9"
+      },
+      "throttleRate": 91.7
+    },
+    {
+      "group": "Website | Token",
+      "label": "Get Website Token",
+      "method": "POST",
+      "path": "/website/token",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 90,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 30,
+        "429": 90
+      },
+      "latency": {
+        "min": "11.0",
+        "max": "218.9",
+        "avg": "81.0",
+        "p50": "74.5",
+        "p95": "168.7",
+        "p99": "208.9"
+      },
+      "throttleRate": 75
+    }
+  ],
+  "throttleBurstResults": [
+    {
+      "endpoint": "GET /health (Public)",
+      "path": "/health",
+      "total": 150,
+      "success": 0,
+      "throttled": 140,
+      "errors": 10,
+      "connectionErrors": 0,
+      "statuses": {
+        "429": 140,
+        "503": 10
+      },
+      "latency": {
+        "min": "4.0",
+        "max": "184.8",
+        "avg": "41.3",
+        "p50": "36.6",
+        "p95": "141.7",
+        "p99": "179.2"
+      },
+      "throttleRate": 93.3,
+      "firstThrottleAt": 11
+    },
+    {
+      "endpoint": "GET /admin/auth/me (Auth)",
+      "path": "/admin/auth/me",
+      "total": 150,
+      "success": 0,
+      "throttled": 140,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 140
+      },
+      "latency": {
+        "min": "4.2",
+        "max": "34.4",
+        "avg": "16.1",
+        "p50": "15.6",
+        "p95": "31.2",
+        "p99": "34.0"
+      },
+      "throttleRate": 93.3,
+      "firstThrottleAt": 11
+    },
+    {
+      "endpoint": "GET /admin/feature-flags (Public)",
+      "path": "/admin/feature-flags",
+      "total": 150,
+      "success": 10,
+      "throttled": 140,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "200": 10,
+        "429": 140
+      },
+      "latency": {
+        "min": "4.5",
+        "max": "40.6",
+        "avg": "18.1",
+        "p50": "15.8",
+        "p95": "39.7",
+        "p99": "40.4"
+      },
+      "throttleRate": 93.3,
+      "firstThrottleAt": 10
+    }
+  ],
+  "summary": {
+    "totalEndpoints": 18,
+    "totalRequests": 2160,
+    "totalSuccess": 33,
+    "totalThrottled": 1883,
+    "totalErrors": 10,
+    "avgLatency": "37.3",
+    "slowestEndpoint": {
+      "group": "System / Health",
+      "label": "Health Check",
+      "method": "GET",
+      "path": "/health",
+      "auth": false,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 10,
+      "connectionErrors": 0,
+      "statuses": {
+        "429": 110,
+        "503": 10
+      },
+      "latency": {
+        "min": "5.6",
+        "max": "557.4",
+        "avg": "70.4",
+        "p50": "28.2",
+        "p95": "534.6",
+        "p99": "555.9"
+      },
+      "throttleRate": 91.7
+    },
+    "fastestEndpoint": {
+      "group": "Admin | System Users",
+      "label": "List System Users",
+      "method": "GET",
+      "path": "/admin/system-users",
+      "auth": true,
+      "total": 120,
+      "success": 0,
+      "throttled": 110,
+      "errors": 0,
+      "connectionErrors": 0,
+      "statuses": {
+        "401": 10,
+        "429": 110
+      },
+      "latency": {
+        "min": "3.6",
+        "max": "25.1",
+        "avg": "14.9",
+        "p50": "15.0",
+        "p95": "23.2",
+        "p99": "24.7"
+      },
+      "throttleRate": 91.7
+    },
+    "throttledEndpoints": [
+      {
+        "label": "Health Check",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "Login",
+        "throttled": 117,
+        "rate": 97.5
+      },
+      {
+        "label": "Signup (expected 409/400)",
+        "throttled": 119,
+        "rate": 99.2
+      },
+      {
+        "label": "Forgot Password",
+        "throttled": 119,
+        "rate": 99.2
+      },
+      {
+        "label": "Refresh Token (invalid)",
+        "throttled": 118,
+        "rate": 98.3
+      },
+      {
+        "label": "Get Current User",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List System Users",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Roles",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "Get User Sidebar Menus",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "Get All Sidebar Menus",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Websites",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Blogs",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Sponsors",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Files",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "Get All Feature Flags",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "List Events",
+        "throttled": 110,
+        "rate": 91.7
+      },
+      {
+        "label": "Get Website Token",
+        "throttled": 90,
+        "rate": 75
+      }
+    ]
+  }
+}

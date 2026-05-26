@@ -26,6 +26,7 @@ import {
 import { Type } from 'class-transformer';
 import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
+import { SkipThrottle } from '@nestjs/throttler';
 
 class RepositoryDto {
   @ApiProperty({
@@ -57,6 +58,7 @@ export class GitHubWebhookDto {
 }
 
 @ApiTags('System')
+@SkipThrottle()
 @Controller('webhook')
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);

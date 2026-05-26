@@ -19,8 +19,10 @@ import {
 import { WebsitesService } from './websites.service';
 import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Website | Websites')
+@Throttle({ short: { ttl: 1000, limit: 30 }, medium: { ttl: 60000, limit: 300 }, long: { ttl: 3600000, limit: 10000 } })
 @Controller('website')
 export class WebsiteWebsitesController {
   constructor(private readonly websitesService: WebsitesService) {}

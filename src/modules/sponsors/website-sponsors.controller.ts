@@ -15,10 +15,12 @@ import {
 import { SponsorsService } from './sponsors.service';
 import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Website | Sponsors')
 @ApiBearerAuth('website-token')
 @UseGuards(WebsiteAuthGuard)
+@Throttle({ short: { ttl: 1000, limit: 30 }, medium: { ttl: 60000, limit: 300 }, long: { ttl: 3600000, limit: 10000 } })
 @Controller('website/sponsors')
 export class WebsiteSponsorsController {
   constructor(private readonly sponsorsService: SponsorsService) {}
