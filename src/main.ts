@@ -115,25 +115,77 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
+  const port = configService.get<number>('PORT') || 3000;
+  const serverUrl = `http://localhost:${port}`;
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Core Media API')
     .setDescription('The Core Media API documentation (Version 1)')
     .setVersion('1.0')
+    .addServer(serverUrl, 'Local Development')
     .addBearerAuth()
     .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
         bearerFormat: 'JWT',
-        name: 'JWT',
         description: 'Enter Website JWT token',
-        in: 'header',
       },
       'website-token',
     )
+    .addTag('Admin | Auth', 'Authentication endpoints (login, signup, OTP, password reset)')
+    .addTag('Admin | System Users', 'System user management')
+    .addTag('Admin | Roles', 'Role and permission management')
+    .addTag('Admin | SidebarMenus', 'Sidebar menu management')
+    .addTag('Admin | Websites', 'Website configuration management')
+    .addTag('Admin | Blog', 'Blog management (admin)')
+    .addTag('Admin | Background Jobs', 'Background job management')
+    .addTag('Admin | Feature Flags', 'Feature flag management')
+    .addTag('Website | Websites', 'Public website endpoints')
+    .addTag('Website | Pages', 'Public website page endpoints')
+    .addTag('Website | Navbar', 'Public website navbar endpoints')
+    .addTag('Website | SEO', 'Public website SEO endpoints')
+    .addTag('Website | Blogs', 'Public website blog endpoints')
+    .addTag('Event Management', 'Event management endpoints')
+    .addTag('Attendees', 'Event attendee registration')
+    .addTag('Sponsors', 'Sponsor management')
+    .addTag('Files', 'File upload and management')
+    .addTag('System', 'System health and webhooks')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  // Clean up empty/problematic schemas for better Apidog compatibility
+  if (document.components?.schemas) {
+    const schemas = document.components.schemas as Record<string, any>;
+
+    // Replace all $ref to 'Object' schema with inline { type: 'object' }
+    const replaceObjectRefs = (obj: any): void => {
+      if (!obj || typeof obj !== 'object') return;
+      for (const key of Object.keys(obj)) {
+        if (
+          key === '$ref' &&
+          obj[key] === '#/components/schemas/Object'
+        ) {
+          delete obj['$ref'];
+          obj['type'] = 'object';
+          return;
+        }
+        replaceObjectRefs(obj[key]);
+      }
+    };
+    replaceObjectRefs(document);
+
+    // Remove the empty 'Object' schema itself
+    if (
+      schemas['Object'] &&
+      schemas['Object'].type === 'object' &&
+      Object.keys(schemas['Object'].properties || {}).length === 0
+    ) {
+      delete schemas['Object'];
+    }
+  }
+
   // Serve Swagger UI at /api/docs
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: {
@@ -167,7 +219,6 @@ async function bootstrap() {
     );
   }
 
-  const port = configService.get<number>('PORT') || 3000;
   await app.listen(port);
 
   const uri = configService.get<string>('MONGODB_URI');

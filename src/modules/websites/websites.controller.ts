@@ -18,19 +18,22 @@ import {
 } from './dto/website.dto';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
+import { PermissionGuard } from '@common/guards/permission.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { Permission } from '@common/decorators/permission.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
 import { ApiStandardResponse } from '@common/decorators/api-standard-response.decorator';
 
 @ApiTags('Admin | Websites')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
 @Controller('admin/websites')
 export class WebsitesController {
   constructor(private readonly websitesService: WebsitesService) {}
 
   @Post()
   @Roles(SystemUserRole.SUPER_ADMIN)
+  @Permission('websites.create')
   @ApiOperation({ summary: 'Create a new website (Super Admin only)' })
   @ApiStandardResponse({ status: 201, description: 'Website created' })
   create(@Body() createWebsiteDto: CreateWebsiteDto) {
@@ -38,6 +41,8 @@ export class WebsitesController {
   }
 
   @Get()
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('websites.view')
   @ApiOperation({ summary: 'Get all websites' })
   @ApiStandardResponse({
     status: 200,
@@ -49,6 +54,8 @@ export class WebsitesController {
   }
 
   @Get(':id')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('websites.view')
   @ApiOperation({ summary: 'Get a website by ID' })
   @ApiStandardResponse({ status: 200, description: 'Website found' })
   findOne(@Param('id') id: string) {
@@ -56,6 +63,8 @@ export class WebsitesController {
   }
 
   @Patch(':id')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('websites.update')
   @ApiOperation({ summary: 'Update a website' })
   @ApiStandardResponse({ status: 200, description: 'Website updated' })
   update(@Param('id') id: string, @Body() updateWebsiteDto: UpdateWebsiteDto) {
@@ -64,6 +73,7 @@ export class WebsitesController {
 
   @Delete(':id')
   @Roles(SystemUserRole.SUPER_ADMIN)
+  @Permission('websites.delete')
   @ApiOperation({ summary: 'Soft delete a website (Super Admin only)' })
   @ApiStandardResponse({ status: 200, description: 'Website deleted' })
   remove(@Param('id') id: string) {

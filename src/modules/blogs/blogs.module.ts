@@ -9,6 +9,7 @@ import { BlogComment, BlogCommentSchema } from './schemas/comment.schema';
 import { BlogMaintenanceService } from './services/blog-maintenance.service';
 import { BlogEngagementProcessor } from './processors/blog-engagement.processor';
 import { AuthModule } from '@core/auth/auth.module';
+import { FilesModule } from '@core/files/files.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from '@core/auth/auth.module';
       name: 'blog-engagement',
     }),
     AuthModule,
+    FilesModule,
   ],
   controllers: [BlogsController, WebsiteBlogsController],
   providers: [BlogsService, BlogMaintenanceService, BlogEngagementProcessor],

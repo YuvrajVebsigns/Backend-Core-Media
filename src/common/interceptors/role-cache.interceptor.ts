@@ -23,8 +23,9 @@ export class RoleCacheInterceptor extends CacheInterceptor {
 
     const url = httpAdapter.getRequestUrl(request);
 
-    // Disable global caching for ALL admin routes to ensure real-time data
-    if (url.includes('/admin')) {
+    // Disable global caching for admin and website routes to ensure real-time data
+    // Website routes rely on request.website (from JWT) which is not in the cache key
+    if (url.includes('/admin') || url.includes('/website')) {
       return undefined;
     }
 

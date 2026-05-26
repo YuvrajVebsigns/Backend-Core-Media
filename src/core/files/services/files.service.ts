@@ -19,6 +19,7 @@ import { UpdateFileDto } from '@core/files/dto/update-file.dto';
 import { QueryFileDto } from '@core/files/dto/query-file.dto';
 import { FileVisibility } from '@core/files/enums/visibility.enum';
 import { ImageVariant } from '@core/files/enums/image-variant.enum';
+import { FileType } from '@core/files/enums/file-type.enum';
 import { StorageProvider } from '@core/files/enums/storage-provider.enum';
 import {
   generateFileKey,
@@ -87,8 +88,18 @@ export class FilesService {
 
     // 1. Handle URL upload if no file buffer is provided
     if (!activeFile && dto.url) {
+      const cleanedUrl = dto.url.trim();
+      const urlLower = cleanedUrl.toLowerCase();
+      const isYoutube =
+        urlLower.includes('youtube.com') ||
+        urlLower.includes('youtu.be') ||
+        urlLower.includes('youtube-nocookie.com');
+
+      if (isYoutube) {
+        return this.createVirtualYoutubeFile(cleanedUrl, dto, uploadedBy);
+      }
       try {
-        const response = await fetch(dto.url, {
+        const response = await fetch(cleanedUrl, {
           headers: {
             'User-Agent':
               'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -97,11 +108,18 @@ export class FilesService {
         if (!response.ok)
           throw new Error(`Failed to fetch from URL: ${response.statusText}`);
 
-        const buffer = Buffer.from(await response.arrayBuffer());
         const contentType =
           response.headers.get('content-type') || 'application/octet-stream';
+
+        if (contentType.toLowerCase().startsWith('text/html')) {
+          throw new BadRequestException(
+            'The provided URL points to an HTML web page or block page instead of a direct asset file. Please ensure you are pasting a direct link to an image, video, or document.',
+          );
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
         const originalName =
-          dto.url.split('/').pop()?.split('?')[0] || 'external-file';
+          cleanedUrl.split('/').pop()?.split('?')[0] || 'external-file';
 
         activeFile = {
           buffer,
@@ -121,7 +139,9 @@ export class FilesService {
           error.stack,
         );
         throw new BadRequestException(
-          `Could not download file from the provided URL: ${error.message}`,
+          error instanceof BadRequestException
+            ? error.message
+            : `Could not download file from the provided URL: ${error.message}`,
         );
       }
     }
@@ -224,6 +244,72 @@ export class FilesService {
       this.logger.debug(`Queued variant processing for file ${saved.id}`);
     }
 
+    return this.mapToResponse(saved);
+  }
+
+  async createVirtualYoutubeFile(
+    youtubeUrl: string,
+    dto: UploadFileDto,
+    uploadedBy: string,
+  ): Promise<any> {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = youtubeUrl.match(regExp);
+    const videoId = match && match[2].length === 11 ? match[2] : null;
+
+    if (!videoId) {
+      throw new BadRequestException('Could not parse a valid YouTube Video ID from the link.');
+    }
+
+    const filename = `youtube-${videoId}`;
+    const extension = 'youtube';
+    const fileType = FileType.VIDEO;
+    const mimeType = 'video/youtube';
+    const visibility = dto.visibility ?? FileVisibility.PUBLIC;
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+    const metadata: any = {
+      alt: dto.alt || `YouTube Video - ${videoId}`,
+      width: 1280,
+      height: 720,
+      blurhash: null,
+      videoResourceId: videoId,
+      thumbnailUrl,
+      provider: 'youtube',
+    };
+
+    const fileDoc = new this.fileModel({
+      provider: StorageProvider.LOCAL,
+      bucket: this.bucket,
+      key: `youtube/${videoId}`,
+      variants: new Map([
+        [
+          'thumbnail',
+          {
+            key: `youtube/${videoId}/thumbnail`,
+            width: 1280,
+            height: 720,
+            size: 0,
+          },
+        ],
+      ]),
+      module: dto.module,
+      entityType: dto.entityType,
+      entityId: dto.entityId,
+      originalName: dto.alt || `YouTube Video`,
+      filename,
+      mimeType,
+      extension,
+      fileType,
+      size: 0,
+      visibility,
+      uploadedBy,
+      metadata,
+      status: FileStatus.READY,
+      keywords: dto.keywords || [],
+    });
+
+    const saved = await fileDoc.save();
+    this.logger.log(`Virtual YouTube File created: ${saved.id} for Video ID: ${videoId}`);
     return this.mapToResponse(saved);
   }
 
@@ -431,6 +517,15 @@ export class FilesService {
   }
 
   getUrl(file: File): { url: string; variants: Record<string, string> } {
+    if (file.mimeType === 'video/youtube') {
+      const resolvedId = (file.metadata as any)?.videoResourceId || file.filename.replace('youtube-', '');
+      return {
+        url: `https://www.youtube.com/watch?v=${resolvedId}`,
+        variants: {
+          thumbnail: `https://img.youtube.com/vi/${resolvedId}/maxresdefault.jpg`,
+        },
+      };
+    }
     return {
       url: this.urlService.getPublicUrl(file.key),
       variants: file.variants

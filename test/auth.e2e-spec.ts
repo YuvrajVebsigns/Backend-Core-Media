@@ -9,6 +9,8 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 import { GlobalExceptionFilter } from '../src/common/filters/global-exception.filter';
+import { Reflector } from '@nestjs/core';
+import { UrlService } from '../src/core/files/services/url.service';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -37,7 +39,9 @@ describe('AuthController (e2e)', () => {
       }),
     );
 
-    app.useGlobalInterceptors(new ResponseInterceptor());
+    const reflector = app.get(Reflector);
+    const urlService = app.get(UrlService);
+    app.useGlobalInterceptors(new ResponseInterceptor(reflector, urlService));
     app.useGlobalFilters(new GlobalExceptionFilter());
 
     await app.init();

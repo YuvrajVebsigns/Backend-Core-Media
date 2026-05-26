@@ -12,6 +12,7 @@ import { BlogsSeeder } from '@database/seeds/blogs.seeder';
 import { EventsSeeder } from '@database/seeds/events.seeder';
 import { EventManagementModule } from '@modules/event-management/event-management.module';
 
+
 @Module({
   imports: [
     RolesModule,
@@ -28,6 +29,8 @@ import { EventManagementModule } from '@modules/event-management/event-managemen
     WebsitesSeeder,
     BlogsSeeder,
     EventsSeeder,
+
   ],
 })
-export class SeedModule {}
+export class SeedModule { }
+

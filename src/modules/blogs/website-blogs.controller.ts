@@ -26,7 +26,7 @@ import { CreateCommentDto } from './dto/comment.dto';
 @UseGuards(WebsiteAuthGuard)
 @Controller('website/blogs')
 export class WebsiteBlogsController {
-  constructor(private readonly blogsService: BlogsService) {}
+  constructor(private readonly blogsService: BlogsService) { }
 
   @Get()
   @ApiOperation({
@@ -58,7 +58,7 @@ export class WebsiteBlogsController {
     @Query('limit') limit?: string,
     @Query('search') search?: string,
   ) {
-    return this.blogsService.findAll({
+    return this.blogsService.findAllForWebsite({
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10,
       search,

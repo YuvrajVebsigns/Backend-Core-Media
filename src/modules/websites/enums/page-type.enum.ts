@@ -1,0 +1,6 @@
+export enum PageType {
+  STATIC_PAGE = 'STATIC_PAGE',
+  BLOG_PAGE = 'BLOG_PAGE',
+  LANDING_PAGE = 'LANDING_PAGE',
+  CUSTOM_PAGE = 'CUSTOM_PAGE',
+}
