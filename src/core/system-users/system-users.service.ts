@@ -213,7 +213,7 @@ export class SystemUsersService {
   }
 
   async findByEmail(email: string): Promise<SystemUser | null> {
-    return this.systemUserModel.findOne({ email }).select('+password').exec();
+    return this.systemUserModel.findOne({ email }).select('+password').populate('role').exec();
   }
 
   async update(id: string, updateDto: any): Promise<SystemUser> {
