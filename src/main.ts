@@ -146,6 +146,8 @@ async function bootstrap() {
     .addTag('Website | Navbar', 'Public website navbar endpoints')
     .addTag('Website | SEO', 'Public website SEO endpoints')
     .addTag('Website | Blogs', 'Public website blog endpoints')
+    .addTag('Admin | Contacts', 'Contact form submission and response management')
+    .addTag('Website | Contacts', 'Public website contact form submission endpoints')
     .addTag('Event Management', 'Event management endpoints')
     .addTag('Attendees', 'Event attendee registration')
     .addTag('Sponsors', 'Sponsor management')
