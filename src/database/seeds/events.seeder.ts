@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { EventManagementService } from '@modules/event-management/event-management.service';
+import { EventsService } from '@modules/event-management/event-management.service';
 import { WebsitesService } from '@modules/websites/websites.service';
 import {
   EventStatus,
@@ -9,7 +9,7 @@ import {
 @Injectable()
 export class EventsSeeder implements OnApplicationBootstrap {
   constructor(
-    private readonly eventService: EventManagementService,
+    private readonly eventService: EventsService,
     private readonly websitesService: WebsitesService,
   ) {}
 

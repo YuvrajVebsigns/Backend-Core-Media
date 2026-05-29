@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Attendee, AttendeeStatus } from './schemas/attendee.schema';
 import { RegisterAttendeeDto } from './dto/attendee.dto';
-import { EventManagementService } from '@modules/event-management/event-management.service';
+import { EventsService } from '@modules/event-management/event-management.service';
 import { JobsService } from '@core/jobs/jobs.service';
 import * as QRCode from 'qrcode';
 import { randomBytes } from 'crypto';
@@ -17,7 +17,7 @@ import { randomBytes } from 'crypto';
 export class AttendeesService {
   constructor(
     @InjectModel(Attendee.name) private attendeeModel: Model<Attendee>,
-    private readonly eventService: EventManagementService,
+    private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
   ) {}
 
@@ -117,6 +117,10 @@ export class AttendeesService {
         },
       })
       .exec();
+  }
+
+  async getCountByEvent(eventId: string): Promise<number> {
+    return this.attendeeModel.countDocuments({ eventId: eventId as any }).exec();
   }
 
   private generatePassCode(): string {

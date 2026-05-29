@@ -15,26 +15,35 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { EventManagementService } from './event-management.service';
+import { EventsService } from './event-management.service';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 import { EventStatus } from './schemas/event.schema';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { PermissionGuard } from '@common/guards/permission.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { Permission } from '@common/decorators/permission.decorator';
+import { SystemUserRole } from '@common/enums/role.enum';
 
-@ApiTags('Event Management')
-@Controller('event-management')
-export class EventManagementController {
-  constructor(private readonly eventService: EventManagementService) {}
+@ApiTags('Admin | Events')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+@Controller('admin/events')
+export class AdminEventsController {
+  constructor(private readonly eventService: EventsService) {}
 
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.create')
   @ApiOperation({ summary: 'Create a new event' })
   create(@Body() createEventDto: CreateEventDto) {
     return this.eventService.create(createEventDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all events with optional filters' })
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.view')
+  @ApiOperation({ summary: 'Get all events with optional filters (Admin)' })
   @ApiQuery({ name: 'websiteId', required: false })
   @ApiQuery({ name: 'status', enum: EventStatus, required: false })
   findAll(
@@ -45,28 +54,24 @@ export class EventManagementController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get an event by id' })
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.view')
+  @ApiOperation({ summary: 'Get an event by ID (Admin)' })
   findOne(@Param('id') id: string) {
     return this.eventService.findOne(id);
   }
 
-  @Get('slug/:slug')
-  @ApiOperation({ summary: 'Get an event by slug' })
-  findBySlug(@Param('slug') slug: string) {
-    return this.eventService.findBySlug(slug);
-  }
-
   @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.update')
   @ApiOperation({ summary: 'Update an event' })
   update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
     return this.eventService.update(id, updateEventDto);
   }
 
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN)
+  @Permission('events.delete')
   @ApiOperation({ summary: 'Delete an event' })
   remove(@Param('id') id: string) {
     return this.eventService.remove(id);

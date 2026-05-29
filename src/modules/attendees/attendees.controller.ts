@@ -82,6 +82,20 @@ export class AttendeesController {
     return this.attendeesService.findAllByEvent(eventId);
   }
 
+  @ApiTags('Admin | Attendees')
+  @Get('event/:eventId/count')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Get attendee count for an event',
+    description: 'Fetches the count of all registered attendees for a specific event.',
+  })
+  @ApiParam({ name: 'eventId', description: 'MongoDB ID of the event.' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved attendee count.' })
+  getCountByEvent(@Param('eventId') eventId: string) {
+    return this.attendeesService.getCountByEvent(eventId);
+  }
+
   @ApiTags('Website | Attendees')
   @Get('pass/:passCode')
   @ApiOperation({
