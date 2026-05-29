@@ -8,7 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Attendee, AttendeeStatus } from './schemas/attendee.schema';
 import { RegisterAttendeeDto } from './dto/attendee.dto';
-import { EventManagementService } from '@modules/event-management/event-management.service';
+import { EventsService } from '@modules/event-management/event-management.service';
 import { JobsService } from '@core/jobs/jobs.service';
 import * as QRCode from 'qrcode';
 import { randomBytes } from 'crypto';
@@ -17,11 +17,14 @@ import { randomBytes } from 'crypto';
 export class AttendeesService {
   constructor(
     @InjectModel(Attendee.name) private attendeeModel: Model<Attendee>,
-    private readonly eventService: EventManagementService,
+    private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
   ) {}
 
-  async register(registerDto: RegisterAttendeeDto): Promise<Attendee> {
+  async register(
+    registerDto: RegisterAttendeeDto,
+    websiteId?: string,
+  ): Promise<Attendee> {
     const event = await this.eventService.findOne(registerDto.eventId);
 
     const existing = await this.attendeeModel
@@ -43,6 +46,7 @@ export class AttendeesService {
       passCode,
       qrCode,
       status: AttendeeStatus.REGISTERED,
+      ...(websiteId ? { websiteId: websiteId as any } : {}),
     });
 
     const savedAttendee = await attendee.save();
@@ -51,12 +55,16 @@ export class AttendeesService {
     await this.jobsService.addJob('emails', 'send-event-registration', {
       email: savedAttendee.email,
       name: savedAttendee.name,
+      organization: savedAttendee.organization || '',
       eventName: event.title,
       passCode: savedAttendee.passCode,
       qrCode: savedAttendee.qrCode,
       startDate: event.startDate,
       endDate: event.endDate,
       location: event.location?.address || 'Online',
+      sponsors: event.sponsors
+        ? event.sponsors.map((s: any) => s.name || s.companyName || s)
+        : [],
     });
 
     return savedAttendee;
@@ -81,8 +89,38 @@ export class AttendeesService {
     return attendee.save();
   }
 
+  async findByPassCode(passCode: string): Promise<Attendee> {
+    const attendee = await this.attendeeModel
+      .findOne({ passCode })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'sponsors',
+        },
+      })
+      .exec();
+
+    if (!attendee) {
+      throw new NotFoundException(`Invalid pass code: ${passCode}`);
+    }
+
+    return attendee;
+  }
+
   async findAllByEvent(eventId: string): Promise<Attendee[]> {
-    return this.attendeeModel.find({ eventId: eventId as any }).exec();
+    return this.attendeeModel
+      .find({ eventId: eventId as any })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'sponsors',
+        },
+      })
+      .exec();
+  }
+
+  async getCountByEvent(eventId: string): Promise<number> {
+    return this.attendeeModel.countDocuments({ eventId: eventId as any }).exec();
   }
 
   private generatePassCode(): string {

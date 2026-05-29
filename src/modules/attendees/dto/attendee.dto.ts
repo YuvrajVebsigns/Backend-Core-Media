@@ -25,6 +25,11 @@ export class RegisterAttendeeDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @ApiProperty({ example: 'Acme Corp', required: false })
+  @IsString()
+  @IsOptional()
+  organization?: string;
 }
 
 export class UpdateAttendeeStatusDto {

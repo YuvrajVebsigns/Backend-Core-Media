@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SponsorsService } from './sponsors.service';
-import { SponsorsController } from './sponsors.controller';
+import { AdminSponsorsController } from './admin-sponsors.controller';
 import { WebsiteSponsorsController } from './website-sponsors.controller';
 import { Sponsor, SponsorSchema } from './schemas/sponsor.schema';
 import { FilesModule } from '@core/files/files.module';
@@ -13,7 +13,7 @@ import { AuthModule } from '@core/auth/auth.module';
     AuthModule,
     FilesModule,
   ],
-  controllers: [SponsorsController, WebsiteSponsorsController],
+  controllers: [AdminSponsorsController, WebsiteSponsorsController],
   providers: [SponsorsService],
   exports: [SponsorsService],
 })

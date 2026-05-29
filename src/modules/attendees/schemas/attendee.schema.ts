@@ -20,7 +20,7 @@ export enum AttendeeStatus {
 export class Attendee extends BaseSchema {
   @Prop({
     type: MongooseSchema.Types.ObjectId,
-    ref: 'EventManagement',
+    ref: 'Event',
     required: true,
   })
   eventId: MongooseSchema.Types.ObjectId;
@@ -33,6 +33,16 @@ export class Attendee extends BaseSchema {
 
   @Prop({ trim: true })
   phone: string;
+
+  @Prop({ trim: true })
+  organization: string;
+
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Website',
+    required: false,
+  })
+  websiteId?: MongooseSchema.Types.ObjectId;
 
   @Prop({
     type: String,

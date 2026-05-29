@@ -72,10 +72,10 @@ export class EventSeo {
 }
 
 @Schema({
-  collection: 'event_managements',
+  collection: 'events',
   timestamps: true,
 })
-export class EventManagement extends BaseSchema {
+export class Event extends BaseSchema {
   @Prop({ required: true, trim: true })
   title: string;
 
@@ -139,17 +139,20 @@ export class EventManagement extends BaseSchema {
   @Prop({ type: [String], default: [] })
   invitedEmails: string[];
 
+  @Prop({ type: Number, default: 0 })
+  totalRegistrations: number;
+
   @Prop({ default: true })
   isActive: boolean;
 }
 
-export const EventManagementSchema =
-  SchemaFactory.createForClass(EventManagement);
+export const EventSchema =
+  SchemaFactory.createForClass(Event);
 
 // Apply soft delete middleware
-applySoftDeleteMiddleware(EventManagementSchema);
+applySoftDeleteMiddleware(EventSchema);
 
-EventManagementSchema.set('toJSON', {
+EventSchema.set('toJSON', {
   getters: true,
   virtuals: true,
   transform: (doc, ret: any) => {
@@ -160,4 +163,4 @@ EventManagementSchema.set('toJSON', {
   },
 });
 
-EventManagementSchema.index({ websites: 1, isActive: 1 });
+EventSchema.index({ websites: 1, isActive: 1 });

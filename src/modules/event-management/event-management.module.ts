@@ -1,17 +1,21 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { EventManagementService } from './event-management.service';
-import { EventManagementController } from './event-management.controller';
-import { EventManagement, EventManagementSchema } from './schemas/event.schema';
+import { EventsService } from './event-management.service';
+import { AdminEventsController } from './admin-events.controller';
+import { WebsiteEventsController } from './website-events.controller';
+import { Event, EventSchema } from './schemas/event.schema';
+import { Sponsor, SponsorSchema } from '../sponsors/schemas/sponsor.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: EventManagement.name, schema: EventManagementSchema },
+      { name: Event.name, schema: EventSchema },
+      { name: Sponsor.name, schema: SponsorSchema },
     ]),
   ],
-  controllers: [EventManagementController],
-  providers: [EventManagementService],
-  exports: [EventManagementService],
+  controllers: [AdminEventsController, WebsiteEventsController],
+  providers: [EventsService],
+  exports: [EventsService],
 })
 export class EventManagementModule {}
+

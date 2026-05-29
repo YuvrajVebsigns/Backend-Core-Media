@@ -30,7 +30,7 @@ import { SystemUserRole } from '@common/enums/role.enum';
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/sponsors')
-export class SponsorsController {
+export class AdminSponsorsController {
   constructor(private readonly sponsorsService: SponsorsService) {}
 
   @Post()

@@ -16,7 +16,9 @@ import { Navbar, NavbarSchema } from './schemas/navbar.schema';
 
 // New Controllers
 import { WebsitePageController } from './controllers/website-page.controller';
+import { AdminWebsitePageController } from './controllers/admin-website-page.controller';
 import { NavbarController } from './controllers/navbar.controller';
+import { AdminNavbarController } from './controllers/admin-navbar.controller';
 import { SeoController } from './controllers/seo.controller';
 
 // New Services
@@ -51,7 +53,9 @@ import { SectionService } from './services/section.service';
     WebsitesController,
     WebsiteWebsitesController,
     WebsitePageController,
+    AdminWebsitePageController,
     NavbarController,
+    AdminNavbarController,
     SeoController,
   ],
   providers: [
