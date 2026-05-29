@@ -21,7 +21,10 @@ export class AttendeesService {
     private readonly jobsService: JobsService,
   ) {}
 
-  async register(registerDto: RegisterAttendeeDto): Promise<Attendee> {
+  async register(
+    registerDto: RegisterAttendeeDto,
+    websiteId?: string,
+  ): Promise<Attendee> {
     const event = await this.eventService.findOne(registerDto.eventId);
 
     const existing = await this.attendeeModel
@@ -43,6 +46,7 @@ export class AttendeesService {
       passCode,
       qrCode,
       status: AttendeeStatus.REGISTERED,
+      ...(websiteId ? { websiteId: websiteId as any } : {}),
     });
 
     const savedAttendee = await attendee.save();

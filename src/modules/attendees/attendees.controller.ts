@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   UseGuards,
+  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -13,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiResponse,
+  ApiHeader,
 } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import { RegisterAttendeeDto } from './dto/attendee.dto';
@@ -37,8 +39,16 @@ export class AttendeesController {
   @ApiResponse({ status: 201, description: 'Successfully registered for the event.' })
   @ApiResponse({ status: 409, description: 'Already registered for this event with this email.' })
   @ApiResponse({ status: 404, description: 'Specified event not found.' })
-  register(@Body() registerDto: RegisterAttendeeDto) {
-    return this.attendeesService.register(registerDto);
+  @ApiHeader({
+    name: 'x-website-id',
+    description: 'Optional website ID from which the registration originated.',
+    required: false,
+  })
+  register(
+    @Body() registerDto: RegisterAttendeeDto,
+    @Headers('x-website-id') websiteId?: string,
+  ) {
+    return this.attendeesService.register(registerDto, websiteId);
   }
 
   @ApiTags('Admin | Attendees')
