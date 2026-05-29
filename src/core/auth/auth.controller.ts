@@ -13,6 +13,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import { ApiStandardResponse } from '@common/decorators/api-standard-response.decorator';
 import { AuthService } from './auth.service';
 import {
@@ -39,6 +40,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Throttle({ short: { ttl: 1000, limit: 3 }, medium: { ttl: 60000, limit: 5 }, long: { ttl: 3600000, limit: 30 } })
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiStandardResponse({
     status: 200,
@@ -58,6 +60,7 @@ export class AuthController {
   }
 
   @Post('signup')
+  @Throttle({ short: { ttl: 1000, limit: 1 }, medium: { ttl: 60000, limit: 3 }, long: { ttl: 3600000, limit: 20 } })
   @ApiOperation({ summary: 'Create a new system user (Signup)' })
   @ApiStandardResponse({
     status: 201,
@@ -69,6 +72,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @Throttle({ short: { ttl: 1000, limit: 1 }, medium: { ttl: 60000, limit: 3 }, long: { ttl: 3600000, limit: 10 } })
   @ApiOperation({ summary: 'Request OTP for password reset' })
   @ApiStandardResponse({
     status: 200,
@@ -80,6 +84,7 @@ export class AuthController {
   }
 
   @Post('verify-otp')
+  @Throttle({ short: { ttl: 1000, limit: 1 }, medium: { ttl: 60000, limit: 5 }, long: { ttl: 3600000, limit: 20 } })
   @ApiOperation({ summary: 'Verify OTP and get reset token' })
   @ApiStandardResponse({
     status: 200,
@@ -92,6 +97,7 @@ export class AuthController {
   }
 
   @Post('reset-password')
+  @Throttle({ short: { ttl: 1000, limit: 1 }, medium: { ttl: 60000, limit: 3 }, long: { ttl: 3600000, limit: 10 } })
   @ApiOperation({ summary: 'Reset password using the reset token' })
   @ApiStandardResponse({
     status: 200,
@@ -107,6 +113,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Throttle({ short: { ttl: 1000, limit: 2 }, medium: { ttl: 60000, limit: 10 }, long: { ttl: 3600000, limit: 100 } })
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiStandardResponse({
     status: 200,

@@ -88,7 +88,7 @@ export class EventManagementService {
 
   async remove(id: string): Promise<void> {
     const result = await this.eventModel
-      .findByIdAndUpdate(id, { isDeleted: true })
+      .findByIdAndUpdate(id, { isDeleted: new Date() })
       .exec();
     if (!result) {
       throw new NotFoundException(`Event with ID ${id} not found`);

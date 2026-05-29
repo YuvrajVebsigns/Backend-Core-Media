@@ -4,8 +4,10 @@ import { AppService } from './app.service';
 import { MongooseHealthIndicator } from '@nestjs/terminus';
 import { RedisHealthIndicator } from '@core/health/redis.health';
 import { StorageHealthIndicator } from '@core/health/storage.health';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiExcludeController()
+@SkipThrottle()
 @Controller()
 export class AppController {
   constructor(

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard, seconds } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { CacheModule, CacheInterceptor } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
 import { BullModule } from '@nestjs/bull';
@@ -26,6 +27,7 @@ import { WebsitesModule } from '@modules/websites/websites.module';
 import { BlogsModule } from '@modules/blogs/blogs.module';
 import { FilesModule } from '@core/files/files.module';
 import { SponsorsModule } from '@modules/sponsors/sponsors.module';
+import { ContactsModule } from '@modules/contacts/contacts.module';
 import { ClsModule } from 'nestjs-cls';
 import { WebhookModule } from './webhook/webhook.module';
 import { randomUUID } from 'crypto';
@@ -102,12 +104,37 @@ const redisQueueImports =
           req.headers['x-correlation-id'] || randomUUID(),
       },
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 100,
-      },
-    ]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'short',
+          ttl: seconds(1),
+          limit: 10,
+        },
+        {
+          name: 'medium',
+          ttl: seconds(60),
+          limit: 100,
+        },
+        {
+          name: 'long',
+          ttl: seconds(3600),
+          limit: 5000,
+        },
+      ],
+      // Enable rate-limit response headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
+      setHeaders: true,
+      // Custom 429 error message
+      errorMessage: 'Rate limit exceeded. Please slow down and try again later.',
+      // Use Redis storage in production/when Redis is enabled for distributed rate limiting
+      ...(useRedis
+        ? {
+            storage: new ThrottlerStorageRedisService(
+              `redis://${envConfig.REDIS_HOST || process.env.REDIS_HOST || 'localhost'}:${envConfig.REDIS_PORT || process.env.REDIS_PORT || '6379'}`,
+            ),
+          }
+        : {}),
+    }),
     CacheModule.registerAsync({
       isGlobal: true,
       imports: [ConfigModule],
@@ -158,6 +185,7 @@ const redisQueueImports =
     BlogsModule,
     FilesModule,
     SponsorsModule,
+    ContactsModule,
     WebhookModule,
     ...redisQueueImports,
   ],

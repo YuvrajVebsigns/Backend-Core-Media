@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ThrottlerException } from '@nestjs/throttler';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -31,6 +32,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       typeof exceptionResponse === 'object' && 'message' in exceptionResponse
         ? (exceptionResponse as any).message
         : exceptionResponse;
+
+    // Enhanced 429 response for rate-limited requests
+    if (exception instanceof ThrottlerException) {
+      const retryAfter = response.getHeader('Retry-After');
+      const errorDetails = {
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        timestamp: new Date().toISOString(),
+        path: request.url,
+        method: request.method,
+        message: 'Rate limit exceeded. Please slow down and try again later.',
+        retryAfter: retryAfter ? Number(retryAfter) : 60,
+      };
+
+      this.logger.warn(
+        `THROTTLED: ${request.method} ${request.url} - IP: ${request.ip}`,
+      );
+
+      response.status(HttpStatus.TOO_MANY_REQUESTS).json(errorDetails);
+      return;
+    }
 
     const errorDetails = {
       statusCode: status,

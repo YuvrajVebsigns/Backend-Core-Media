@@ -9,8 +9,10 @@ import { RedisHealthIndicator } from './redis.health';
 import { SystemHealthIndicator } from './system.health';
 import { StorageHealthIndicator } from './storage.health';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiTags('System')
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(

@@ -52,6 +52,14 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         group: 'content management',
       },
       {
+        name: 'Contacts',
+        path: '/contacts',
+        permissionKey: 'contacts.view',
+        icon: 'mail',
+        order: 5,
+        group: 'content management',
+      },
+      {
         name: 'Events',
         path: '/events',
         permissionKey: 'events.view',
