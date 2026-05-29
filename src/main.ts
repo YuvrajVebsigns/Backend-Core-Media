@@ -90,8 +90,31 @@ async function bootstrap() {
 
   app.use(helmet());
 
+  const allowedOrigins = [
+    'https://admin.uatcoremedia.vebsigns.com',
+    'https://admin.uatcoremedia.vebsigns.com/',
+    'https://backend.uatcoremedia.vebsigns.com',
+    'https://backend.uatcoremedia.vebsigns.com/',
+  ];
+
   app.enableCors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
+        /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
+
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
@@ -122,6 +145,7 @@ async function bootstrap() {
     .setTitle('Core Media API')
     .setDescription('The Core Media API documentation (Version 1)')
     .setVersion('1.0')
+    .addServer('https://backend.uatcoremedia.vebsigns.com', 'Test Server')
     .addServer(serverUrl, 'Local Development')
     .addBearerAuth()
     .addBearerAuth(
