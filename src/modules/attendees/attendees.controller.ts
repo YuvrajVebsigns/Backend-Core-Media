@@ -5,6 +5,8 @@ import {
   Body,
   Patch,
   Param,
+  Delete,
+  Query,
   UseGuards,
   Headers,
 } from '@nestjs/common';
@@ -15,10 +17,21 @@ import {
   ApiParam,
   ApiResponse,
   ApiHeader,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
-import { RegisterAttendeeDto } from './dto/attendee.dto';
+import {
+  RegisterAttendeeDto,
+  CreateAttendeeDto,
+  UpdateAttendeeDto,
+  QueryAttendeeDto,
+} from './dto/attendee.dto';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { PermissionGuard } from '@common/guards/permission.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { Permission } from '@common/decorators/permission.decorator';
+import { SystemUserRole } from '@common/enums/role.enum';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('attendees')
@@ -94,6 +107,61 @@ export class AttendeesController {
   @ApiResponse({ status: 200, description: 'Successfully retrieved attendee count.' })
   getCountByEvent(@Param('eventId') eventId: string) {
     return this.attendeesService.getCountByEvent(eventId);
+  }
+
+  @ApiTags('Admin | Attendees')
+  @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.view')
+  @ApiOperation({ summary: 'Get all attendees with query filter (Admin)' })
+  findAll(@Query() query: QueryAttendeeDto) {
+    return this.attendeesService.findAll(query);
+  }
+
+  @ApiTags('Admin | Attendees')
+  @Get(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.view')
+  @ApiOperation({ summary: 'Get an attendee by ID (Admin)' })
+  findOne(@Param('id') id: string) {
+    return this.attendeesService.findOne(id);
+  }
+
+  @ApiTags('Admin | Attendees')
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.create')
+  @ApiOperation({ summary: 'Manually create/invite an attendee (Admin)' })
+  create(@Body() createDto: CreateAttendeeDto) {
+    return this.attendeesService.create(createDto);
+  }
+
+  @ApiTags('Admin | Attendees')
+  @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.update')
+  @ApiOperation({ summary: 'Update attendee profile details (Admin)' })
+  update(@Param('id') id: string, @Body() updateDto: UpdateAttendeeDto) {
+    return this.attendeesService.update(id, updateDto);
+  }
+
+  @ApiTags('Admin | Attendees')
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.delete')
+  @ApiOperation({ summary: 'Delete/Cancel an attendee registration (Admin)' })
+  remove(@Param('id') id: string) {
+    return this.attendeesService.remove(id);
   }
 
   @ApiTags('Website | Attendees')
