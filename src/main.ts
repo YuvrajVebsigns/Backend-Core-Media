@@ -168,6 +168,7 @@ async function bootstrap() {
     .addTag('Admin | Events', 'Event CMS management (admin)')
     .addTag('Admin | Sponsors', 'Sponsor management (admin)')
     .addTag('Admin | Attendees', 'Event attendee management and check-in (admin)')
+    .addTag('Admin | Registrees', 'Global unique CRM lead/contact tracking and history management (admin)')
     .addTag('Admin | Contacts', 'Contact form submission and response management')
     .addTag('Website | Websites', 'Public website endpoints')
     .addTag('Website | Pages', 'Public website page endpoints')

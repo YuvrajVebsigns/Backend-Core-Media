@@ -45,6 +45,13 @@ export class Attendee extends BaseSchema {
   websiteId?: MongooseSchema.Types.ObjectId;
 
   @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Registree',
+    required: false,
+  })
+  registreeId?: MongooseSchema.Types.ObjectId;
+
+  @Prop({
     type: String,
     enum: Object.values(AttendeeStatus),
     default: AttendeeStatus.INVITED,
