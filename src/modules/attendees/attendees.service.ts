@@ -51,12 +51,16 @@ export class AttendeesService {
     await this.jobsService.addJob('emails', 'send-event-registration', {
       email: savedAttendee.email,
       name: savedAttendee.name,
+      organization: savedAttendee.organization || '',
       eventName: event.title,
       passCode: savedAttendee.passCode,
       qrCode: savedAttendee.qrCode,
       startDate: event.startDate,
       endDate: event.endDate,
       location: event.location?.address || 'Online',
+      sponsors: event.sponsors
+        ? event.sponsors.map((s: any) => s.name || s.companyName || s)
+        : [],
     });
 
     return savedAttendee;
@@ -81,8 +85,34 @@ export class AttendeesService {
     return attendee.save();
   }
 
+  async findByPassCode(passCode: string): Promise<Attendee> {
+    const attendee = await this.attendeeModel
+      .findOne({ passCode })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'sponsors',
+        },
+      })
+      .exec();
+
+    if (!attendee) {
+      throw new NotFoundException(`Invalid pass code: ${passCode}`);
+    }
+
+    return attendee;
+  }
+
   async findAllByEvent(eventId: string): Promise<Attendee[]> {
-    return this.attendeeModel.find({ eventId: eventId as any }).exec();
+    return this.attendeeModel
+      .find({ eventId: eventId as any })
+      .populate({
+        path: 'eventId',
+        populate: {
+          path: 'sponsors',
+        },
+      })
+      .exec();
   }
 
   private generatePassCode(): string {

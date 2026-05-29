@@ -25,7 +25,8 @@ export class EventManagementService {
       );
     }
     const createdEvent = new this.eventModel(createEventDto);
-    return createdEvent.save();
+    const savedEvent = await createdEvent.save();
+    return this.findOne(savedEvent._id.toString());
   }
 
   async findAll(
@@ -79,6 +80,8 @@ export class EventManagementService {
   ): Promise<EventManagement> {
     const updatedEvent = await this.eventModel
       .findByIdAndUpdate(id, updateEventDto, { new: true })
+      .populate('websites')
+      .populate('sponsors')
       .exec();
     if (!updatedEvent) {
       throw new NotFoundException(`Event with ID ${id} not found`);

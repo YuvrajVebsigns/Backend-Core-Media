@@ -34,6 +34,9 @@ export class Attendee extends BaseSchema {
   @Prop({ trim: true })
   phone: string;
 
+  @Prop({ trim: true })
+  organization: string;
+
   @Prop({
     type: String,
     enum: Object.values(AttendeeStatus),

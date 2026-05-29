@@ -19,8 +19,18 @@ export class EmailProcessor {
 
   @Process('send-event-registration')
   async handleEventRegistration(job: Job) {
-    const { email, name, eventName, passCode, startDate, endDate, location } =
-      job.data;
+    const {
+      email,
+      name,
+      organization,
+      eventName,
+      passCode,
+      qrCode,
+      startDate,
+      endDate,
+      location,
+      sponsors,
+    } = job.data;
 
     this.logger.debug(
       `[Background Job Started] Sending event registration email to ${email} for ${eventName}...`,
@@ -36,15 +46,23 @@ export class EmailProcessor {
     // Simulate background processing delay
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
+    const sponsorsText =
+      sponsors && sponsors.length > 0
+        ? `\n      Proudly Sponsored by: ${sponsors.join(', ')}`
+        : '';
+
+    const orgText = organization ? ` (${organization})` : '';
+
     this.logger.debug(`
       [Email Sent to ${email}]
-      Hi ${name},
+      Hi ${name}${orgText},
       You have successfully registered for ${eventName}!
+      
       Your Pass Code: ${passCode}
       Date: ${new Date(startDate).toLocaleString()}
-      Location: ${location}
+      Location: ${location}${sponsorsText}
       Add to Calendar: ${calendarUrl}
-      [QR Code Attached]
+      [QR Code Attached: ${qrCode ? qrCode.substring(0, 50) + '...' : 'N/A'}]
     `);
 
     this.logger.debug(
