@@ -76,6 +76,21 @@ export class Attendee extends BaseSchema {
 
   @Prop({
     type: {
+      userId: MongooseSchema.Types.ObjectId,
+      name: String,
+      email: String,
+    },
+    required: false,
+    _id: false,
+  })
+  checkedInBy?: {
+    userId: MongooseSchema.Types.ObjectId;
+    name: string;
+    email: string;
+  };
+
+  @Prop({
+    type: {
       name: String,
       countryCode: String,
       phoneNumber: String,

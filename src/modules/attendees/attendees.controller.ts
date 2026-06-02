@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -47,8 +48,16 @@ export class AdminAttendeesController {
   @ApiResponse({ status: 200, description: 'Successfully checked in.' })
   @ApiResponse({ status: 400, description: 'Attendee is already checked in or blocked.' })
   @ApiResponse({ status: 404, description: 'Passcode is invalid.' })
-  checkIn(@Param('passCode') passCode: string) {
-    return this.attendeesService.checkIn(passCode);
+  checkIn(@Param('passCode') passCode: string, @Request() req: any) {
+    const user = req?.user;
+    const checkedInBy = user
+      ? {
+          userId: user.id,
+          name: user.fullName || user.name || 'System User',
+          email: user.email,
+        }
+      : undefined;
+    return this.attendeesService.checkIn(passCode, checkedInBy);
   }
 
   @Get('event/:eventId')
