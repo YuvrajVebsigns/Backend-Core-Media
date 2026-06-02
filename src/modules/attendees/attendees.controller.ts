@@ -8,7 +8,6 @@ import {
   Delete,
   Query,
   UseGuards,
-  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,12 +15,9 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiResponse,
-  ApiHeader,
-  ApiQuery,
 } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import {
-  RegisterAttendeeDto,
   CreateAttendeeDto,
   UpdateAttendeeDto,
   QueryAttendeeDto,
@@ -32,42 +28,17 @@ import { PermissionGuard } from '@common/guards/permission.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { Permission } from '@common/decorators/permission.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
-import { Throttle } from '@nestjs/throttler';
 
-@Controller('attendees')
-export class AttendeesController {
+@ApiTags('Admin | Attendees')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
+@Controller('admin/attendees')
+export class AdminAttendeesController {
   constructor(private readonly attendeesService: AttendeesService) {}
 
-  @ApiTags('Website | Attendees')
-  @Post('register')
-  @Throttle({
-    short: { ttl: 1000, limit: 2 },
-    medium: { ttl: 60000, limit: 5 },
-    long: { ttl: 3600000, limit: 50 },
-  })
-  @ApiOperation({
-    summary: 'Register for an event',
-    description: 'Registers a new attendee for the specified event and schedules a welcome/pass email notification.',
-  })
-  @ApiResponse({ status: 201, description: 'Successfully registered for the event.' })
-  @ApiResponse({ status: 409, description: 'Already registered for this event with this email.' })
-  @ApiResponse({ status: 404, description: 'Specified event not found.' })
-  @ApiHeader({
-    name: 'x-website-id',
-    description: 'Optional website ID from which the registration originated.',
-    required: false,
-  })
-  register(
-    @Body() registerDto: RegisterAttendeeDto,
-    @Headers('x-website-id') websiteId?: string,
-  ) {
-    return this.attendeesService.register(registerDto, websiteId);
-  }
-
-  @ApiTags('Admin | Attendees')
   @Patch(':passCode/check-in')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.update')
   @ApiOperation({
     summary: 'Mark attendance at registration desk',
     description: 'Verifies the passcode and marks the attendee as checked in.',
@@ -80,10 +51,9 @@ export class AttendeesController {
     return this.attendeesService.checkIn(passCode);
   }
 
-  @ApiTags('Admin | Attendees')
   @Get('event/:eventId')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.view')
   @ApiOperation({
     summary: 'Get all attendees for an event',
     description: 'Fetches the list of all registered attendees for a specific event with nested event and sponsor details.',
@@ -95,10 +65,9 @@ export class AttendeesController {
     return this.attendeesService.findAllByEvent(eventId);
   }
 
-  @ApiTags('Admin | Attendees')
   @Get('event/:eventId/count')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('registrations.view')
   @ApiOperation({
     summary: 'Get attendee count for an event',
     description: 'Fetches the count of all registered attendees for a specific event.',
@@ -109,10 +78,7 @@ export class AttendeesController {
     return this.attendeesService.getCountByEvent(eventId);
   }
 
-  @ApiTags('Admin | Attendees')
   @Get()
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('registrations.view')
   @ApiOperation({ summary: 'Get all attendees with query filter (Admin)' })
@@ -120,10 +86,7 @@ export class AttendeesController {
     return this.attendeesService.findAll(query);
   }
 
-  @ApiTags('Admin | Attendees')
   @Get(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('registrations.view')
   @ApiOperation({ summary: 'Get an attendee by ID (Admin)' })
@@ -131,10 +94,7 @@ export class AttendeesController {
     return this.attendeesService.findOne(id);
   }
 
-  @ApiTags('Admin | Attendees')
   @Post()
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('registrations.create')
   @ApiOperation({ summary: 'Manually create/invite an attendee (Admin)' })
@@ -142,10 +102,7 @@ export class AttendeesController {
     return this.attendeesService.create(createDto);
   }
 
-  @ApiTags('Admin | Attendees')
   @Patch(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('registrations.update')
   @ApiOperation({ summary: 'Update attendee profile details (Admin)' })
@@ -153,27 +110,11 @@ export class AttendeesController {
     return this.attendeesService.update(id, updateDto);
   }
 
-  @ApiTags('Admin | Attendees')
   @Delete(':id')
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('registrations.delete')
   @ApiOperation({ summary: 'Delete/Cancel an attendee registration (Admin)' })
   remove(@Param('id') id: string) {
     return this.attendeesService.remove(id);
-  }
-
-  @ApiTags('Website | Attendees')
-  @Get('pass/:passCode')
-  @ApiOperation({
-    summary: 'Get attendee details by pass code',
-    description: 'Retrieves public attendee registration info populated with event and sponsor details.',
-  })
-  @ApiParam({ name: 'passCode', description: 'Unique passcode of the attendee.' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved attendee pass details.' })
-  @ApiResponse({ status: 404, description: 'Passcode is invalid.' })
-  findByPassCode(@Param('passCode') passCode: string) {
-    return this.attendeesService.findByPassCode(passCode);
   }
 }

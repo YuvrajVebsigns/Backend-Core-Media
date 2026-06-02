@@ -83,9 +83,12 @@ export class EventsSeeder implements OnApplicationBootstrap {
         .replace(/ /g, '-')
         .replace(/[^\w-]/g, '');
 
-      const existing = await this.eventService
-        .findAll({ status: template.status })
-        .then((events) => events.find((e) => e.slug === slug));
+      let existing: any = null;
+      try {
+        existing = await this.eventService.findBySlug(slug);
+      } catch (e) {
+        // Event does not exist yet
+      }
 
       if (!existing) {
         const startDate = new Date();

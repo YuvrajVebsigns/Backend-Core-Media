@@ -88,9 +88,15 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
+  const configService = app.get(ConfigService);
+
   app.use(helmet());
 
   const allowedOrigins = [
+    `http://localhost:${configService.get<number>('PORT')}`,
+    `http://localhost:${configService.get<number>('PORT')}/`,
+    `http://localhost:3000`,
+    `http://localhost:3000`,
     'https://admin.uatcoremedia.vebsigns.com',
     'https://admin.uatcoremedia.vebsigns.com/',
     'https://backend.uatcoremedia.vebsigns.com',
@@ -107,7 +113,10 @@ async function bootstrap() {
       const isAllowed =
         allowedOrigins.includes(origin) ||
         /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
-        /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
+        /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) ||
+        /\.vebsigns\.com$/.test(origin) ||
+        /(^|\.)coremediagroup\.com$/.test(origin) ||
+        /^https?:\/\//.test(origin);
 
       if (isAllowed) {
         callback(null, true);
@@ -135,8 +144,6 @@ async function bootstrap() {
 
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads' });
-
-  const configService = app.get(ConfigService);
 
   const port = configService.get<number>('PORT') || 3000;
   const serverUrl = `http://localhost:${port}`;

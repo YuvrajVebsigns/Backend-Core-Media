@@ -21,10 +21,15 @@ export class RegisterAttendeeDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: '+1234567890', required: false })
+  @ApiProperty({ example: '+91', required: false })
   @IsString()
   @IsOptional()
-  phone?: string;
+  countryCode?: string;
+
+  @ApiProperty({ example: '9876543210', required: false })
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 
   @ApiProperty({ example: 'Acme Corp', required: false })
   @IsString()
@@ -60,6 +65,16 @@ export class UpdateAttendeeDto {
   @IsString()
   @IsOptional()
   organization?: string;
+
+  @ApiProperty({ example: '+91', required: false })
+  @IsString()
+  @IsOptional()
+  countryCode?: string;
+
+  @ApiProperty({ example: '9876543210', required: false })
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 
   @ApiProperty({ example: '507f1f77bcf86cd799439011', required: false })
   @IsMongoId()
@@ -105,4 +120,14 @@ export class QueryAttendeeDto {
   @IsString()
   @IsOptional()
   email?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  countryCode?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 }

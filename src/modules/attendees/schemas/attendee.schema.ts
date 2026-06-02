@@ -31,8 +31,11 @@ export class Attendee extends BaseSchema {
   @Prop({ required: true, trim: true, lowercase: true })
   email: string;
 
-  @Prop({ trim: true })
-  phone: string;
+  @Prop({ trim: true, index: true })
+  countryCode: string;
+
+  @Prop({ trim: true, index: true })
+  phoneNumber: string;
 
   @Prop({ trim: true })
   organization: string;
@@ -70,6 +73,37 @@ export class Attendee extends BaseSchema {
 
   @Prop({ type: Date })
   checkedInAt: Date;
+
+  @Prop({
+    type: {
+      name: String,
+      countryCode: String,
+      phoneNumber: String,
+      organization: String,
+      websiteId: { type: MongooseSchema.Types.ObjectId, ref: 'Website' },
+      eventId: { type: MongooseSchema.Types.ObjectId, ref: 'Event' },
+      passCode: String,
+      qrCode: String,
+      attended: { type: Boolean, default: false },
+      attendedAt: Date,
+      savedAt: { type: Date, default: Date.now },
+    },
+    required: false,
+    _id: false,
+  })
+  registrationDetails?: {
+    name: string;
+    countryCode?: string;
+    phoneNumber?: string;
+    organization?: string;
+    websiteId?: MongooseSchema.Types.ObjectId;
+    eventId?: MongooseSchema.Types.ObjectId;
+    passCode?: string;
+    qrCode?: string;
+    attended: boolean;
+    attendedAt?: Date;
+    savedAt: Date;
+  };
 }
 
 export const AttendeeSchema = SchemaFactory.createForClass(Attendee);

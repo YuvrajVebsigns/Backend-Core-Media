@@ -12,10 +12,15 @@ export class UpdateRegistreeDto {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ example: '+1234567890', required: false })
+  @ApiProperty({ example: '+91', required: false })
   @IsString()
   @IsOptional()
-  phone?: string;
+  countryCode?: string;
+
+  @ApiProperty({ example: '9876543210', required: false })
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
 
   @ApiProperty({ example: 'Acme Corp', required: false })
   @IsString()
