@@ -133,7 +133,10 @@ export class AttendeesService {
     return savedAttendee;
   }
 
-  async checkIn(passCode: string): Promise<Attendee> {
+  async checkIn(
+    passCode: string,
+    checkedInBy?: { userId: string; name: string; email: string },
+  ): Promise<Attendee> {
     const attendee = await this.attendeeModel.findOne({ passCode }).exec();
     if (!attendee) {
       throw new NotFoundException(`Invalid pass code: ${passCode}`);
@@ -149,6 +152,14 @@ export class AttendeesService {
 
     attendee.status = AttendeeStatus.CHECKED_IN;
     attendee.checkedInAt = new Date();
+
+    if (checkedInBy) {
+      attendee.set('checkedInBy', {
+        userId: new Types.ObjectId(checkedInBy.userId),
+        name: checkedInBy.name,
+        email: checkedInBy.email,
+      });
+    }
 
     if (attendee.registrationDetails) {
       attendee.registrationDetails.attended = true;
@@ -530,12 +541,19 @@ export class AttendeesService {
       const regObj: any = registree.toObject();
       const regAttendees = attendeesMap.get(registree._id.toString()) || [];
       regObj.eventIds = regAttendees.map((a) => a.eventId);
-      regObj.history = regAttendees.map((a) => ({
-        ...a.registrationDetails,
-        attended: a.status === AttendeeStatus.CHECKED_IN,
-        attendedAt: a.checkedInAt,
-        savedAt: a.registeredAt || a.createdAt,
-      }));
+      regObj.history = regAttendees.map((a) => {
+        const plainAttendee = a.toObject();
+        const eventObj = plainAttendee.eventId;
+        return {
+          ...plainAttendee.registrationDetails,
+          id: plainAttendee.id || plainAttendee._id?.toString(),
+          eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+          event: eventObj,
+          attended: a.status === AttendeeStatus.CHECKED_IN,
+          attendedAt: a.checkedInAt,
+          savedAt: a.registeredAt || a.createdAt,
+        };
+      });
       return regObj;
     });
 
@@ -568,12 +586,19 @@ export class AttendeesService {
 
     const regObj: any = registree.toObject();
     regObj.eventIds = regAttendees.map((a) => a.eventId);
-    regObj.history = regAttendees.map((a) => ({
-      ...a.registrationDetails,
-      attended: a.status === AttendeeStatus.CHECKED_IN,
-      attendedAt: a.checkedInAt,
-      savedAt: a.registeredAt || a.createdAt,
-    }));
+    regObj.history = regAttendees.map((a) => {
+      const plainAttendee = a.toObject();
+      const eventObj = plainAttendee.eventId;
+      return {
+        ...plainAttendee.registrationDetails,
+        id: plainAttendee.id || plainAttendee._id?.toString(),
+        eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+        event: eventObj,
+        attended: a.status === AttendeeStatus.CHECKED_IN,
+        attendedAt: a.checkedInAt,
+        savedAt: a.registeredAt || a.createdAt,
+      };
+    });
 
     return regObj;
   }
