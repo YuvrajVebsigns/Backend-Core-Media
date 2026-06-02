@@ -22,7 +22,7 @@ import { Types } from 'mongoose';
 @UseGuards(WebsiteAuthGuard)
 @Controller('website/events')
 export class WebsiteEventsController {
-  constructor(private readonly eventService: EventsService) {}
+  constructor(private readonly eventService: EventsService) { }
 
   @Get()
   @ApiOperation({

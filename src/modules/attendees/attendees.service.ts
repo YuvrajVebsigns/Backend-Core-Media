@@ -530,12 +530,19 @@ export class AttendeesService {
       const regObj: any = registree.toObject();
       const regAttendees = attendeesMap.get(registree._id.toString()) || [];
       regObj.eventIds = regAttendees.map((a) => a.eventId);
-      regObj.history = regAttendees.map((a) => ({
-        ...a.registrationDetails,
-        attended: a.status === AttendeeStatus.CHECKED_IN,
-        attendedAt: a.checkedInAt,
-        savedAt: a.registeredAt || a.createdAt,
-      }));
+      regObj.history = regAttendees.map((a) => {
+        const plainAttendee = a.toObject();
+        const eventObj = plainAttendee.eventId;
+        return {
+          ...plainAttendee.registrationDetails,
+          id: plainAttendee.id || plainAttendee._id?.toString(),
+          eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+          event: eventObj,
+          attended: a.status === AttendeeStatus.CHECKED_IN,
+          attendedAt: a.checkedInAt,
+          savedAt: a.registeredAt || a.createdAt,
+        };
+      });
       return regObj;
     });
 
@@ -568,12 +575,19 @@ export class AttendeesService {
 
     const regObj: any = registree.toObject();
     regObj.eventIds = regAttendees.map((a) => a.eventId);
-    regObj.history = regAttendees.map((a) => ({
-      ...a.registrationDetails,
-      attended: a.status === AttendeeStatus.CHECKED_IN,
-      attendedAt: a.checkedInAt,
-      savedAt: a.registeredAt || a.createdAt,
-    }));
+    regObj.history = regAttendees.map((a) => {
+      const plainAttendee = a.toObject();
+      const eventObj = plainAttendee.eventId;
+      return {
+        ...plainAttendee.registrationDetails,
+        id: plainAttendee.id || plainAttendee._id?.toString(),
+        eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+        event: eventObj,
+        attended: a.status === AttendeeStatus.CHECKED_IN,
+        attendedAt: a.checkedInAt,
+        savedAt: a.registeredAt || a.createdAt,
+      };
+    });
 
     return regObj;
   }

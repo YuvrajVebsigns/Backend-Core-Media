@@ -24,14 +24,16 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   constructor(
     private reflector: Reflector,
     private urlService: UrlService,
-  ) {}
+  ) { }
 
   intercept(
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<StandardResponse<T>> {
     const request = context.switchToHttp().getRequest();
-    const showMetadata = request.query.showMetadata === 'true';
+    const showMetadata =
+      request.query.showMetadata === 'true' ||
+      request.query.showMetaData === 'true';
 
     const responseMessage = this.reflector.get<string>(
       RESPONSE_MESSAGE_METADATA,
