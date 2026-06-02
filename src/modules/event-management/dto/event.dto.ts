@@ -174,3 +174,33 @@ export class CreateEventDto {
 }
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {}
+
+export class QueryEventDto {
+  @ApiProperty({ required: false, default: 1 })
+  @IsOptional()
+  page?: number;
+
+  @ApiProperty({ required: false, default: 10 })
+  @IsOptional()
+  limit?: number;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @ApiProperty({ enum: EventStatus, required: false })
+  @IsEnum(EventStatus)
+  @IsOptional()
+  status?: EventStatus;
+
+  @ApiProperty({ enum: EventType, required: false })
+  @IsEnum(EventType)
+  @IsOptional()
+  type?: EventType;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  websiteId?: string;
+}

@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Event, EventStatus } from './schemas/event.schema';
+import { Event, EventStatus, EventType } from './schemas/event.schema';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 
 @Injectable()
@@ -30,8 +30,15 @@ export class EventsService {
   }
 
   async findAll(
-    filters: { websiteId?: string; status?: EventStatus } = {},
-  ): Promise<Event[]> {
+    filters: {
+      websiteId?: string;
+      status?: EventStatus;
+      page?: number;
+      limit?: number;
+      search?: string;
+      type?: EventType;
+    } = {},
+  ): Promise<any> {
     const query: any = {};
 
     if (filters.websiteId) {
@@ -42,6 +49,69 @@ export class EventsService {
       query.status = filters.status;
     }
 
+    if (filters.type) {
+      query.type = filters.type;
+    }
+
+    if (filters.search) {
+      const searchRegex = { $regex: filters.search, $options: 'i' };
+      query.$or = [
+        { title: searchRegex },
+        { slug: searchRegex },
+        { excerpt: searchRegex },
+        { 'location.city': searchRegex },
+        { 'location.address': searchRegex },
+      ];
+    }
+
+    // Default to active events
+    query.isActive = { $ne: false };
+
+    // If page & limit are specified, return paginated results
+    if (filters.page && filters.limit) {
+      const page = Math.max(1, Number(filters.page));
+      const limit = Math.max(1, Number(filters.limit));
+      const skip = (page - 1) * limit;
+
+      const [events, total] = await Promise.all([
+        this.eventModel
+          .find(query)
+          .populate('websites')
+          .populate('sponsors')
+          .sort({ startDate: 1 })
+          .skip(skip)
+          .limit(limit)
+          .exec(),
+        this.eventModel.countDocuments(query).exec(),
+      ]);
+
+      const eventsWithRegistrations = await Promise.all(
+        events.map(async (event) => {
+          let totalRegistrations = 0;
+          try {
+            const attendeeModel = this.eventModel.db.model('Attendee');
+            totalRegistrations = await attendeeModel
+              .countDocuments({ eventId: event._id })
+              .exec();
+          } catch (e) {
+            // Model not compiled yet fallback
+          }
+
+          const eventJson = event.toJSON();
+          eventJson.totalRegistrations = totalRegistrations;
+          return eventJson;
+        }),
+      );
+
+      return {
+        data: eventsWithRegistrations,
+        total,
+        page,
+        limit,
+      };
+    }
+
+    // Otherwise, return traditional flat array (fully backwards-compatible)
     const events = await this.eventModel
       .find(query)
       .populate('websites')
@@ -67,7 +137,7 @@ export class EventsService {
       }),
     );
 
-    return eventsWithRegistrations as any;
+    return eventsWithRegistrations;
   }
 
   async findOne(id: string): Promise<Event> {

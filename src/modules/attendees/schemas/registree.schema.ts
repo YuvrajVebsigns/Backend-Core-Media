@@ -13,20 +13,17 @@ export class Registree extends BaseSchema {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ required: true, trim: true, lowercase: true, index: true })
+  @Prop({ required: true, trim: true, lowercase: true, unique: true, index: true })
   email: string;
 
   @Prop({ trim: true, index: true })
-  phone: string;
+  countryCode: string;
+
+  @Prop({ trim: true, index: true })
+  phoneNumber: string;
 
   @Prop({ trim: true })
   organization: string;
-
-  @Prop({
-    type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Event' }],
-    default: [],
-  })
-  eventIds: MongooseSchema.Types.ObjectId[];
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
@@ -34,36 +31,6 @@ export class Registree extends BaseSchema {
     required: false,
   })
   websiteId?: MongooseSchema.Types.ObjectId;
-
-  @Prop({
-    type: [
-      {
-        name: String,
-        phone: String,
-        organization: String,
-        websiteId: { type: MongooseSchema.Types.ObjectId, ref: 'Website' },
-        eventId: { type: MongooseSchema.Types.ObjectId, ref: 'Event' },
-        passCode: String,
-        qrCode: String,
-        attended: { type: Boolean, default: false },
-        attendedAt: Date,
-        savedAt: { type: Date, default: Date.now },
-      },
-    ],
-    default: [],
-  })
-  history: Array<{
-    name: string;
-    phone: string;
-    organization: string;
-    websiteId?: MongooseSchema.Types.ObjectId;
-    eventId?: MongooseSchema.Types.ObjectId;
-    passCode?: string;
-    qrCode?: string;
-    attended: boolean;
-    attendedAt?: Date;
-    savedAt: Date;
-  }>;
 }
 
 export const RegistreeSchema = SchemaFactory.createForClass(Registree);

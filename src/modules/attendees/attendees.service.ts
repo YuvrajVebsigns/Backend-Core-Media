@@ -28,7 +28,7 @@ export class AttendeesService {
     @InjectModel(Registree.name) private registreeModel: Model<Registree>,
     private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
-  ) {}
+  ) { }
 
   async register(
     registerDto: RegisterAttendeeDto,
@@ -50,37 +50,27 @@ export class AttendeesService {
     const passCode = this.generatePassCode();
     const qrCode = await QRCode.toDataURL(passCode);
 
-    // CRM business logic: Find or create the Registree by email/phone first
+    // CRM business logic: Find or create the Registree by email first
     let registreeId: any = undefined;
     try {
       let registree = await this.registreeModel.findOne({ email: registerDto.email }).exec();
-
-      const historyEntry = {
-        name: registerDto.name,
-        phone: registerDto.phone || '',
-        organization: registerDto.organization || '',
-        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
-        eventId: new Types.ObjectId(event.id) as any,
-        passCode,
-        qrCode,
-        attended: false,
-        savedAt: new Date(),
-      };
 
       if (!registree) {
         registree = new this.registreeModel({
           name: registerDto.name,
           email: registerDto.email,
-          phone: registerDto.phone || '',
+          countryCode: registerDto.countryCode || '',
+          phoneNumber: registerDto.phoneNumber || '',
           organization: registerDto.organization || '',
-          eventIds: [new Types.ObjectId(event.id) as any],
           websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
-          history: [historyEntry],
         });
       } else {
         registree.name = registerDto.name;
-        if (registerDto.phone) {
-          registree.phone = registerDto.phone;
+        if (registerDto.countryCode) {
+          registree.countryCode = registerDto.countryCode;
+        }
+        if (registerDto.phoneNumber) {
+          registree.phoneNumber = registerDto.phoneNumber;
         }
         if (registerDto.organization) {
           registree.organization = registerDto.organization;
@@ -88,32 +78,38 @@ export class AttendeesService {
         if (websiteId) {
           registree.websiteId = new Types.ObjectId(websiteId) as any;
         }
-
-        const eventObjId = new Types.ObjectId(event.id);
-        const hasEvent = registree.eventIds.some(
-          (id) => id.toString() === eventObjId.toString()
-        );
-        if (!hasEvent) {
-          registree.eventIds.push(eventObjId as any);
-        }
-
-        registree.history.push(historyEntry);
       }
 
       const savedRegistree = await registree.save();
       registreeId = savedRegistree._id;
     } catch (e) {
-      // Gracefully log/ignore database write errors for CRM to prevent registration block
       console.error('CRM Registree tracking error:', e);
     }
 
     const attendee = new this.attendeeModel({
-      ...registerDto,
+      eventId: event.id as any,
+      name: registerDto.name,
+      email: registerDto.email,
+      countryCode: registerDto.countryCode || '',
+      phoneNumber: registerDto.phoneNumber || '',
+      organization: registerDto.organization || '',
       passCode,
       qrCode,
       status: AttendeeStatus.REGISTERED,
       ...(websiteId ? { websiteId: websiteId as any } : {}),
       ...(registreeId ? { registreeId: registreeId as any } : {}),
+      registrationDetails: {
+        name: registerDto.name,
+        countryCode: registerDto.countryCode || '',
+        phoneNumber: registerDto.phoneNumber || '',
+        organization: registerDto.organization || '',
+        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
+        eventId: new Types.ObjectId(event.id) as any,
+        passCode,
+        qrCode,
+        attended: false,
+        savedAt: new Date(),
+      },
     });
 
     const savedAttendee = await attendee.save();
@@ -153,12 +149,14 @@ export class AttendeesService {
 
     attendee.status = AttendeeStatus.CHECKED_IN;
     attendee.checkedInAt = new Date();
-    const savedAttendee = await attendee.save();
 
-    // Sync status to global Registree history timeline
-    await this.syncRegistreeCheckIn(savedAttendee.email, savedAttendee.eventId.toString());
+    if (attendee.registrationDetails) {
+      attendee.registrationDetails.attended = true;
+      attendee.registrationDetails.attendedAt = new Date();
+      attendee.markModified('registrationDetails');
+    }
 
-    return savedAttendee;
+    return attendee.save();
   }
 
   async findByPassCode(passCode: string): Promise<Attendee> {
@@ -218,12 +216,21 @@ export class AttendeesService {
       matchQuery.email = query.email;
     }
 
+    if (query.countryCode) {
+      matchQuery.countryCode = query.countryCode;
+    }
+
+    if (query.phoneNumber) {
+      matchQuery.phoneNumber = query.phoneNumber;
+    }
+
     if (query.search) {
       const searchRegex = { $regex: query.search, $options: 'i' };
       matchQuery.$or = [
         { name: searchRegex },
         { email: searchRegex },
-        { phone: searchRegex },
+        { countryCode: searchRegex },
+        { phoneNumber: searchRegex },
         { organization: searchRegex },
         { passCode: searchRegex },
       ];
@@ -285,39 +292,27 @@ export class AttendeesService {
     const passCode = this.generatePassCode();
     const qrCode = await QRCode.toDataURL(passCode);
 
-    // CRM business logic: Find or create the Registree by email/phone first
+    // CRM business logic: Find or create the Registree by email first
     let registreeId: any = undefined;
     try {
       let registree = await this.registreeModel.findOne({ email: createDto.email }).exec();
-
-      const isAttended = createDto.status === AttendeeStatus.CHECKED_IN;
-      const historyEntry = {
-        name: createDto.name,
-        phone: createDto.phone || '',
-        organization: createDto.organization || '',
-        websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
-        eventId: new Types.ObjectId(event.id) as any,
-        passCode,
-        qrCode,
-        attended: isAttended,
-        attendedAt: isAttended ? new Date() : undefined,
-        savedAt: new Date(),
-      };
 
       if (!registree) {
         registree = new this.registreeModel({
           name: createDto.name,
           email: createDto.email,
-          phone: createDto.phone || '',
+          countryCode: createDto.countryCode || '',
+          phoneNumber: createDto.phoneNumber || '',
           organization: createDto.organization || '',
-          eventIds: [new Types.ObjectId(event.id) as any],
           websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
-          history: [historyEntry],
         });
       } else {
         registree.name = createDto.name;
-        if (createDto.phone) {
-          registree.phone = createDto.phone;
+        if (createDto.countryCode) {
+          registree.countryCode = createDto.countryCode;
+        }
+        if (createDto.phoneNumber) {
+          registree.phoneNumber = createDto.phoneNumber;
         }
         if (createDto.organization) {
           registree.organization = createDto.organization;
@@ -325,16 +320,6 @@ export class AttendeesService {
         if (createDto.websiteId) {
           registree.websiteId = new Types.ObjectId(createDto.websiteId) as any;
         }
-
-        const eventObjId = new Types.ObjectId(event.id);
-        const hasEvent = registree.eventIds.some(
-          (id) => id.toString() === eventObjId.toString()
-        );
-        if (!hasEvent) {
-          registree.eventIds.push(eventObjId as any);
-        }
-
-        registree.history.push(historyEntry);
       }
 
       const savedRegistree = await registree.save();
@@ -344,12 +329,30 @@ export class AttendeesService {
     }
 
     const attendee = new this.attendeeModel({
-      ...createDto,
+      eventId: event.id as any,
+      name: createDto.name,
+      email: createDto.email,
+      countryCode: createDto.countryCode || '',
+      phoneNumber: createDto.phoneNumber || '',
+      organization: createDto.organization || '',
       passCode,
       qrCode,
       status: createDto.status || AttendeeStatus.REGISTERED,
       ...(createDto.websiteId ? { websiteId: new Types.ObjectId(createDto.websiteId) } : {}),
       ...(registreeId ? { registreeId: registreeId as any } : {}),
+      registrationDetails: {
+        name: createDto.name,
+        countryCode: createDto.countryCode || '',
+        phoneNumber: createDto.phoneNumber || '',
+        organization: createDto.organization || '',
+        websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
+        eventId: new Types.ObjectId(event.id) as any,
+        passCode,
+        qrCode,
+        attended: createDto.status === AttendeeStatus.CHECKED_IN,
+        attendedAt: createDto.status === AttendeeStatus.CHECKED_IN ? new Date() : undefined,
+        savedAt: new Date(),
+      },
       registeredAt: new Date(),
     });
 
@@ -384,34 +387,67 @@ export class AttendeesService {
       throw new NotFoundException(`Attendee with ID ${id} not found`);
     }
 
-    let shouldSyncCheckIn = false;
     if (updateDto.status !== undefined) {
       if (updateDto.status === AttendeeStatus.CHECKED_IN && attendee.status !== AttendeeStatus.CHECKED_IN) {
         attendee.checkedInAt = new Date();
-        shouldSyncCheckIn = true;
+        if (attendee.registrationDetails) {
+          attendee.registrationDetails.attended = true;
+          attendee.registrationDetails.attendedAt = new Date();
+          attendee.markModified('registrationDetails');
+        }
+      } else if (updateDto.status !== AttendeeStatus.CHECKED_IN) {
+        attendee.checkedInAt = null as any;
+        if (attendee.registrationDetails) {
+          attendee.registrationDetails.attended = false;
+          attendee.registrationDetails.attendedAt = null as any;
+          attendee.markModified('registrationDetails');
+        }
       }
       attendee.status = updateDto.status;
     }
 
     if (updateDto.organization !== undefined) {
       attendee.organization = updateDto.organization;
+      if (attendee.registrationDetails) {
+        attendee.registrationDetails.organization = updateDto.organization;
+        attendee.markModified('registrationDetails');
+      }
+    }
+
+    if (updateDto.countryCode !== undefined) {
+      attendee.countryCode = updateDto.countryCode;
+      if (attendee.registrationDetails) {
+        attendee.registrationDetails.countryCode = updateDto.countryCode;
+        attendee.markModified('registrationDetails');
+      }
+    }
+
+    if (updateDto.phoneNumber !== undefined) {
+      attendee.phoneNumber = updateDto.phoneNumber;
+      if (attendee.registrationDetails) {
+        attendee.registrationDetails.phoneNumber = updateDto.phoneNumber;
+        attendee.markModified('registrationDetails');
+      }
     }
 
     if (updateDto.eventId !== undefined) {
       await this.eventService.findOne(updateDto.eventId);
       attendee.eventId = new Types.ObjectId(updateDto.eventId) as any;
+      if (attendee.registrationDetails) {
+        attendee.registrationDetails.eventId = new Types.ObjectId(updateDto.eventId) as any;
+        attendee.markModified('registrationDetails');
+      }
     }
 
     if (updateDto.websiteId !== undefined) {
       attendee.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
+      if (attendee.registrationDetails) {
+        attendee.registrationDetails.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
+        attendee.markModified('registrationDetails');
+      }
     }
 
-    const saved = await attendee.save();
-
-    if (shouldSyncCheckIn) {
-      await this.syncRegistreeCheckIn(saved.email, saved.eventId.toString());
-    }
-
+    await attendee.save();
     return this.findOne(id);
   }
 
@@ -437,7 +473,12 @@ export class AttendeesService {
     }
 
     if (query.eventId) {
-      matchQuery.eventIds = new Types.ObjectId(query.eventId);
+      const attendees = await this.attendeeModel
+        .find({ eventId: new Types.ObjectId(query.eventId) as any })
+        .select('registreeId')
+        .exec();
+      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      matchQuery._id = { $in: registreeIds };
     }
 
     if (query.websiteId) {
@@ -449,7 +490,8 @@ export class AttendeesService {
       matchQuery.$or = [
         { name: searchRegex },
         { email: searchRegex },
-        { phone: searchRegex },
+        { countryCode: searchRegex },
+        { phoneNumber: searchRegex },
         { organization: searchRegex },
       ];
     }
@@ -457,10 +499,7 @@ export class AttendeesService {
     const [data, total] = await Promise.all([
       this.registreeModel
         .find(matchQuery)
-        .populate('eventIds', 'title type status startDate endDate bannerImage location')
         .populate('websiteId', 'name domain logo')
-        .populate('history.eventId', 'title')
-        .populate('history.websiteId', 'name')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -468,8 +507,40 @@ export class AttendeesService {
       this.registreeModel.countDocuments(matchQuery).exec(),
     ]);
 
+    // Populate registration history and events lists dynamically from Attendee collection
+    const registreeIds = data.map((r) => r._id);
+    const allAttendees = await this.attendeeModel
+      .find({ registreeId: { $in: registreeIds as any[] } })
+      .populate('eventId', 'title type status startDate endDate bannerImage location')
+      .populate('websiteId', 'name')
+      .exec();
+
+    const attendeesMap = new Map<string, any[]>();
+    for (const attendee of allAttendees) {
+      const rId = attendee.registreeId?.toString();
+      if (rId) {
+        if (!attendeesMap.has(rId)) {
+          attendeesMap.set(rId, []);
+        }
+        attendeesMap.get(rId)!.push(attendee);
+      }
+    }
+
+    const populatedData = data.map((registree) => {
+      const regObj: any = registree.toObject();
+      const regAttendees = attendeesMap.get(registree._id.toString()) || [];
+      regObj.eventIds = regAttendees.map((a) => a.eventId);
+      regObj.history = regAttendees.map((a) => ({
+        ...a.registrationDetails,
+        attended: a.status === AttendeeStatus.CHECKED_IN,
+        attendedAt: a.checkedInAt,
+        savedAt: a.registeredAt || a.createdAt,
+      }));
+      return regObj;
+    });
+
     return {
-      data,
+      data: populatedData,
       meta: {
         total,
         page,
@@ -479,20 +550,32 @@ export class AttendeesService {
     };
   }
 
-  async findOneRegistree(id: string): Promise<Registree> {
+  async findOneRegistree(id: string): Promise<any> {
     const registree = await this.registreeModel
       .findById(id)
-      .populate('eventIds')
       .populate('websiteId')
-      .populate('history.eventId', 'title')
-      .populate('history.websiteId', 'name')
       .exec();
 
     if (!registree) {
       throw new NotFoundException(`Registree with ID ${id} not found`);
     }
 
-    return registree;
+    const regAttendees = await this.attendeeModel
+      .find({ registreeId: new Types.ObjectId(id) as any })
+      .populate('eventId')
+      .populate('websiteId')
+      .exec();
+
+    const regObj: any = registree.toObject();
+    regObj.eventIds = regAttendees.map((a) => a.eventId);
+    regObj.history = regAttendees.map((a) => ({
+      ...a.registrationDetails,
+      attended: a.status === AttendeeStatus.CHECKED_IN,
+      attendedAt: a.checkedInAt,
+      savedAt: a.registeredAt || a.createdAt,
+    }));
+
+    return regObj;
   }
 
   async updateRegistree(id: string, updateDto: UpdateRegistreeDto): Promise<Registree> {
@@ -511,8 +594,12 @@ export class AttendeesService {
       }
       registree.email = updateDto.email;
     }
-    if (updateDto.phone !== undefined) {
-      registree.phone = updateDto.phone;
+
+    if (updateDto.countryCode !== undefined) {
+      registree.countryCode = updateDto.countryCode;
+    }
+    if (updateDto.phoneNumber !== undefined) {
+      registree.phoneNumber = updateDto.phoneNumber;
     }
     if (updateDto.organization !== undefined) {
       registree.organization = updateDto.organization;
@@ -532,28 +619,6 @@ export class AttendeesService {
 
     if (!result) {
       throw new NotFoundException(`Registree with ID ${id} not found`);
-    }
-  }
-
-  async syncRegistreeCheckIn(email: string, eventId: string): Promise<void> {
-    try {
-      const registree = await this.registreeModel.findOne({ email }).exec();
-      if (registree) {
-        let updated = false;
-        registree.history = registree.history.map((entry) => {
-          if (entry.eventId && entry.eventId.toString() === eventId.toString()) {
-            entry.attended = true;
-            entry.attendedAt = new Date();
-            updated = true;
-          }
-          return entry;
-        });
-        if (updated) {
-          await registree.save();
-        }
-      }
-    } catch (e) {
-      console.error('Failed to sync Registree check-in status:', e);
     }
   }
 
