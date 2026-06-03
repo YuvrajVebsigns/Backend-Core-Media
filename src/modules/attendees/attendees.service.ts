@@ -547,7 +547,7 @@ export class AttendeesService {
         return {
           ...plainAttendee.registrationDetails,
           id: plainAttendee.id || plainAttendee._id?.toString(),
-          eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+          eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
           event: eventObj,
           attended: a.status === AttendeeStatus.CHECKED_IN,
           attendedAt: a.checkedInAt,
@@ -592,7 +592,7 @@ export class AttendeesService {
       return {
         ...plainAttendee.registrationDetails,
         id: plainAttendee.id || plainAttendee._id?.toString(),
-        eventId: eventObj?._id?.toString() || eventObj?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+        eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
         event: eventObj,
         attended: a.status === AttendeeStatus.CHECKED_IN,
         attendedAt: a.checkedInAt,

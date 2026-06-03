@@ -24,9 +24,13 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { WebhookService } from './webhook.service';
 import { ConfigService } from '@nestjs/config';
 import { SkipThrottle } from '@nestjs/throttler';
+import { WebhookService, DEPLOY_REGISTRY } from './webhook.service';
+
+// ---------------------------------------------------------------------------
+// DTOs
+// ---------------------------------------------------------------------------
 
 class RepositoryDto {
   @ApiProperty({
@@ -57,6 +61,22 @@ export class GitHubWebhookDto {
   repository: RepositoryDto;
 }
 
+// ---------------------------------------------------------------------------
+// GitHub repo name  →  deployment target registry
+//
+// To add a new GitHub repo / deployment mapping, add ONE entry here.
+// No handler logic needs to change.
+// ---------------------------------------------------------------------------
+const GITHUB_REPO_MAP: Record<string, string> = {
+  'Backend-Core-Media': 'backend',
+  'Admin-Panel-Frontend': 'frontend',
+  'www.core-mediagroup.com': 'website-1',
+};
+
+// ---------------------------------------------------------------------------
+// Controller
+// ---------------------------------------------------------------------------
+
 @ApiTags('System')
 @SkipThrottle()
 @Controller('webhook')
@@ -66,14 +86,14 @@ export class WebhookController {
   constructor(
     private readonly webhookService: WebhookService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @Post('github')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'GitHub Webhook endpoint for Auto-Deployment',
     description:
-      'Processes incoming GitHub Webhook events (push/ping), validates the HMAC-SHA256 signature, and runs deployment script.',
+      'Processes incoming GitHub Webhook events (push/ping), validates the HMAC-SHA256 signature, and runs the deployment script.',
   })
   @ApiHeader({
     name: 'x-hub-signature-256',
@@ -91,14 +111,8 @@ export class WebhookController {
     type: GitHubWebhookDto,
     description: 'GitHub Webhook payload containing push details.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Webhook event processed successfully.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized request - Invalid or missing HMAC signature.',
-  })
+  @ApiResponse({ status: 200, description: 'Webhook event processed successfully.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized – invalid or missing HMAC signature.' })
   async handleGitHubWebhook(
     @Req() req: any,
     @Headers('x-hub-signature-256') signature: string,
@@ -107,85 +121,79 @@ export class WebhookController {
   ) {
     this.logger.log(`Received GitHub Webhook event: "${event}"`);
 
-    // 1. Support GitHub's initial ping connection check
+    // 1. Respond to GitHub's initial ping handshake
     if (event === 'ping') {
-      this.logger.log(
-        'GitHub Webhook handshake "ping" received. Responding with pong.',
-      );
+      this.logger.log('GitHub Webhook "ping" received. Responding with pong.');
       return { status: 'success', message: 'pong' };
     }
 
-    // 2. Perform HMAC-SHA256 signature verification
-    const isSignatureValid = this.webhookService.verifySignature(
-      req.rawBody,
-      signature,
-    );
-    if (!isSignatureValid) {
-      this.logger.error(
-        'Webhook signature verification failed. Rejecting request.',
-      );
+    // 2. HMAC-SHA256 signature verification
+    if (!this.webhookService.verifySignature(req.rawBody, signature)) {
+      this.logger.error('Webhook signature verification failed. Rejecting request.');
       throw new UnauthorizedException('Invalid webhook signature');
     }
 
-    // 3. For push events, process branch & repository and trigger deploy
+    // 3. Handle push events
     if (event === 'push') {
-      const gitHubPayload = payload as GitHubWebhookDto;
-      const ref = gitHubPayload.ref; // e.g. refs/heads/main
-      const repoName = gitHubPayload.repository?.name; // e.g. Backend-Core-Media or Admin-Panel-Frontend
+      return this.handlePush(payload as GitHubWebhookDto);
+    }
 
-      this.logger.log(
-        `Push event details: Repository = ${repoName}, Branch = ${ref}`,
+    return { status: 'success', message: `Event "${event}" is ignored.` };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private helpers
+  // ---------------------------------------------------------------------------
+
+  private handlePush(payload: GitHubWebhookDto) {
+    const repoName = payload.repository?.name;
+    const ref = payload.ref;
+
+    this.logger.log(`Push event: repo = ${repoName}, ref = ${ref}`);
+
+    // Resolve which deployment target this repo maps to
+    const target = GITHUB_REPO_MAP[repoName];
+    if (!target) {
+      this.logger.warn(
+        `Push from unknown/unsupported repository "${repoName}". Skipping.`,
       );
-
-      const backendBranch =
-        this.configService.get<string>('DEPLOY_BACKEND_BRANCH') ||
-        'refs/heads/main';
-      const frontendBranch =
-        this.configService.get<string>('DEPLOY_FRONTEND_BRANCH') ||
-        'refs/heads/main';
-
-      let triggered = false;
-
-      if (repoName === 'Backend-Core-Media') {
-        if (ref === backendBranch) {
-          triggered = true;
-          // Spawn deployment asynchronously (non-blocking)
-          this.webhookService.deploy('backend');
-        } else {
-          this.logger.warn(
-            `Push to branch ${ref} does not match backend target branch ${backendBranch}. Skipping deployment.`,
-          );
-        }
-      } else if (repoName === 'Admin-Panel-Frontend') {
-        if (ref === frontendBranch) {
-          triggered = true;
-          // Spawn deployment asynchronously (non-blocking)
-          this.webhookService.deploy('frontend');
-        } else {
-          this.logger.warn(
-            `Push to branch ${ref} does not match frontend target branch ${frontendBranch}. Skipping deployment.`,
-          );
-        }
-      } else {
-        this.logger.warn(
-          `Push event from unknown or unsupported repository: "${repoName}". Skipping.`,
-        );
-      }
-
       return {
         status: 'success',
-        message: triggered
-          ? `Deployment triggered in the background for ${repoName}.`
-          : `Criteria not met for ${repoName} (Branch: ${ref}). No deploy triggered.`,
+        message: `Repository "${repoName}" is not mapped to any deployment. Skipping.`,
         repository: repoName,
         branch: ref,
-        triggered,
+        triggered: false,
       };
     }
 
+    // Resolve the expected branch for this target from env
+    const registryEntry = DEPLOY_REGISTRY[target];
+    const expectedBranch =
+      this.configService.get<string>(registryEntry.branchKey) ||
+      'refs/heads/main';
+
+    if (ref !== expectedBranch) {
+      this.logger.warn(
+        `Push to "${ref}" does not match target branch "${expectedBranch}" for "${target}". Skipping.`,
+      );
+      return {
+        status: 'success',
+        message: `Branch "${ref}" does not match target branch "${expectedBranch}" for "${target}". No deploy triggered.`,
+        repository: repoName,
+        branch: ref,
+        triggered: false,
+      };
+    }
+
+    // Fire deployment asynchronously (non-blocking)
+    this.webhookService.deploy(target);
+
     return {
       status: 'success',
-      message: `Event "${event}" is ignored.`,
+      message: `Deployment triggered in the background for "${repoName}" (→ ${target}).`,
+      repository: repoName,
+      branch: ref,
+      triggered: true,
     };
   }
 }
