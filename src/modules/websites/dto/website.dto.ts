@@ -84,6 +84,16 @@ export class CreateWebsiteDto {
   @ValidateNested()
   @Type(() => SeoMetadataDto)
   seo?: SeoMetadataDto;
+
+  @ApiPropertyOptional({
+    example: ['website.uatcoremedia.vebsigns.com', 'staging.coremediagroup.com'],
+    description:
+      'Additional (whitelabel / staging / UAT) domains that are allowed to obtain a token for this website.',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  allowedDomains?: string[];
 }
 
 export class UpdateWebsiteDto extends PartialType(CreateWebsiteDto) {}

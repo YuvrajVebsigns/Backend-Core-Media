@@ -185,7 +185,11 @@ export class WebsitesService {
       .find({ isDeleted: null, isActive: true })
       .exec();
     const matchedWebsite = websites.find(
-      (w) => normalizeDomain(w.domain) === targetDomain,
+      (w) =>
+        normalizeDomain(w.domain) === targetDomain ||
+        (w.allowedDomains ?? []).some(
+          (d) => normalizeDomain(d) === targetDomain,
+        ),
     );
 
     if (!matchedWebsite) {
