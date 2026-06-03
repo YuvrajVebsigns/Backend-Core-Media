@@ -37,6 +37,13 @@ export class Website extends BaseSchema {
   @Prop({ required: true, unique: true, trim: true })
   domain: string;
 
+  /**
+   * Additional domains (e.g. UAT/staging) that are allowed to obtain a token
+   * for this website. Useful for whitelabeling or environment overrides.
+   */
+  @Prop({ type: [String], default: [] })
+  allowedDomains: string[];
+
   @Prop({ trim: true })
   logo: string;
 
