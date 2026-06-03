@@ -96,11 +96,13 @@ async function bootstrap() {
     `http://localhost:${configService.get<number>('PORT')}`,
     `http://localhost:${configService.get<number>('PORT')}/`,
     `http://localhost:3000`,
-    `http://localhost:3000`,
+    `http://localhost:3000/`,
     'https://admin.uatcoremedia.vebsigns.com',
     'https://admin.uatcoremedia.vebsigns.com/',
     'https://backend.uatcoremedia.vebsigns.com',
     'https://backend.uatcoremedia.vebsigns.com/',
+    'https://website.uatcoremedia.vebsigns.com',
+    'https://website.uatcoremedia.vebsigns.com/',
   ];
 
   app.enableCors({

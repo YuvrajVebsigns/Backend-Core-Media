@@ -5,6 +5,38 @@ import { exec } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Deployment target registry.
+ *
+ * To add a new deployment target, add a single entry here.
+ * No other code in this file (or the controller) needs to change.
+ *
+ * Keys:
+ *   dirKey  — env var that holds the directory path
+ *   cmdKey  — env var that holds the shell command
+ *   branchKey — env var that holds the target branch (e.g. refs/heads/main)
+ */
+export const DEPLOY_REGISTRY: Record<
+  string,
+  { dirKey: string; cmdKey: string; branchKey: string }
+> = {
+  backend: {
+    dirKey: 'DEPLOY_BACKEND_DIR',
+    cmdKey: 'DEPLOY_BACKEND_CMD',
+    branchKey: 'DEPLOY_BACKEND_BRANCH',
+  },
+  frontend: {
+    dirKey: 'DEPLOY_FRONTEND_DIR',
+    cmdKey: 'DEPLOY_FRONTEND_CMD',
+    branchKey: 'DEPLOY_FRONTEND_BRANCH',
+  },
+  'website-1': {
+    dirKey: 'DEPLOY_WEBSITE_1_DIR',
+    cmdKey: 'DEPLOY_WEBSITE-1_CMD',
+    branchKey: 'DEPLOY_WEBSITE_1_BRANCH',
+  },
+};
+
 @Injectable()
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
@@ -12,7 +44,7 @@ export class WebhookService {
   constructor(private readonly configService: ConfigService) {}
 
   /**
-   * Verifies the GitHub signature of incoming webhooks to ensure authenticity.
+   * Verifies the GitHub HMAC-SHA256 signature to ensure authenticity.
    */
   verifySignature(rawBody: Buffer, signatureHeader: string): boolean {
     const secret = this.configService.get<string>('DEPLOY_WEBHOOK_SECRET');
@@ -49,33 +81,44 @@ export class WebhookService {
       return false;
     }
 
-    // Protect against timing attacks using constant-time comparison
+    // Constant-time comparison to protect against timing attacks
     return crypto.timingSafeEqual(calculatedBuffer, signatureBuffer);
   }
 
   /**
-   * Triggers the deployment of frontend or backend in a non-blocking background child process.
+   * Triggers the deployment for a registered target in a non-blocking
+   * background child process.
+   *
+   * @param target — a key from DEPLOY_REGISTRY (e.g. "backend", "frontend", "website-1")
    */
-  deploy(repo: 'backend' | 'frontend'): void {
-    const isBackend = repo === 'backend';
-    const targetDir = this.configService.get<string>(
-      isBackend ? 'DEPLOY_BACKEND_DIR' : 'DEPLOY_FRONTEND_DIR',
-    );
-    const command = this.configService.get<string>(
-      isBackend ? 'DEPLOY_BACKEND_CMD' : 'DEPLOY_FRONTEND_CMD',
-    );
-
-    if (!targetDir || !command) {
+  deploy(target: string): void {
+    const entry = DEPLOY_REGISTRY[target];
+    if (!entry) {
       this.logger.error(
-        `Deployment configurations for ${repo} are incomplete in the environment settings.`,
+        `Unknown deployment target "${target}". Register it in DEPLOY_REGISTRY.`,
       );
       return;
     }
 
-    this.logger.log(`Starting deployment process for ${repo}...`);
+    const targetDir = this.configService.get<string>(entry.dirKey);
+    const command = this.configService.get<string>(entry.cmdKey);
+
+    if (!targetDir || !command) {
+      this.logger.error(
+        `Deployment config for "${target}" is incomplete. ` +
+          `Check env vars: ${entry.dirKey}, ${entry.cmdKey}`,
+      );
+      return;
+    }
+
+    this.logger.log(`Starting deployment process for "${target}"...`);
 
     // Ensure logs directory exists
-    const logFilePath = path.join(process.cwd(), 'logs', `deploy-${repo}.log`);
+    const logFilePath = path.join(
+      process.cwd(),
+      'logs',
+      `deploy-${target}.log`,
+    );
     const logsDir = path.dirname(logFilePath);
     if (!fs.existsSync(logsDir)) {
       fs.mkdirSync(logsDir, { recursive: true });
@@ -92,7 +135,7 @@ export class WebhookService {
         `==================================================\n`,
     );
 
-    // Asynchronously spawn shell to execute git pull and build commands
+    // Spawn shell command asynchronously (non-blocking)
     const child = exec(command, { cwd: targetDir });
 
     child.stdout?.on('data', (data) => {
@@ -110,14 +153,15 @@ export class WebhookService {
           logFilePath,
           `\n✅ DEPLOYMENT SUCCESSFUL AT ${finishTime} (Exit Code: 0)\n`,
         );
-        this.logger.log(`Deployment for ${repo} completed successfully.`);
+        this.logger.log(`Deployment for "${target}" completed successfully.`);
       } else {
         fs.appendFileSync(
           logFilePath,
           `\n❌ DEPLOYMENT FAILED AT ${finishTime} (Exit Code: ${code})\n`,
         );
         this.logger.error(
-          `Deployment for ${repo} failed with code ${code}. Check logs/deploy-${repo}.log for details.`,
+          `Deployment for "${target}" failed with code ${code}. ` +
+            `Check logs/deploy-${target}.log for details.`,
         );
       }
     });
