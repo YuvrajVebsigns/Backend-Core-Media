@@ -62,6 +62,7 @@ export class AttendeesService {
           countryCode: registerDto.countryCode || '',
           phoneNumber: registerDto.phoneNumber || '',
           organization: registerDto.organization || '',
+          tags: ['registree'],
           websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
         });
       } else {
@@ -315,6 +316,7 @@ export class AttendeesService {
           countryCode: createDto.countryCode || '',
           phoneNumber: createDto.phoneNumber || '',
           organization: createDto.organization || '',
+          tags: ['registree'],
           websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
         });
       } else {
@@ -496,6 +498,10 @@ export class AttendeesService {
       matchQuery.websiteId = new Types.ObjectId(query.websiteId);
     }
 
+    if (query.tag) {
+      matchQuery.tags = query.tag;
+    }
+
     if (query.search) {
       const searchRegex = { $regex: query.search, $options: 'i' };
       matchQuery.$or = [
@@ -504,6 +510,7 @@ export class AttendeesService {
         { countryCode: searchRegex },
         { phoneNumber: searchRegex },
         { organization: searchRegex },
+        { city: searchRegex },
       ];
     }
 
@@ -628,6 +635,12 @@ export class AttendeesService {
     }
     if (updateDto.organization !== undefined) {
       registree.organization = updateDto.organization;
+    }
+    if (updateDto.city !== undefined) {
+      registree.city = updateDto.city;
+    }
+    if (updateDto.tags !== undefined) {
+      registree.tags = updateDto.tags;
     }
     if (updateDto.websiteId !== undefined) {
       registree.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
