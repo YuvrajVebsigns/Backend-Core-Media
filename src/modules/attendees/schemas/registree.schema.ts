@@ -25,6 +25,16 @@ export class Registree extends BaseSchema {
   @Prop({ trim: true })
   organization: string;
 
+  @Prop({ trim: true })
+  city: string;
+
+  @Prop({
+    type: [String],
+    default: ['registree'],
+    index: true,
+  })
+  tags: string[];
+
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     ref: 'Website',

@@ -62,6 +62,7 @@ export class AttendeesService {
           countryCode: registerDto.countryCode || '',
           phoneNumber: registerDto.phoneNumber || '',
           organization: registerDto.organization || '',
+          tags: ['registree'],
           websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
         });
       } else {
@@ -315,6 +316,7 @@ export class AttendeesService {
           countryCode: createDto.countryCode || '',
           phoneNumber: createDto.phoneNumber || '',
           organization: createDto.organization || '',
+          tags: ['registree'],
           websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
         });
       } else {
@@ -484,16 +486,24 @@ export class AttendeesService {
     }
 
     if (query.eventId) {
-      const attendees = await this.attendeeModel
-        .find({ eventId: new Types.ObjectId(query.eventId) as any })
-        .select('registreeId')
-        .exec();
-      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
-      matchQuery._id = { $in: registreeIds };
+      const registreeIds = await this.attendeeModel.distinct('registreeId', { 
+        eventId: new Types.ObjectId(query.eventId),
+        isDeleted: null
+      });
+      matchQuery._id = { $in: registreeIds.filter(Boolean) };
+    } else {
+      const registreeIds = await this.attendeeModel.distinct('registreeId', {
+        isDeleted: null
+      });
+      matchQuery._id = { $in: registreeIds.filter(Boolean) };
     }
 
     if (query.websiteId) {
       matchQuery.websiteId = new Types.ObjectId(query.websiteId);
+    }
+
+    if (query.tag) {
+      matchQuery.tags = query.tag;
     }
 
     if (query.search) {
@@ -504,6 +514,7 @@ export class AttendeesService {
         { countryCode: searchRegex },
         { phoneNumber: searchRegex },
         { organization: searchRegex },
+        { city: searchRegex },
       ];
     }
 
@@ -539,6 +550,7 @@ export class AttendeesService {
 
     const populatedData = data.map((registree) => {
       const regObj: any = registree.toObject();
+      regObj.joinedAt = regObj.createdAt;
       const regAttendees = attendeesMap.get(registree._id.toString()) || [];
       regObj.eventIds = regAttendees.map((a) => a.eventId);
       regObj.history = regAttendees.map((a) => {
@@ -585,6 +597,7 @@ export class AttendeesService {
       .exec();
 
     const regObj: any = registree.toObject();
+    regObj.joinedAt = regObj.createdAt;
     regObj.eventIds = regAttendees.map((a) => a.eventId);
     regObj.history = regAttendees.map((a) => {
       const plainAttendee = a.toObject();
@@ -628,6 +641,12 @@ export class AttendeesService {
     }
     if (updateDto.organization !== undefined) {
       registree.organization = updateDto.organization;
+    }
+    if (updateDto.city !== undefined) {
+      registree.city = updateDto.city;
+    }
+    if (updateDto.tags !== undefined) {
+      registree.tags = updateDto.tags;
     }
     if (updateDto.websiteId !== undefined) {
       registree.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
