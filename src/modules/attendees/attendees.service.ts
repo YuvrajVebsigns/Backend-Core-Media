@@ -486,16 +486,22 @@ export class AttendeesService {
     }
 
     if (query.eventId) {
-      const registreeIds = await this.attendeeModel.distinct('registreeId', { 
-        eventId: new Types.ObjectId(query.eventId),
-        isDeleted: null
-      });
-      matchQuery._id = { $in: registreeIds.filter(Boolean) };
+      const attendees = await this.attendeeModel
+        .find({ 
+          eventId: new Types.ObjectId(query.eventId) as any, 
+          isDeleted: null 
+        })
+        .select('registreeId')
+        .exec();
+      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      matchQuery._id = { $in: registreeIds };
     } else {
-      const registreeIds = await this.attendeeModel.distinct('registreeId', {
-        isDeleted: null
-      });
-      matchQuery._id = { $in: registreeIds.filter(Boolean) };
+      const attendees = await this.attendeeModel
+        .find({ isDeleted: null })
+        .select('registreeId')
+        .exec();
+      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      matchQuery._id = { $in: registreeIds };
     }
 
     if (query.websiteId) {
