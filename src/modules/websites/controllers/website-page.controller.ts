@@ -16,19 +16,29 @@ import { WebsitePageService } from '../services/website-page.service';
 @ApiTags('Website | Pages')
 @Controller('website/pages')
 export class WebsitePageController {
-  constructor(private readonly pageService: WebsitePageService) {}
+  constructor(private readonly pageService: WebsitePageService) { }
 
   // ----------------------------------------------------
   // PUBLIC WEBSITE ENDPOINTS
   // ----------------------------------------------------
 
+  @Get()
+  @UseGuards(WebsiteAuthGuard)
+  @ApiBearerAuth('website-token')
+  @ApiOperation({
+    summary: 'List all available pages with small details for the authenticated website',
+  })
+  async findAll(@CurrentWebsite() website: any) {
+    return this.pageService.findAllForWebsite(website.id);
+  }
+
   @Get(':slug')
   @UseGuards(WebsiteAuthGuard)
   @ApiBearerAuth('website-token')
   @ApiOperation({
-    summary: 'Get published page by slug for the authenticated website',
+    summary: 'Get page by slug for the authenticated website',
   })
   async findBySlug(@CurrentWebsite() website: any, @Param('slug') slug: string) {
-    return this.pageService.findBySlug(website.id, slug);
+    return this.pageService.findBySlugForWebsite(website.id, slug);
   }
 }

@@ -157,10 +157,23 @@ export class WebsitePageService {
       await this.unsetHomepageForSite(updateDto.siteId || existing.siteId.toString());
     }
 
+    const updateData: any = { ...updateDto, updatedBy: userId };
+
+    if (updateDto.status !== undefined && updateDto.status !== existing.status) {
+      if (updateDto.status === PageStatus.PUBLISHED) {
+        updateData.publishedAt = new Date();
+      } else if (
+        updateDto.status === PageStatus.DRAFT ||
+        updateDto.status === PageStatus.ARCHIVED
+      ) {
+        updateData.publishedAt = null;
+      }
+    }
+
     const updated = await this.pageModel
       .findOneAndUpdate(
         { _id: id },
-        { ...updateDto, updatedBy: userId },
+        updateData,
         { new: true },
       )
       .exec();
@@ -228,4 +241,34 @@ export class WebsitePageService {
 
     return duplicated.save();
   }
+
+  async findAllForWebsite(siteId: string): Promise<Partial<WebsitePage>[]> {
+    return this.pageModel
+      .find({ siteId: siteId as any, status: PageStatus.PUBLISHED, isDeleted: null })
+      .sort({ createdAt: -1 })
+      .select('title slug isHomepage status pageType createdAt updatedAt')
+      .exec();
+  }
+
+  async findBySlugForWebsite(siteId: string, slug: string, skipCache = false): Promise<WebsitePage> {
+    if (!skipCache) {
+      const cached = await this.cacheService.getPage(siteId, slug);
+      if (cached) return cached;
+    }
+
+    const page = await this.pageModel
+      .findOne({ siteId: siteId as any, status: PageStatus.PUBLISHED, slug, isDeleted: null })
+      .exec();
+
+    if (!page) {
+      throw new NotFoundException(`Page with slug '${slug}' not found for this website`);
+    }
+
+    if (!skipCache && page.status === PageStatus.PUBLISHED) {
+      await this.cacheService.setPage(siteId, slug, page);
+    }
+
+    return page;
+  }
 }
+
