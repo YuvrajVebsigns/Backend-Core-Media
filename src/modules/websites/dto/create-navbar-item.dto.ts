@@ -9,8 +9,9 @@ import {
   IsNumber,
   IsArray,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { MenuType } from '../enums/menu-type.enum';
 import { NavbarPosition } from '../enums/navbar-position.enum';
 
@@ -36,6 +37,7 @@ export class MenuItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ValidateIf((o) => o.pageId !== undefined && o.pageId !== null && o.pageId !== '' && o.pageId !== 'null')
   @IsMongoId()
   pageId?: string;
 
@@ -82,6 +84,7 @@ export class CreateNavbarItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ValidateIf((o) => o.pageId !== undefined && o.pageId !== null && o.pageId !== '' && o.pageId !== 'null')
   @IsMongoId()
   pageId?: string;
 
@@ -102,6 +105,7 @@ export class CreateNavbarItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @ValidateIf((o) => o.parentId !== undefined && o.parentId !== null && o.parentId !== '' && o.parentId !== 'null')
   @IsMongoId()
   parentId?: string;
 

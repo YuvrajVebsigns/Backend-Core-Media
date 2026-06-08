@@ -199,10 +199,4 @@ export class QuerySponsorDto extends PaginationQueryDto {
   @IsOptional()
   @IsMongoId()
   websiteId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true' || value === true)
-  showMetadata?: boolean;
 }

@@ -163,9 +163,4 @@ export class QueryBlogDto extends PaginationQueryDto {
   @IsEnum(BlogStatus)
   @IsOptional()
   status?: BlogStatus;
-
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === 'true' || value === true)
-  showMetadata?: boolean;
 }
