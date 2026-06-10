@@ -35,7 +35,7 @@ export class Navbar extends BaseSchema {
   isVisible: boolean;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Navbar' })
-  parentId?: MongooseSchema.Types.ObjectId; // Support nested hierarchies
+  parentId?: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: [MenuItemSchema], default: [] })
   items: MenuItem[];

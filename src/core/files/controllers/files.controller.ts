@@ -41,7 +41,7 @@ import { SystemUserRole } from '@common/enums/role.enum';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('admin/files')
 export class FilesController {
-  constructor(private readonly filesService: FilesService) {}
+  constructor(private readonly filesService: FilesService) { }
 
   // ─── POST /admin/files/upload ──────────────────────────────────────────────
 
@@ -71,6 +71,8 @@ export class FilesController {
             'users',
             'websites',
             'documents',
+            'reports',
+            'teams',
             'media',
           ],
         },

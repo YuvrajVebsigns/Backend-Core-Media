@@ -9,5 +9,7 @@ export enum FileModule {
   USERS = 'users',
   WEBSITES = 'websites',
   DOCUMENTS = 'documents',
+  REPORTS = 'reports',
+  TEAMS = 'teams',
   MEDIA = 'media',
 }

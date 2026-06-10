@@ -12,7 +12,7 @@ import { NavbarService } from '../services/navbar.service';
 @ApiTags('Website | Navbar')
 @Controller('website/navbar')
 export class NavbarController {
-  constructor(private readonly navbarService: NavbarService) {}
+  constructor(private readonly navbarService: NavbarService) { }
 
   @Get()
   @UseGuards(WebsiteAuthGuard)

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Schema as MongooseSchema } from 'mongoose';
+import { Schema as MongooseSchema, Types } from 'mongoose';
 import {
   BaseSchema,
   applySoftDeleteMiddleware,
@@ -41,6 +41,32 @@ export class Registree extends BaseSchema {
     required: false,
   })
   websiteId?: MongooseSchema.Types.ObjectId;
+
+  @Prop({
+    type: [{
+      reportId: { type: MongooseSchema.Types.ObjectId, ref: 'Report' },
+      downloadedAt: { type: Date, default: Date.now },
+      firstName: String,
+      lastName: String,
+      companyName: String,
+      designation: String,
+      industry: String,
+      phoneNumber: String,
+      countryCode: String,
+    }],
+    default: [],
+  })
+  downloadedReports?: Array<{
+    reportId: Types.ObjectId;
+    downloadedAt: Date;
+    firstName: string;
+    lastName: string;
+    companyName: string;
+    designation: string;
+    industry: string;
+    phoneNumber: string;
+    countryCode: string;
+  }>;
 }
 
 export const RegistreeSchema = SchemaFactory.createForClass(Registree);

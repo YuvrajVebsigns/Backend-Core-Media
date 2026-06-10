@@ -48,4 +48,12 @@ export class PaginationQueryDto {
     return value;
   })
   filters?: Record<string, any>;
+
+  @ApiPropertyOptional({ description: 'Show metadata in response' })
+  @IsOptional()
+  showMetadata?: any;
+
+  @ApiPropertyOptional({ description: 'Show metadata in response (alternative casing)' })
+  @IsOptional()
+  showMetaData?: any;
 }
