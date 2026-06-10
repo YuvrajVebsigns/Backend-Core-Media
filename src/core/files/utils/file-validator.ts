@@ -44,6 +44,8 @@ const MODULE_SIZE_LIMITS: Record<string, number> = {
   [FileModule.USERS]: 2 * 1024 * 1024, // 2 MB — avatars
   [FileModule.WEBSITES]: 5 * 1024 * 1024,
   [FileModule.DOCUMENTS]: 25 * 1024 * 1024, // 25 MB
+  [FileModule.REPORTS]: 25 * 1024 * 1024, // 25 MB
+  [FileModule.TEAMS]: 5 * 1024 * 1024, // 5 MB
   [FileModule.MEDIA]: 50 * 1024 * 1024, // 50 MB
 };
 

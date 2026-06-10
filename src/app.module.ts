@@ -29,6 +29,7 @@ import { FilesModule } from '@core/files/files.module';
 import { SponsorsModule } from '@modules/sponsors/sponsors.module';
 import { ContactsModule } from '@modules/contacts/contacts.module';
 import { NominationsModule } from '@modules/nominations/nominations.module';
+import { ReportsModule } from '@modules/reports/reports.module';
 import { ClsModule } from 'nestjs-cls';
 import { WebhookModule } from './webhook/webhook.module';
 import { randomUUID } from 'crypto';
@@ -188,6 +189,7 @@ const redisQueueImports =
     SponsorsModule,
     ContactsModule,
     NominationsModule,
+    ReportsModule,
     WebhookModule,
     ...redisQueueImports,
   ],

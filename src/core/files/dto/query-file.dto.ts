@@ -18,6 +18,7 @@ export class QueryFileDto extends PaginationQueryDto {
       'events',
       'users',
       'websites',
+      'reports',
       'documents',
       'media',
     ],
