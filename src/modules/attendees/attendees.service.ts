@@ -33,105 +33,97 @@ export class AttendeesService {
   async register(
     registerDto: RegisterAttendeeDto,
     websiteId?: string,
-  ): Promise<Attendee> {
+  ): Promise<any> {
     const event = await this.eventService.findOne(registerDto.eventId);
 
-    const existing = await this.attendeeModel
-      .findOne({
-        eventId: registerDto.eventId as any,
-        email: registerDto.email,
-      })
-      .exec();
+    // CRM business logic: Find or create the Registree by email first
+    let registree = await this.registreeModel.findOne({ email: registerDto.email }).exec();
 
-    if (existing) {
+    // Check if user is blocked globally or for any registrations
+    const blockedAttendee = await this.attendeeModel.findOne({
+      email: registerDto.email,
+      status: AttendeeStatus.BLOCKED,
+    }).exec();
+
+    const hasBlockedRegistration = registree?.registrations?.some(
+      (r: any) => r.status === 'BLOCKED',
+    );
+
+    if (blockedAttendee || hasBlockedRegistration) {
+      throw new BadRequestException('Your registration is blocked');
+    }
+
+    // Check if already registered (pending or approved)
+    const existingAttendee = await this.attendeeModel.findOne({
+      eventId: registerDto.eventId as any,
+      email: registerDto.email,
+    }).exec();
+
+    if (existingAttendee) {
       throw new ConflictException('You are already registered for this event');
     }
 
-    const passCode = this.generatePassCode();
-    const qrCode = await QRCode.toDataURL(passCode);
+    const existingReg = registree?.registrations?.find(
+      (r: any) => r.eventId.toString() === registerDto.eventId && r.status !== 'REJECTED',
+    );
 
-    // CRM business logic: Find or create the Registree by email first
-    let registreeId: any = undefined;
-    try {
-      let registree = await this.registreeModel.findOne({ email: registerDto.email }).exec();
-
-      if (!registree) {
-        registree = new this.registreeModel({
-          name: registerDto.name,
-          email: registerDto.email,
-          countryCode: registerDto.countryCode || '',
-          phoneNumber: registerDto.phoneNumber || '',
-          organization: registerDto.organization || '',
-          tags: ['registree'],
-          websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
-        });
-      } else {
-        registree.name = registerDto.name;
-        if (registerDto.countryCode) {
-          registree.countryCode = registerDto.countryCode;
-        }
-        if (registerDto.phoneNumber) {
-          registree.phoneNumber = registerDto.phoneNumber;
-        }
-        if (registerDto.organization) {
-          registree.organization = registerDto.organization;
-        }
-        if (websiteId) {
-          registree.websiteId = new Types.ObjectId(websiteId) as any;
-        }
+    if (existingReg) {
+      if (existingReg.status === 'APPROVED') {
+        throw new ConflictException('You are already registered for this event');
+      } else if (existingReg.status === 'PENDING') {
+        throw new ConflictException('Your registration for this event is pending approval');
+      } else if (existingReg.status === 'BLOCKED') {
+        throw new BadRequestException('Your registration is blocked');
       }
-
-      const savedRegistree = await registree.save();
-      registreeId = savedRegistree._id;
-    } catch (e) {
-      console.error('CRM Registree tracking error:', e);
     }
 
-    const attendee = new this.attendeeModel({
-      eventId: event.id as any,
+    if (!registree) {
+      registree = new this.registreeModel({
+        name: registerDto.name,
+        email: registerDto.email,
+        countryCode: registerDto.countryCode || '',
+        phoneNumber: registerDto.phoneNumber || '',
+        organization: registerDto.organization || '',
+        tags: ['registree'],
+        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
+      });
+    } else {
+      registree.name = registerDto.name;
+      if (registerDto.countryCode) {
+        registree.countryCode = registerDto.countryCode;
+      }
+      if (registerDto.phoneNumber) {
+        registree.phoneNumber = registerDto.phoneNumber;
+      }
+      if (registerDto.organization) {
+        registree.organization = registerDto.organization;
+      }
+      if (websiteId) {
+        registree.websiteId = new Types.ObjectId(websiteId) as any;
+      }
+    }
+
+    if (!registree.registrations) {
+      registree.registrations = [];
+    }
+
+    registree.registrations.push({
+      eventId: new Types.ObjectId(registerDto.eventId) as any,
       name: registerDto.name,
       email: registerDto.email,
       countryCode: registerDto.countryCode || '',
       phoneNumber: registerDto.phoneNumber || '',
       organization: registerDto.organization || '',
-      passCode,
-      qrCode,
-      status: AttendeeStatus.REGISTERED,
-      ...(websiteId ? { websiteId: websiteId as any } : {}),
-      ...(registreeId ? { registreeId: registreeId as any } : {}),
-      registrationDetails: {
-        name: registerDto.name,
-        countryCode: registerDto.countryCode || '',
-        phoneNumber: registerDto.phoneNumber || '',
-        organization: registerDto.organization || '',
-        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
-        eventId: new Types.ObjectId(event.id) as any,
-        passCode,
-        qrCode,
-        attended: false,
-        savedAt: new Date(),
-      },
+      status: 'PENDING',
+      registeredAt: new Date(),
     });
 
-    const savedAttendee = await attendee.save();
+    await registree.save();
 
-    // Send registration email via background job
-    await this.jobsService.addJob('emails', 'send-event-registration', {
-      email: savedAttendee.email,
-      name: savedAttendee.name,
-      organization: savedAttendee.organization || '',
-      eventName: event.title,
-      passCode: savedAttendee.passCode,
-      qrCode: savedAttendee.qrCode,
-      startDate: event.startDate,
-      endDate: event.endDate,
-      location: event.location?.address || 'Online',
-      sponsors: event.sponsors
-        ? event.sponsors.map((s: any) => s.name || s.companyName || s)
-        : [],
-    });
-
-    return savedAttendee;
+    return {
+      success: true,
+      message: 'Event Registration submitted successfully.',
+    };
   }
 
   async checkIn(
@@ -493,15 +485,22 @@ export class AttendeesService {
         })
         .select('registreeId')
         .exec();
-      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
-      matchQuery._id = { $in: registreeIds };
+      const approvedRegistreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      matchQuery.$or = [
+        { _id: { $in: approvedRegistreeIds } },
+        { 'registrations.eventId': new Types.ObjectId(query.eventId) }
+      ];
     } else {
       const attendees = await this.attendeeModel
         .find({ isDeleted: null })
         .select('registreeId')
         .exec();
-      const registreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
-      matchQuery._id = { $in: registreeIds };
+      const approvedRegistreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      matchQuery.$or = [
+        { _id: { $in: approvedRegistreeIds } },
+        { 'registrations.0': { $exists: true } },
+        { 'downloadedReports.0': { $exists: true } }
+      ];
     }
 
     if (query.websiteId) {
@@ -528,6 +527,7 @@ export class AttendeesService {
       this.registreeModel
         .find(matchQuery)
         .populate('websiteId', 'name domain logo')
+        .populate('registrations.eventId', 'title type status startDate endDate bannerImage location')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -558,8 +558,16 @@ export class AttendeesService {
       const regObj: any = registree.toObject();
       regObj.joinedAt = regObj.createdAt;
       const regAttendees = attendeesMap.get(registree._id.toString()) || [];
-      regObj.eventIds = regAttendees.map((a) => a.eventId);
-      regObj.history = regAttendees.map((a) => {
+      const registrationsList = regObj.registrations || [];
+
+      // Combine eventIds
+      const attendeeEventIds = regAttendees.map((a) => a.eventId);
+      const pendingOrRejectedEventIds = registrationsList
+        .filter((r: any) => r.status !== 'APPROVED')
+        .map((r: any) => r.eventId);
+      regObj.eventIds = [...attendeeEventIds, ...pendingOrRejectedEventIds];
+
+      const historyFromAttendees = regAttendees.map((a) => {
         const plainAttendee = a.toObject();
         const eventObj = plainAttendee.eventId;
         return {
@@ -567,11 +575,33 @@ export class AttendeesService {
           id: plainAttendee.id || plainAttendee._id?.toString(),
           eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
           event: eventObj,
+          status: 'APPROVED',
           attended: a.status === AttendeeStatus.CHECKED_IN,
           attendedAt: a.checkedInAt,
           savedAt: a.registeredAt || a.createdAt,
         };
       });
+
+      const historyFromRegistrations = registrationsList
+        .filter((r: any) => r.status !== 'APPROVED')
+        .map((r: any) => {
+          const eventObj = r.eventId;
+          return {
+            id: r._id?.toString(),
+            eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || r.eventId?.toString(),
+            event: eventObj,
+            name: r.name,
+            email: r.email,
+            countryCode: r.countryCode,
+            phoneNumber: r.phoneNumber,
+            organization: r.organization,
+            status: r.status,
+            attended: false,
+            savedAt: r.registeredAt,
+          };
+        });
+
+      regObj.history = [...historyFromAttendees, ...historyFromRegistrations];
       return regObj;
     });
 
@@ -590,6 +620,7 @@ export class AttendeesService {
     const registree = await this.registreeModel
       .findById(id)
       .populate('websiteId')
+      .populate('registrations.eventId', 'title type status startDate endDate bannerImage location')
       .exec();
 
     if (!registree) {
@@ -598,14 +629,22 @@ export class AttendeesService {
 
     const regAttendees = await this.attendeeModel
       .find({ registreeId: new Types.ObjectId(id) as any })
-      .populate('eventId')
-      .populate('websiteId')
+      .populate('eventId', 'title type status startDate endDate bannerImage location')
+      .populate('websiteId', 'name')
       .exec();
 
     const regObj: any = registree.toObject();
     regObj.joinedAt = regObj.createdAt;
-    regObj.eventIds = regAttendees.map((a) => a.eventId);
-    regObj.history = regAttendees.map((a) => {
+    const registrationsList = regObj.registrations || [];
+
+    // Combine eventIds
+    const attendeeEventIds = regAttendees.map((a) => a.eventId);
+    const pendingOrRejectedEventIds = registrationsList
+      .filter((r: any) => r.status !== 'APPROVED')
+      .map((r: any) => r.eventId);
+    regObj.eventIds = [...attendeeEventIds, ...pendingOrRejectedEventIds];
+
+    const historyFromAttendees = regAttendees.map((a) => {
       const plainAttendee = a.toObject();
       const eventObj = plainAttendee.eventId;
       return {
@@ -613,11 +652,33 @@ export class AttendeesService {
         id: plainAttendee.id || plainAttendee._id?.toString(),
         eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
         event: eventObj,
+        status: 'APPROVED',
         attended: a.status === AttendeeStatus.CHECKED_IN,
         attendedAt: a.checkedInAt,
         savedAt: a.registeredAt || a.createdAt,
       };
     });
+
+    const historyFromRegistrations = registrationsList
+      .filter((r: any) => r.status !== 'APPROVED')
+      .map((r: any) => {
+        const eventObj = r.eventId;
+        return {
+          id: r._id?.toString(),
+          eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || r.eventId?.toString(),
+          event: eventObj,
+          name: r.name,
+          email: r.email,
+          countryCode: r.countryCode,
+          phoneNumber: r.phoneNumber,
+          organization: r.organization,
+          status: r.status,
+          attended: false,
+          savedAt: r.registeredAt,
+        };
+      });
+
+    regObj.history = [...historyFromAttendees, ...historyFromRegistrations];
 
     return regObj;
   }
@@ -670,6 +731,144 @@ export class AttendeesService {
     if (!result) {
       throw new NotFoundException(`Registree with ID ${id} not found`);
     }
+  }
+
+  async approveRegistration(registreeId: string, eventId: string): Promise<any> {
+    const registree = await this.registreeModel.findById(registreeId).exec();
+    if (!registree) {
+      throw new NotFoundException(`Registree with ID ${registreeId} not found`);
+    }
+
+    const registration = registree.registrations?.find(
+      (r: any) => r.eventId.toString() === eventId,
+    );
+    if (!registration) {
+      throw new NotFoundException(`Registration for event ${eventId} not found`);
+    }
+
+    if (registration.status === 'APPROVED') {
+      throw new BadRequestException('Registration is already approved');
+    }
+
+    if (registration.status === 'BLOCKED') {
+      throw new BadRequestException('This registration is blocked');
+    }
+
+    const existingAttendee = await this.attendeeModel.findOne({
+      eventId: eventId as any,
+      email: registree.email,
+    }).exec();
+
+    if (existingAttendee) {
+      throw new ConflictException('Attendee already exists for this event');
+    }
+
+    registration.status = 'APPROVED';
+    registree.markModified('registrations');
+    await registree.save();
+
+    const event = await this.eventService.findOne(eventId);
+    const passCode = this.generatePassCode();
+    const qrCode = await QRCode.toDataURL(passCode);
+
+    const attendee = new this.attendeeModel({
+      eventId: event.id as any,
+      name: registration.name || registree.name,
+      email: registree.email,
+      countryCode: registration.countryCode || registree.countryCode || '',
+      phoneNumber: registration.phoneNumber || registree.phoneNumber || '',
+      organization: registration.organization || registree.organization || '',
+      passCode,
+      qrCode,
+      status: AttendeeStatus.REGISTERED,
+      websiteId: registree.websiteId,
+      registreeId: registree._id,
+      registrationDetails: {
+        name: registration.name || registree.name,
+        countryCode: registration.countryCode || registree.countryCode || '',
+        phoneNumber: registration.phoneNumber || registree.phoneNumber || '',
+        organization: registration.organization || registree.organization || '',
+        websiteId: registree.websiteId,
+        eventId: new Types.ObjectId(event.id) as any,
+        passCode,
+        qrCode,
+        attended: false,
+        savedAt: new Date(),
+      },
+    });
+
+    const savedAttendee = await attendee.save();
+
+    try {
+      await this.jobsService.addJob('emails', 'send-event-registration', {
+        email: savedAttendee.email,
+        name: savedAttendee.name,
+        organization: savedAttendee.organization || '',
+        eventName: event.title,
+        passCode: savedAttendee.passCode,
+        qrCode: savedAttendee.qrCode,
+        startDate: event.startDate,
+        endDate: event.endDate,
+        location: event.location?.address || 'Online',
+        sponsors: event.sponsors
+          ? event.sponsors.map((s: any) => s.name || s.companyName || s)
+          : [],
+      });
+    } catch (err) {
+      console.error('Failed to queue registration email:', err);
+    }
+
+    return { message: 'Registration approved successfully', attendee: savedAttendee };
+  }
+
+  async rejectRegistration(registreeId: string, eventId: string): Promise<any> {
+    const registree = await this.registreeModel.findById(registreeId).exec();
+    if (!registree) {
+      throw new NotFoundException(`Registree with ID ${registreeId} not found`);
+    }
+
+    const registration = registree.registrations?.find(
+      (r: any) => r.eventId.toString() === eventId,
+    );
+    if (!registration) {
+      throw new NotFoundException(`Registration for event ${eventId} not found`);
+    }
+
+    registration.status = 'REJECTED';
+    registree.markModified('registrations');
+    await registree.save();
+
+    return { message: 'Registration rejected successfully' };
+  }
+
+  async blockRegistration(registreeId: string, eventId: string): Promise<any> {
+    const registree = await this.registreeModel.findById(registreeId).exec();
+    if (!registree) {
+      throw new NotFoundException(`Registree with ID ${registreeId} not found`);
+    }
+
+    const registration = registree.registrations?.find(
+      (r: any) => r.eventId.toString() === eventId,
+    );
+    if (!registration) {
+      throw new NotFoundException(`Registration for event ${eventId} not found`);
+    }
+
+    registration.status = 'BLOCKED';
+    registree.markModified('registrations');
+    await registree.save();
+
+    const attendee = await this.attendeeModel.findOne({
+      eventId: eventId as any,
+      email: registree.email,
+    }).exec();
+
+    if (attendee) {
+      attendee.status = AttendeeStatus.BLOCKED;
+      await attendee.save();
+    }
+
+    return { message: 'Registration blocked successfully' };
   }
 
   private generatePassCode(): string {

@@ -67,6 +67,30 @@ export class Registree extends BaseSchema {
     phoneNumber: string;
     countryCode: string;
   }>;
+
+  @Prop({
+    type: [{
+      eventId: { type: MongooseSchema.Types.ObjectId, ref: 'Event', required: true },
+      name: String,
+      email: String,
+      countryCode: String,
+      phoneNumber: String,
+      organization: String,
+      status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'BLOCKED'], default: 'PENDING' },
+      registeredAt: { type: Date, default: Date.now },
+    }],
+    default: [],
+  })
+  registrations?: Array<{
+    eventId: Types.ObjectId;
+    name: string;
+    email: string;
+    countryCode?: string;
+    phoneNumber?: string;
+    organization?: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'BLOCKED';
+    registeredAt: Date;
+  }>;
 }
 
 export const RegistreeSchema = SchemaFactory.createForClass(Registree);

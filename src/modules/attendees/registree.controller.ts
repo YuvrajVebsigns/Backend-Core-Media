@@ -65,4 +65,31 @@ export class AdminRegistreesController {
   remove(@Param('id') id: string) {
     return this.attendeesService.removeRegistree(id);
   }
+
+  @Patch(':id/registrations/:eventId/approve')
+  @Permission('registrations.update')
+  @ApiOperation({ summary: 'Approve a registree event registration' })
+  @ApiParam({ name: 'id', description: 'MongoDB ID of the Registree.' })
+  @ApiParam({ name: 'eventId', description: 'MongoDB ID of the Event.' })
+  approve(@Param('id') id: string, @Param('eventId') eventId: string) {
+    return this.attendeesService.approveRegistration(id, eventId);
+  }
+
+  @Patch(':id/registrations/:eventId/reject')
+  @Permission('registrations.update')
+  @ApiOperation({ summary: 'Reject a registree event registration' })
+  @ApiParam({ name: 'id', description: 'MongoDB ID of the Registree.' })
+  @ApiParam({ name: 'eventId', description: 'MongoDB ID of the Event.' })
+  reject(@Param('id') id: string, @Param('eventId') eventId: string) {
+    return this.attendeesService.rejectRegistration(id, eventId);
+  }
+
+  @Patch(':id/registrations/:eventId/block')
+  @Permission('registrations.update')
+  @ApiOperation({ summary: 'Block a registree event registration' })
+  @ApiParam({ name: 'id', description: 'MongoDB ID of the Registree.' })
+  @ApiParam({ name: 'eventId', description: 'MongoDB ID of the Event.' })
+  block(@Param('id') id: string, @Param('eventId') eventId: string) {
+    return this.attendeesService.blockRegistration(id, eventId);
+  }
 }

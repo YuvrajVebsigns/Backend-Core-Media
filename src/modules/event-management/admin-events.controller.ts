@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { EventsService } from './event-management.service';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
+import { CreateEventMeetingDto, UpdateEventMeetingDto } from './dto/event-meeting.dto';
 import { EventStatus } from './schemas/event.schema';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -75,5 +76,47 @@ export class AdminEventsController {
   @ApiOperation({ summary: 'Delete an event' })
   remove(@Param('id') id: string) {
     return this.eventService.remove(id);
+  }
+
+  @Post(':eventId/meetings')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.update')
+  @ApiOperation({ summary: 'Create a meeting reservation mapping for an event' })
+  createMeeting(
+    @Param('eventId') eventId: string,
+    @Body() createMeetingDto: CreateEventMeetingDto,
+  ) {
+    return this.eventService.createMeeting(eventId, createMeetingDto);
+  }
+
+  @Get(':eventId/meetings')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.view')
+  @ApiOperation({ summary: 'Get all meeting mapping reservations for an event' })
+  findMeetings(@Param('eventId') eventId: string) {
+    return this.eventService.findMeetingsByEvent(eventId);
+  }
+
+  @Patch(':eventId/meetings/:meetingId')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.update')
+  @ApiOperation({ summary: 'Update a meeting mapping' })
+  updateMeeting(
+    @Param('eventId') eventId: string,
+    @Param('meetingId') meetingId: string,
+    @Body() updateMeetingDto: UpdateEventMeetingDto,
+  ) {
+    return this.eventService.updateMeeting(meetingId, updateMeetingDto);
+  }
+
+  @Delete(':eventId/meetings/:meetingId')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @Permission('events.update')
+  @ApiOperation({ summary: 'Cancel/Delete a meeting mapping' })
+  removeMeeting(
+    @Param('eventId') eventId: string,
+    @Param('meetingId') meetingId: string,
+  ) {
+    return this.eventService.removeMeeting(meetingId);
   }
 }
