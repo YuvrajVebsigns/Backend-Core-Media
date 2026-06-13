@@ -4,15 +4,19 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Event, EventStatus, EventType } from './schemas/event.schema';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
+import { EventMeeting } from './schemas/event-meeting.schema';
+import { CreateEventMeetingDto, UpdateEventMeetingDto } from './dto/event-meeting.dto';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectModel(Event.name)
     private eventModel: Model<Event>,
+    @InjectModel(EventMeeting.name)
+    private eventMeetingModel: Model<EventMeeting>,
   ) {}
 
   async create(createEventDto: CreateEventDto): Promise<Event> {
@@ -224,6 +228,61 @@ export class EventsService {
       .exec();
     if (!result) {
       throw new NotFoundException(`Event with ID ${id} not found`);
+    }
+  }
+
+  async createMeeting(eventId: string, createDto: CreateEventMeetingDto): Promise<EventMeeting> {
+    const event = await this.eventModel.findById(eventId).exec();
+    if (!event) {
+      throw new NotFoundException(`Event with ID ${eventId} not found`);
+    }
+    const createdMeeting = new this.eventMeetingModel({
+      ...createDto,
+      eventId,
+    });
+    const savedMeeting = await createdMeeting.save();
+    return this.findMeetingById(savedMeeting._id.toString());
+  }
+
+  async findMeetingsByEvent(eventId: string): Promise<EventMeeting[]> {
+    return this.eventMeetingModel
+      .find({ eventId: new Types.ObjectId(eventId), isDeleted: null } as any)
+      .populate('attendeeIds')
+      .populate('sponsorId')
+      .sort({ createdAt: 1 })
+      .exec();
+  }
+
+  async findMeetingById(meetingId: string): Promise<EventMeeting> {
+    const meeting = await this.eventMeetingModel
+      .findById(meetingId)
+      .populate('attendeeIds')
+      .populate('sponsorId')
+      .exec();
+    if (!meeting) {
+      throw new NotFoundException(`Meeting with ID ${meetingId} not found`);
+    }
+    return meeting;
+  }
+
+  async updateMeeting(meetingId: string, updateDto: UpdateEventMeetingDto): Promise<EventMeeting> {
+    const updated = await this.eventMeetingModel
+      .findByIdAndUpdate(meetingId, updateDto, { new: true })
+      .populate('attendeeIds')
+      .populate('sponsorId')
+      .exec();
+    if (!updated) {
+      throw new NotFoundException(`Meeting with ID ${meetingId} not found`);
+    }
+    return updated;
+  }
+
+  async removeMeeting(meetingId: string): Promise<void> {
+    const result = await this.eventMeetingModel
+      .findByIdAndUpdate(meetingId, { isDeleted: new Date() })
+      .exec();
+    if (!result) {
+      throw new NotFoundException(`Meeting with ID ${meetingId} not found`);
     }
   }
 }
