@@ -8,6 +8,7 @@ import { Sponsor, SponsorSchema } from '../sponsors/schemas/sponsor.schema';
 import { Attendee, AttendeeSchema } from '../attendees/schemas/attendee.schema';
 import { EventMeeting, EventMeetingSchema } from './schemas/event-meeting.schema';
 import { AuthModule } from '@core/auth/auth.module';
+import { FilesModule } from '@core/files/files.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from '@core/auth/auth.module';
       { name: EventMeeting.name, schema: EventMeetingSchema },
     ]),
     AuthModule,
+    FilesModule,
   ],
   controllers: [AdminEventsController, WebsiteEventsController],
   providers: [EventsService],

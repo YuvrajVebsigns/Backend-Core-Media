@@ -9,6 +9,13 @@ import { Event, EventStatus, EventType } from './schemas/event.schema';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 import { EventMeeting } from './schemas/event-meeting.schema';
 import { CreateEventMeetingDto, UpdateEventMeetingDto } from './dto/event-meeting.dto';
+import { UrlService } from '@core/files/services/url.service';
+import { FilesService } from '@core/files/services/files.service';
+import { FileModule } from '@core/files/enums/file-module.enum';
+import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
+
+/** Only fetch the fields we need from the File document when populating */
+const IMAGE_POPULATE_SELECT = '_id key variants metadata';
 
 @Injectable()
 export class EventsService {
@@ -17,9 +24,103 @@ export class EventsService {
     private eventModel: Model<Event>,
     @InjectModel(EventMeeting.name)
     private eventMeetingModel: Model<EventMeeting>,
-  ) {}
+    private readonly urlService: UrlService,
+    private readonly filesService: FilesService,
+  ) { }
 
-  async create(createEventDto: CreateEventDto): Promise<Event> {
+  /**
+   * Transform populated File references into lean image objects
+   * and enrich bannerImage / seo.ogImage with CDN variant URLs.
+   */
+  private transformImageFields(event: any): any {
+    if (!event) return event;
+
+    const obj = event.toJSON ? event.toJSON() : { ...event };
+
+    // Transform bannerImageId — only if it was actually populated (has 'key')
+    if (obj.bannerImageId && typeof obj.bannerImageId === 'object' && obj.bannerImageId.key) {
+      const file = obj.bannerImageId;
+      const url = this.urlService.getPublicUrl(file.key);
+      const urlVariants = file.variants
+        ? this.urlService.getVariantUrls(file.variants)
+        : {};
+
+      obj.bannerImageId = {
+        id: file.id || file._id,
+        metadata: file.metadata || {},
+        url,
+        urlVariants,
+      };
+
+      // Enrich bannerImage with variant URLs
+      obj.bannerImage = {
+        original: url,
+        ...urlVariants,
+      };
+    }
+
+    // Transform seo.ogImageId — only if it was actually populated (has 'key')
+    if (obj.seo?.ogImageId && typeof obj.seo.ogImageId === 'object' && obj.seo.ogImageId.key) {
+      const file = obj.seo.ogImageId;
+      const url = this.urlService.getPublicUrl(file.key);
+      const urlVariants = file.variants
+        ? this.urlService.getVariantUrls(file.variants)
+        : {};
+
+      obj.seo.ogImageId = {
+        id: file.id || file._id,
+        metadata: file.metadata || {},
+        url,
+        urlVariants,
+      };
+
+      obj.seo.ogImage = {
+        original: url,
+        ...urlVariants,
+      };
+    }
+
+    return obj;
+  }
+
+  /**
+   * Prevents storing full CDN URLs in the database when a File ref is provided.
+   */
+  private sanitizeImageUrls(dto: any) {
+    if (dto.bannerImage) {
+      if (dto.bannerImageId) {
+        delete dto.bannerImage;
+      } else if (typeof dto.bannerImage === 'object') {
+        const url = dto.bannerImage.original || dto.bannerImage.url;
+        if (url && typeof url === 'string') {
+          dto.bannerImage = url;
+        } else {
+          delete dto.bannerImage;
+        }
+      }
+    }
+
+    if (dto.seo) {
+      if (dto.seo.ogImage) {
+        if (dto.seo.ogImageId) {
+          delete dto.seo.ogImage;
+        } else if (typeof dto.seo.ogImage === 'object') {
+          const url = dto.seo.ogImage.original || dto.seo.ogImage.url;
+          if (url && typeof url === 'string') {
+            dto.seo.ogImage = url;
+          } else {
+            delete dto.seo.ogImage;
+          }
+        }
+      }
+    }
+  }
+
+  async create(
+    createEventDto: CreateEventDto,
+    bannerFile?: Express.Multer.File,
+    uploadedBy?: string,
+  ): Promise<Event> {
     const existing = await this.eventModel
       .findOne({ slug: createEventDto.slug })
       .exec();
@@ -28,8 +129,19 @@ export class EventsService {
         `Event with slug ${createEventDto.slug} already exists`,
       );
     }
+
+    // Parse JSON string fields from multipart/form-data
+    this.parseFormDataFields(createEventDto);
+    this.sanitizeImageUrls(createEventDto);
+
     const createdEvent = new this.eventModel(createEventDto);
     const savedEvent = await createdEvent.save();
+
+    // Upload banner image if file is provided
+    if (bannerFile && uploadedBy) {
+      await this.uploadAndSetBanner(savedEvent._id.toString(), bannerFile, uploadedBy);
+    }
+
     return this.findOne(savedEvent._id.toString());
   }
 
@@ -82,6 +194,8 @@ export class EventsService {
           .find(query)
           .populate('websites')
           .populate('sponsors')
+          .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+          .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
           .sort({ startDate: 1 })
           .skip(skip)
           .limit(limit)
@@ -101,7 +215,7 @@ export class EventsService {
             // Model not compiled yet fallback
           }
 
-          const eventJson = event.toJSON();
+          const eventJson = this.transformImageFields(event);
           eventJson.totalRegistrations = totalRegistrations;
           return eventJson;
         }),
@@ -120,6 +234,8 @@ export class EventsService {
       .find(query)
       .populate('websites')
       .populate('sponsors')
+      .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
       .sort({ startDate: 1 })
       .exec();
 
@@ -135,7 +251,7 @@ export class EventsService {
           // Model not compiled yet fallback
         }
 
-        const eventJson = event.toJSON();
+        const eventJson = this.transformImageFields(event);
         eventJson.totalRegistrations = totalRegistrations;
         return eventJson;
       }),
@@ -144,11 +260,112 @@ export class EventsService {
     return eventsWithRegistrations;
   }
 
+  /**
+   * Website-facing findAll — returns only summary fields needed for listing.
+   * Heavy fields (description, agenda, invitedEmails, seo, sponsors, websites)
+   * are excluded and only available via the single event detail endpoint.
+   */
+  async findAllForWebsite(
+    filters: {
+      websiteId?: string;
+      status?: EventStatus;
+      page?: number;
+      limit?: number;
+      search?: string;
+      type?: EventType;
+    } = {},
+  ): Promise<PaginatedResponseDto<Partial<Event>>> {
+    const query: any = {};
+
+    if (filters.websiteId) {
+      query.websites = filters.websiteId;
+    }
+
+    if (filters.status) {
+      query.status = filters.status;
+    }
+
+    if (filters.type) {
+      query.type = filters.type;
+    }
+
+    if (filters.search) {
+      const searchRegex = { $regex: filters.search, $options: 'i' };
+      query.$or = [
+        { title: searchRegex },
+        { slug: searchRegex },
+      ];
+    }
+
+    // Default to active events
+    query.isActive = { $ne: false };
+
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.max(1, Number(filters.limit) || 10);
+    const skip = (page - 1) * limit;
+
+    // Only select summary fields needed for listing
+    const summaryProjection = {
+      title: 1,
+      slug: 1,
+      excerpt: 1,
+      type: 1,
+      startDate: 1,
+      endDate: 1,
+      bannerImageId: 1,
+    };
+
+    const [events, total] = await Promise.all([
+      this.eventModel
+        .find(query, summaryProjection)
+        .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+        .sort({ startDate: 1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.eventModel.countDocuments(query).exec(),
+    ]);
+
+    const data = await Promise.all(
+      events.map(async (event) => {
+        let totalRegistrations = 0;
+        try {
+          const attendeeModel = this.eventModel.db.model('Attendee');
+          totalRegistrations = await attendeeModel
+            .countDocuments({ eventId: event._id })
+            .exec();
+        } catch (e) {
+          // Model not compiled yet fallback
+        }
+
+        const eventJson = this.transformImageFields(event);
+        eventJson.totalRegistrations = totalRegistrations;
+        return eventJson;
+      }),
+    );
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
+  }
+
   async findOne(id: string): Promise<Event> {
     const event = await this.eventModel
       .findById(id)
       .populate('websites')
       .populate('sponsors')
+      .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
       .exec();
     if (!event) {
       throw new NotFoundException(`Event with ID ${id} not found`);
@@ -164,7 +381,7 @@ export class EventsService {
       // Model not compiled fallback
     }
 
-    const eventJson = event.toJSON();
+    const eventJson = this.transformImageFields(event);
     eventJson.totalRegistrations = totalRegistrations;
     return eventJson as any;
   }
@@ -174,6 +391,8 @@ export class EventsService {
       .findOne({ slug })
       .populate('websites')
       .populate('sponsors')
+      .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
       .exec();
     if (!event) {
       throw new NotFoundException(`Event with slug ${slug} not found`);
@@ -189,7 +408,7 @@ export class EventsService {
       // Model not compiled fallback
     }
 
-    const eventJson = event.toJSON();
+    const eventJson = this.transformImageFields(event);
     eventJson.totalRegistrations = totalRegistrations;
     return eventJson as any;
   }
@@ -197,11 +416,24 @@ export class EventsService {
   async update(
     id: string,
     updateEventDto: UpdateEventDto,
+    bannerFile?: Express.Multer.File,
+    uploadedBy?: string,
   ): Promise<Event> {
+    // Parse JSON string fields from multipart/form-data
+    this.parseFormDataFields(updateEventDto);
+    this.sanitizeImageUrls(updateEventDto);
+
+    // Upload new banner image if file is provided
+    if (bannerFile && uploadedBy) {
+      await this.uploadAndSetBanner(id, bannerFile, uploadedBy);
+    }
+
     const updatedEvent = await this.eventModel
       .findByIdAndUpdate(id, updateEventDto, { new: true })
       .populate('websites')
       .populate('sponsors')
+      .populate('bannerImageId', IMAGE_POPULATE_SELECT)
+      .populate('seo.ogImageId', IMAGE_POPULATE_SELECT)
       .exec();
     if (!updatedEvent) {
       throw new NotFoundException(`Event with ID ${id} not found`);
@@ -217,9 +449,46 @@ export class EventsService {
       // Model not compiled fallback
     }
 
-    const eventJson = updatedEvent.toJSON();
+    const eventJson = this.transformImageFields(updatedEvent);
     eventJson.totalRegistrations = totalRegistrations;
     return eventJson as any;
+  }
+
+  /**
+   * Upload a banner image file via FilesService and set bannerImageId on the event.
+   */
+  private async uploadAndSetBanner(
+    eventId: string,
+    file: Express.Multer.File,
+    uploadedBy: string,
+  ): Promise<void> {
+    const uploadedFile = await this.filesService.upload(file, {
+      module: FileModule.EVENTS,
+      entityType: 'banner',
+      entityId: eventId,
+    } as any, uploadedBy);
+
+    const fileId = uploadedFile.id || (uploadedFile as any)._id;
+    await this.eventModel.findByIdAndUpdate(eventId, {
+      bannerImageId: fileId,
+    }).exec();
+  }
+
+  /**
+   * When using multipart/form-data, nested objects and arrays arrive as JSON strings.
+   * This method parses them back into proper objects.
+   */
+  private parseFormDataFields(dto: any): void {
+    const jsonFields = ['description', 'location', 'agenda', 'seo', 'websites', 'sponsors', 'invitedEmails'];
+    for (const field of jsonFields) {
+      if (dto[field] && typeof dto[field] === 'string') {
+        try {
+          dto[field] = JSON.parse(dto[field]);
+        } catch {
+          // Keep the original value if parsing fails
+        }
+      }
+    }
   }
 
   async remove(id: string): Promise<void> {
