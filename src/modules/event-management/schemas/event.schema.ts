@@ -115,6 +115,9 @@ export class Event extends BaseSchema {
   @Prop({ trim: true })
   meetingLink: string;
 
+  @Prop({ trim: true })
+  bannerImage: string;
+
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
   bannerImageId: MongooseSchema.Types.ObjectId;
 

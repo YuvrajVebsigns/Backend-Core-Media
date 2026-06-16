@@ -10,6 +10,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { EventsService } from './event-management.service';
 import { EventStatus } from './schemas/event.schema';
 import { QueryEventDto } from './dto/event.dto';
@@ -20,6 +21,7 @@ import { Types } from 'mongoose';
 @ApiTags('Website | Events')
 @ApiBearerAuth('website-token')
 @UseGuards(WebsiteAuthGuard)
+@Throttle({ short: { ttl: 1000, limit: 30 }, medium: { ttl: 60000, limit: 300 }, long: { ttl: 3600000, limit: 10000 } })
 @Controller('website/events')
 export class WebsiteEventsController {
   constructor(private readonly eventService: EventsService) { }
@@ -27,7 +29,7 @@ export class WebsiteEventsController {
   @Get()
   @ApiOperation({
     summary: 'Get all published events for public website',
-    description: 'Fetches paginated, searchable, and filtered list of events scoped to the authenticated website.',
+    description: 'Fetches paginated list of events with summary fields only, scoped to the authenticated website.',
   })
   findAll(
     @CurrentWebsite() website: any,
@@ -37,7 +39,7 @@ export class WebsiteEventsController {
     const page = query.page ? Number(query.page) : 1;
     const limit = query.limit ? Number(query.limit) : 10;
 
-    return this.eventService.findAll({
+    return this.eventService.findAllForWebsite({
       ...query,
       page,
       limit,
