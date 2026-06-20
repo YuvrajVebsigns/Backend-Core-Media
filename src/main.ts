@@ -195,6 +195,7 @@ async function bootstrap() {
     .addTag('Admin | System', 'System health and webhooks')
     .addTag('Admin | Background Jobs', 'Background job management')
     .addTag('Admin | Feature Flags', 'Feature flag management')
+    .addTag('Admin | Communications', 'Communication channels and webhook management')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

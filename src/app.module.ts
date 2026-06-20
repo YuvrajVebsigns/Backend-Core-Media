@@ -32,6 +32,7 @@ import { NominationsModule } from '@modules/nominations/nominations.module';
 import { ReportsModule } from '@modules/reports/reports.module';
 import { ClsModule } from 'nestjs-cls';
 import { WebhookModule } from './webhook/webhook.module';
+import { CommunicationsModule } from '@modules/communications/communications.module';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from '@common/interceptors/role-cache.interceptor';
 import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
@@ -191,6 +192,7 @@ const redisQueueImports =
     NominationsModule,
     ReportsModule,
     WebhookModule,
+    CommunicationsModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],
