@@ -13,8 +13,10 @@ import { WebsitesSeeder } from '@database/seeds/websites.seeder';
 import { BlogsSeeder } from '@database/seeds/blogs.seeder';
 import { EventsSeeder } from '@database/seeds/events.seeder';
 import { SponsorsSeeder } from '@database/seeds/sponsors.seeder';
+import { CommunicationsProviderSeeder } from '@database/seeds/communications-provider.seeder';
 import { EventManagementModule } from '@modules/event-management/event-management.module';
 import { Sponsor, SponsorSchema } from '@modules/sponsors/schemas/sponsor.schema';
+import { CommunicationProvider, CommunicationProviderSchema } from '@modules/communications/schemas/communication-provider.schema';
 
 @Module({
   imports: [
@@ -25,7 +27,10 @@ import { Sponsor, SponsorSchema } from '@modules/sponsors/schemas/sponsor.schema
     BlogsModule,
     SponsorsModule,
     EventManagementModule,
-    MongooseModule.forFeature([{ name: Sponsor.name, schema: SponsorSchema }]),
+    MongooseModule.forFeature([
+      { name: Sponsor.name, schema: SponsorSchema },
+      { name: CommunicationProvider.name, schema: CommunicationProviderSchema },
+    ]),
   ],
   providers: [
     RolesSeeder,
@@ -35,7 +40,7 @@ import { Sponsor, SponsorSchema } from '@modules/sponsors/schemas/sponsor.schema
     BlogsSeeder,
     EventsSeeder,
     SponsorsSeeder,
+    CommunicationsProviderSeeder,
   ],
 })
 export class SeedModule { }
-

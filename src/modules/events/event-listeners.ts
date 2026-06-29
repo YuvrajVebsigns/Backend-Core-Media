@@ -7,10 +7,60 @@ import {
   FileUploadedEvent,
   AppEvents,
 } from './event-definitions';
+import { CommunicationsService } from '../communications/communications.service';
+import { SystemUsersService } from '@core/system-users/system-users.service';
 
 @Injectable()
 export class EventListeners {
   private readonly logger = new Logger(EventListeners.name);
+
+  constructor(
+    private readonly communicationsService: CommunicationsService,
+    private readonly systemUsersService: SystemUsersService,
+  ) {}
+
+  private async triggerMappedEvent(eventName: string, payload: any) {
+    try {
+      const mapping = await this.communicationsService.findEventMappingByEvent(eventName);
+      if (!mapping || !mapping.isActive) {
+        this.logger.debug(`No active event mapping found for event: ${eventName}`);
+        return;
+      }
+
+      const template = mapping.templateId as any;
+      if (!template) {
+        this.logger.warn(`Template not found for event mapping: ${eventName}`);
+        return;
+      }
+
+      // Resolve recipient
+      let recipient = '';
+      if (payload.email) {
+        recipient = payload.email;
+      } else if (payload.recipient) {
+        recipient = payload.recipient;
+      } else if (payload.userId) {
+        const user = await this.systemUsersService.findOne(payload.userId);
+        if (user) {
+          recipient = user.email;
+        }
+      }
+
+      if (!recipient) {
+        this.logger.warn(`Could not resolve a recipient email for event ${eventName}. Payload: ${JSON.stringify(payload)}`);
+        return;
+      }
+
+      this.logger.log(`Dispatching template "${template.slug}" for event: ${eventName} to: ${recipient}`);
+      await this.communicationsService.dispatchTemplateMessage({
+        slug: template.slug,
+        recipient,
+        params: payload,
+      });
+    } catch (err) {
+      this.logger.error(`Error processing event-template mapping for event ${eventName}: ${err.message}`);
+    }
+  }
 
   // ──────────────────────────────────────────────
   // User Events
@@ -21,10 +71,7 @@ export class EventListeners {
     this.logger.log(
       `📧 New user created: ${event.email} (ID: ${event.userId})`,
     );
-    // Example side effects:
-    // - Send welcome email via queue
-    // - Create default user preferences
-    // - Notify analytics service
+    this.triggerMappedEvent(AppEvents.USER_CREATED, event);
   }
 
   // ──────────────────────────────────────────────
@@ -36,10 +83,7 @@ export class EventListeners {
     this.logger.log(
       `🛒 Order placed: ${event.orderId} by user ${event.userId} — $${event.totalAmount}`,
     );
-    // Example side effects:
-    // - Reserve inventory
-    // - Send order confirmation email
-    // - Notify warehouse
+    this.triggerMappedEvent(AppEvents.ORDER_PLACED, event);
   }
 
   // ──────────────────────────────────────────────
@@ -51,10 +95,7 @@ export class EventListeners {
     this.logger.log(
       `💳 Payment completed: ${event.paymentId} for order ${event.orderId} — $${event.amount} via ${event.method}`,
     );
-    // Example side effects:
-    // - Update order status to "paid"
-    // - Generate invoice
-    // - Send payment receipt email
+    this.triggerMappedEvent(AppEvents.PAYMENT_COMPLETED, event);
   }
 
   // ──────────────────────────────────────────────
@@ -66,9 +107,6 @@ export class EventListeners {
     this.logger.log(
       `📁 File uploaded: ${event.filename} (${(event.size / 1024).toFixed(1)} KB) by user ${event.userId}`,
     );
-    // Example side effects:
-    // - Generate thumbnails via image-processing queue
-    // - Scan for malware
-    // - Update user storage quota
+    this.triggerMappedEvent(AppEvents.FILE_UPLOADED, event);
   }
 }

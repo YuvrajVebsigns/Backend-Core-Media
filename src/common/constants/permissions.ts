@@ -96,6 +96,9 @@ export const PERMISSIONS = {
   NOMINEES_CREATE: 'nominees.create',
   NOMINEES_UPDATE: 'nominees.update',
   NOMINEES_DELETE: 'nominees.delete',
+
+  // Communications
+  COMMUNICATIONS_VIEW: 'communications.view',
 };
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

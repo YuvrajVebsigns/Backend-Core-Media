@@ -196,6 +196,7 @@ async function bootstrap() {
     .addTag('Admin | Background Jobs', 'Background job management')
     .addTag('Admin | Feature Flags', 'Feature flag management')
     .addTag('Admin | Communications', 'Communication channels and webhook management')
+    .addTag('Webhooks | Brevo', 'Brevo transactional email delivery webhook receiver')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);

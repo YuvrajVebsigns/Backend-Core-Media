@@ -1,6 +1,5 @@
 import { Process, Processor } from '@nestjs/bull';
-import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import type { Job } from 'bull';
@@ -8,7 +7,9 @@ import * as crypto from 'crypto';
 import {
   CommunicationLog,
   CommunicationStatus,
+  CommunicationChannel,
 } from '../schemas/communication-log.schema';
+import { ProviderRegistryService } from '../providers/provider-registry.service';
 
 @Processor('communications')
 export class CommunicationsProcessor {
@@ -17,7 +18,8 @@ export class CommunicationsProcessor {
   constructor(
     @InjectModel(CommunicationLog.name)
     private readonly logModel: Model<CommunicationLog>,
-    private readonly configService: ConfigService,
+    @Inject(forwardRef(() => ProviderRegistryService))
+    private readonly providerRegistry: ProviderRegistryService,
   ) {}
 
   @Process('send-email')
@@ -32,36 +34,26 @@ export class CommunicationsProcessor {
     }
 
     try {
-      const apiKey = this.configService.get<string>('BREVO_API_KEY');
-      const senderEmail = this.configService.get<string>('BREVO_SENDER_EMAIL');
-      const senderName = this.configService.get<string>('BREVO_SENDER_NAME') || 'Core Media';
-
-      if (apiKey && senderEmail) {
-        // Send email via Brevo REST API
-        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-          method: 'POST',
-          headers: {
-            'api-key': apiKey,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            sender: { name: senderName, email: senderEmail },
-            to: [{ email: recipient }],
-            subject: title,
-            htmlContent: content,
-          }),
+      const activeProvider = await this.providerRegistry.resolveActiveProvider(CommunicationChannel.EMAIL);
+      if (activeProvider) {
+        const result = await activeProvider.send({
+          recipient,
+          title,
+          content,
+          metadata: logDoc.metadata,
         });
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Brevo API responded with status ${response.status}: ${errText}`);
+        if (!result.success) {
+          throw new Error(result.error || 'Provider failed to send raw email.');
         }
 
-        const resData = await response.json();
-        logDoc.metadata = { ...logDoc.metadata, brevoMessageId: resData.messageId };
+        logDoc.metadata = { 
+          ...logDoc.metadata, 
+          providerName: activeProvider.name, 
+          brevoMessageId: result.externalId 
+        };
       } else {
-        // Mock fallback in local dev
+        // Fallback mock
         this.logger.log(`
           --- MOCK EMAIL ---
           To: ${recipient}
@@ -86,7 +78,72 @@ export class CommunicationsProcessor {
       logDoc.retryCount = job.attemptsMade;
       await logDoc.save();
 
-      // Rethrow to let Bull handle retry attempt and backoff
+      throw error;
+    }
+  }
+
+  @Process('send-template-email')
+  async handleSendTemplateEmail(job: Job) {
+    const { logId, recipient, recipientName, templateSlug, externalTemplateId, params } = job.data;
+    this.logger.debug(`[Template Email Job Started] Log ID: ${logId} to ${recipient} (Template Slug: ${templateSlug})`);
+
+    const logDoc = await this.logModel.findById(logId);
+    if (!logDoc) {
+      this.logger.warn(`CommunicationLog ${logId} not found in database. Skipping.`);
+      return;
+    }
+
+    try {
+      const activeProvider = await this.providerRegistry.resolveActiveProvider(CommunicationChannel.EMAIL);
+      if (activeProvider) {
+        if (!externalTemplateId) {
+          throw new Error(`External template ID is missing for provider "${activeProvider.name}". Ensure template synchronization has run.`);
+        }
+
+        const result = await activeProvider.sendWithTemplate({
+          recipient,
+          recipientName,
+          templateId: templateSlug,
+          externalTemplateId: Number(externalTemplateId),
+          params,
+          metadata: logDoc.metadata,
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Provider failed to send template email.');
+        }
+
+        logDoc.metadata = { 
+          ...logDoc.metadata, 
+          providerName: activeProvider.name, 
+          brevoMessageId: result.externalId 
+        };
+      } else {
+        // Fallback mock
+        this.logger.log(`
+          --- MOCK TEMPLATE EMAIL ---
+          To: ${recipient} (Name: ${recipientName})
+          Template: ${templateSlug}
+          Params: ${JSON.stringify(params)}
+          ---------------------------
+        `);
+        logDoc.metadata = { ...logDoc.metadata, mocked: true };
+      }
+
+      logDoc.status = CommunicationStatus.SENT;
+      logDoc.error = null;
+      logDoc.retryCount = job.attemptsMade;
+      await logDoc.save();
+
+      this.logger.debug(`[Template Email Job Completed] Log ID: ${logId} to ${recipient} successfully sent.`);
+    } catch (error) {
+      this.logger.error(`[Template Email Job Failed] Log ID: ${logId} to ${recipient}. Error: ${error.message}`);
+      
+      logDoc.status = CommunicationStatus.FAILED;
+      logDoc.error = error.message;
+      logDoc.retryCount = job.attemptsMade;
+      await logDoc.save();
+
       throw error;
     }
   }
