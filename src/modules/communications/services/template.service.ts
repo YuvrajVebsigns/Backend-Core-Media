@@ -25,7 +25,7 @@ export class TemplateService {
     @InjectModel(MessageTemplate.name)
     private readonly templateModel: Model<MessageTemplate>,
     private readonly providerRegistry: ProviderRegistryService,
-  ) {}
+  ) { }
 
   async create(dto: CreateMessageTemplateDto): Promise<MessageTemplate> {
     const existing = await this.templateModel.findOne({ slug: dto.slug, isDeleted: null }).exec();
@@ -161,9 +161,16 @@ export class TemplateService {
         return;
       }
 
-      // Check if we have standard sender setup in credentials
-      const defaultEmail = process.env.BREVO_SENDER_EMAIL || 'noreply@coremediagroup.com';
-      const defaultName = process.env.BREVO_SENDER_NAME || 'Core Media';
+      // Resolve sender from template override, or from the initialized Brevo provider credentials/config
+      const defaultEmail =
+        template.senderEmail ||
+        brevoProvider.getSenderEmail() ||
+        process.env.BREVO_SENDER_EMAIL
+      const defaultName =
+        template.senderName ||
+        (template.senderEmail
+          ? template.senderEmail.split('@')[0]
+          : brevoProvider.getSenderName() || process.env.BREVO_SENDER_NAME);
 
       const templateId = template.providerSync?.brevo?.templateId;
 
@@ -298,5 +305,113 @@ export class TemplateService {
       this.logger.error(`Error syncing template ${brevoTemplateId} from Brevo: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Performs bidirectional sync between local DB and Brevo transactional templates
+   */
+  async syncAllWithBrevo(): Promise<{ imported: number; updated: number; pushed: number; failed: number }> {
+    let imported = 0;
+    let updated = 0;
+    let pushed = 0;
+    let failed = 0;
+
+    try {
+      const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+      const brevoClient = brevoProvider.getClient();
+      if (!brevoClient) {
+        throw new Error('Brevo client is not initialized.');
+      }
+
+      // 1. Fetch all templates from Brevo
+      const brevoRes = await brevoClient.transactionalEmails.getSmtpTemplates({ limit: 100 });
+      const brevoTemplates = brevoRes.templates || [];
+
+      // Create a map of brevo templates by ID
+      const brevoTemplateMap = new Map<number, typeof brevoTemplates[0]>();
+      for (const bt of brevoTemplates) {
+        if (bt.id) {
+          brevoTemplateMap.set(bt.id, bt);
+        }
+      }
+
+      // 2. Sync Brevo templates to local database
+      for (const [brevoId, bt] of brevoTemplateMap.entries()) {
+        try {
+          let localTemplate = await this.templateModel.findOne({
+            'providerSync.brevo.templateId': brevoId,
+            isDeleted: null,
+          }).exec();
+
+          const templateData = {
+            name: bt.name,
+            subject: bt.subject,
+            htmlContent: bt.htmlContent || '',
+            isActive: bt.isActive ?? true,
+            channel: CommunicationChannel.EMAIL,
+            providerSync: {
+              brevo: {
+                templateId: brevoId,
+                syncedAt: new Date(),
+                syncStatus: 'synced' as const,
+                error: null,
+              },
+            },
+          };
+
+          if (localTemplate) {
+            // Only update local template if Brevo's modifiedAt is newer than local's updatedAt/createdAt
+            const brevoModDate = new Date(bt.modifiedAt || bt.createdAt);
+            const localUpdateDate = new Date(localTemplate.updatedAt || localTemplate.createdAt);
+            if (brevoModDate > localUpdateDate) {
+              Object.assign(localTemplate, templateData);
+              await localTemplate.save();
+              updated++;
+            }
+          } else {
+            const generatedSlug = `brevo-sync-${brevoId}`;
+            localTemplate = new this.templateModel({
+              ...templateData,
+              slug: generatedSlug,
+            });
+            await localTemplate.save();
+            imported++;
+          }
+        } catch (err) {
+          this.logger.error(`Failed to sync Brevo template ID ${brevoId} to local DB: ${err.message}`);
+          failed++;
+        }
+      }
+
+      // 3. Find all local EMAIL templates that do NOT have a Brevo templateId or exist in Brevo, and push them
+      const localTemplates = await this.templateModel.find({
+        channel: CommunicationChannel.EMAIL,
+        isDeleted: null,
+      }).exec();
+
+      for (const lt of localTemplates) {
+        const hasId = lt.providerSync?.brevo?.templateId;
+        if (!hasId || !brevoTemplateMap.has(hasId)) {
+          try {
+            // Reset the sync ID locally if it was deleted on Brevo
+            if (hasId && !brevoTemplateMap.has(hasId)) {
+              if (lt.providerSync?.brevo) {
+                lt.providerSync.brevo.templateId = undefined;
+              }
+            }
+            await this.syncToBrevo(lt);
+            pushed++;
+          } catch (err) {
+            this.logger.error(`Failed to sync local template "${lt.slug}" to Brevo: ${err.message}`);
+            failed++;
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Failed to perform complete templates sync: ${err.message}`);
+      throw err;
+    }
+
+    return { imported, updated, pushed, failed };
   }
 }

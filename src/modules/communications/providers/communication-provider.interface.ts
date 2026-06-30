@@ -5,6 +5,8 @@ export interface SendMessagePayload {
   title: string;
   content: string;
   metadata?: Record<string, any>;
+  senderEmail?: string;
+  senderName?: string;
 }
 
 export interface SendTemplatePayload {
@@ -14,6 +16,8 @@ export interface SendTemplatePayload {
   externalTemplateId: number; // Provider-specific template ID
   params: Record<string, any>;
   metadata?: Record<string, any>;
+  senderEmail?: string;
+  senderName?: string;
 }
 
 export interface ProviderSendResult {

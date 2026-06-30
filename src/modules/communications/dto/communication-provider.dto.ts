@@ -68,6 +68,18 @@ export class RegisterBrevoWebhookDto {
   url: string;
 }
 
+export class CreateBrevoSenderDto {
+  @ApiProperty({ example: 'support@example.com', description: 'Sender email' })
+  @IsNotEmpty()
+  @IsString()
+  email: string;
+
+  @ApiProperty({ example: 'Support Team', description: 'Sender display name' })
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+}
+
 export class QueryCommunicationProviderDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()

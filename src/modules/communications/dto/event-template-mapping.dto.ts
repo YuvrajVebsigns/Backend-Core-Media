@@ -12,6 +12,16 @@ export class CreateEventTemplateMappingDto {
   @IsNotEmpty()
   templateId: string;
 
+  @ApiProperty({ example: 'sender@example.com', required: false })
+  @IsString()
+  @IsOptional()
+  senderEmail?: string;
+
+  @ApiProperty({ example: 'Sender Name', required: false })
+  @IsString()
+  @IsOptional()
+  senderName?: string;
+
   @ApiProperty({ example: true, required: false })
   @IsBoolean()
   @IsOptional()
@@ -28,6 +38,16 @@ export class UpdateEventTemplateMappingDto {
   @IsString()
   @IsOptional()
   templateId?: string;
+
+  @ApiProperty({ example: 'sender@example.com', required: false })
+  @IsString()
+  @IsOptional()
+  senderEmail?: string;
+
+  @ApiProperty({ example: 'Sender Name', required: false })
+  @IsString()
+  @IsOptional()
+  senderName?: string;
 
   @ApiProperty({ example: true, required: false })
   @IsBoolean()

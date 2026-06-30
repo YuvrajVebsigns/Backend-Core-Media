@@ -10,7 +10,7 @@ import {
   timestamps: true,
 })
 export class EventTemplateMapping extends BaseSchema {
-  @Prop({ required: true, unique: true, index: true, trim: true })
+  @Prop({ required: true, index: true, trim: true })
   event: string;
 
   @Prop({
@@ -21,11 +21,22 @@ export class EventTemplateMapping extends BaseSchema {
   })
   templateId: MongooseSchema.Types.ObjectId;
 
+  @Prop({ trim: true })
+  senderEmail?: string;
+
+  @Prop({ trim: true })
+  senderName?: string;
+
   @Prop({ default: true, index: true })
   isActive: boolean;
 }
 
 export const EventTemplateMappingSchema = SchemaFactory.createForClass(EventTemplateMapping);
+
+EventTemplateMappingSchema.index(
+  { event: 1 },
+  { unique: true, partialFilterExpression: { isDeleted: null } }
+);
 
 applySoftDeleteMiddleware(EventTemplateMappingSchema);
 

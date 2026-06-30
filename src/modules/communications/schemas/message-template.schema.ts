@@ -68,6 +68,12 @@ export class MessageTemplate extends BaseSchema {
     sendgrid?: ProviderSyncInfo;
   };
 
+  @Prop({ trim: true, required: false })
+  senderEmail?: string;
+
+  @Prop({ trim: true, required: false })
+  senderName?: string;
+
   @Prop({ default: true, index: true })
   isActive: boolean;
 }

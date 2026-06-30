@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Logger, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, Logger, HttpCode, ValidationPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { BrevoWebhookEventDto } from '../dto/brevo-webhook.dto';
@@ -29,13 +29,25 @@ export class BrevoWebhookController {
   })
   @ApiResponse({ status: 200, description: 'Event acknowledged' })
   @ApiResponse({ status: 400, description: 'Invalid payload' })
-  async handleBrevoEvent(@Body() payload: BrevoWebhookEventDto) {
+  async handleBrevoEvent(@Body() payload: any) {
+    const localPipe = new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    });
+
+    const validatedPayload = await localPipe.transform(payload, {
+      type: 'body',
+      metatype: BrevoWebhookEventDto,
+      data: '',
+    });
+
     this.logger.log(
-      `Brevo webhook received: event="${payload.event}" email="${payload.email}" messageId="${payload['message-id'] || 'N/A'}"`,
+      `Brevo webhook received: event="${validatedPayload.event}" email="${validatedPayload.email}" messageId="${validatedPayload['message-id'] || 'N/A'}"`,
     );
 
     try {
-      await this.communicationsService.handleBrevoWebhook(payload);
+      await this.communicationsService.handleBrevoWebhook(validatedPayload);
     } catch (error) {
       // Log but still return 200 to Brevo to prevent retries for processing errors.
       // Only validation failures (400) should trigger Brevo retries.

@@ -100,4 +100,23 @@ export class BrevoWebhookEventDto {
   @IsOptional()
   @IsString()
   device_used?: string;
+
+  @ApiPropertyOptional({ example: 'campaign_tag', description: 'Tag associated with the email' })
+  @IsOptional()
+  @IsString()
+  tag?: string;
+
+  @ApiPropertyOptional({ example: 'sender@domain.com', description: 'Sender email address' })
+  @IsOptional()
+  @IsString()
+  sender_email?: string;
+
+  @ApiPropertyOptional({ example: 'a1b2c3d4-e5f6-7890-abcd-ef0123456789', description: 'UUID of the event' })
+  @IsOptional()
+  @IsString()
+  uuid?: string;
+
+  @ApiPropertyOptional({ example: 123456, description: 'Contact ID associated with the recipient' })
+  @IsOptional()
+  contact_id?: any;
 }

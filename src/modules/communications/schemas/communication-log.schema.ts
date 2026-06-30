@@ -17,6 +17,13 @@ export enum CommunicationStatus {
   PENDING = 'pending',
   SENT = 'sent',
   FAILED = 'failed',
+  REQUESTED = 'requested',
+  DELIVERED = 'delivered',
+  OPENED = 'opened',
+  CLICKED = 'clicked',
+  BOUNCED = 'bounced',
+  SPAM = 'spam',
+  BLOCKED = 'blocked',
 }
 
 @Schema({

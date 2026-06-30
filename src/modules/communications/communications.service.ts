@@ -28,11 +28,13 @@ import {
 import {
   CreateCommunicationProviderDto,
   UpdateCommunicationProviderDto,
+  CreateBrevoSenderDto,
 } from './dto/communication-provider.dto';
 import { SendTemplateMessageDto } from './dto/message-template.dto';
 import { BrevoWebhookEventDto } from './dto/brevo-webhook.dto';
 import { ProviderRegistryService } from './providers/provider-registry.service';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
+import { BrevoEmailProvider } from './providers/brevo-email.provider';
 
 @Injectable()
 export class CommunicationsService {
@@ -125,6 +127,10 @@ export class CommunicationsService {
     }
 
     // Create pending log
+    const finalSenderEmail = dto.senderEmail || template.senderEmail;
+    const finalSenderName = dto.senderName || template.senderName;
+
+    // Create pending log
     const log = new this.logModel({
       channel: template.channel,
       recipient: dto.recipient,
@@ -136,6 +142,7 @@ export class CommunicationsService {
         params: dto.params,
         recipientName: dto.recipientName,
         providerName: provider.name,
+        ...(finalSenderEmail ? { senderEmail: finalSenderEmail, senderName: finalSenderName } : {}),
       },
     });
     const savedLog = await log.save();
@@ -153,6 +160,8 @@ export class CommunicationsService {
         templateSlug: dto.slug,
         externalTemplateId,
         params: dto.params,
+        senderEmail: finalSenderEmail,
+        senderName: finalSenderName,
       },
       {
         attempts: 3,
@@ -396,27 +405,36 @@ export class CommunicationsService {
 
   /**
    * Brevo event → CommunicationLog status mapping:
-   *   - delivered            → 'sent'  (confirms actual inbox delivery)
-   *   - hard_bounce, soft_bounce, blocked, error, invalid_email, spam → 'failed'
-   *   - request, deferred, opened, click, unsubscribed → informational only (logged in metadata)
    */
   private static readonly BREVO_STATUS_MAP: Record<string, CommunicationStatus | null> = {
-    delivered: CommunicationStatus.SENT,
-    hard_bounce: CommunicationStatus.FAILED,
-    soft_bounce: CommunicationStatus.FAILED,
-    blocked: CommunicationStatus.FAILED,
-    error: CommunicationStatus.FAILED,
+    request: CommunicationStatus.REQUESTED,
+    deferred: CommunicationStatus.PENDING,
+    delivered: CommunicationStatus.DELIVERED,
+    opened: CommunicationStatus.OPENED,
+    unique_opened: CommunicationStatus.OPENED,
+    proxy_open: CommunicationStatus.OPENED,
+    unique_proxy_open: CommunicationStatus.OPENED,
+    click: CommunicationStatus.CLICKED,
+    hard_bounce: CommunicationStatus.BOUNCED,
+    soft_bounce: CommunicationStatus.BOUNCED,
+    blocked: CommunicationStatus.BLOCKED,
+    spam: CommunicationStatus.SPAM,
     invalid_email: CommunicationStatus.FAILED,
-    spam: CommunicationStatus.FAILED,
-    // Informational-only events — don't override status
-    request: null,
-    deferred: null,
-    opened: null,
-    click: null,
+    error: CommunicationStatus.FAILED,
     unsubscribed: null,
-    unique_opened: null,
-    proxy_open: null,
-    unique_proxy_open: null,
+  };
+
+  private static readonly STATUS_PRECEDENCE: Record<CommunicationStatus, number> = {
+    [CommunicationStatus.PENDING]: 0,
+    [CommunicationStatus.REQUESTED]: 1,
+    [CommunicationStatus.SENT]: 2,
+    [CommunicationStatus.DELIVERED]: 3,
+    [CommunicationStatus.OPENED]: 4,
+    [CommunicationStatus.CLICKED]: 5,
+    [CommunicationStatus.FAILED]: 6,
+    [CommunicationStatus.BOUNCED]: 6,
+    [CommunicationStatus.SPAM]: 6,
+    [CommunicationStatus.BLOCKED]: 6,
   };
 
   /**
@@ -457,34 +475,60 @@ export class CommunicationsService {
       userAgent: payload.user_agent || null,
       deviceUsed: payload.device_used || null,
       sendingIp: payload.sending_ip || null,
+      ip: payload.sending_ip || null,
       receivedAt: new Date().toISOString(),
     };
 
-    // Append to the deliveryEvents audit trail
+    // Append to the deliveryEvents and webhookHistory audit trails
     const existingEvents = logDoc.metadata?.deliveryEvents || [];
     existingEvents.push(deliveryEvent);
+
+    const existingWebhookHistory = logDoc.metadata?.webhookHistory || [];
+    existingWebhookHistory.push(deliveryEvent);
 
     // Determine if we should update the log status
     const mappedStatus = CommunicationsService.BREVO_STATUS_MAP[payload.event];
 
-    // Only update status if the event maps to a concrete status change
-    // and we don't downgrade from 'sent' to 'sent' (no-op) or override
-    // 'failed' with an informational event.
     if (mappedStatus) {
-      logDoc.status = mappedStatus;
+      const currentPrecedence = CommunicationsService.STATUS_PRECEDENCE[logDoc.status as CommunicationStatus] || 0;
+      const newPrecedence = CommunicationsService.STATUS_PRECEDENCE[mappedStatus] || 0;
 
-      // For failure events, store the reason as error
-      if (mappedStatus === CommunicationStatus.FAILED) {
-        logDoc.error = payload.reason || `Brevo event: ${payload.event}`;
+      // Only update log status if the new status has equal or higher precedence
+      // This prevents out-of-order events from downgrading status (e.g. request arriving after delivered)
+      if (newPrecedence >= currentPrecedence) {
+        logDoc.status = mappedStatus;
+
+        // For failure events, store the reason as error
+        if (
+          [
+            CommunicationStatus.FAILED,
+            CommunicationStatus.BOUNCED,
+            CommunicationStatus.SPAM,
+            CommunicationStatus.BLOCKED,
+          ].includes(mappedStatus)
+        ) {
+          logDoc.error = payload.reason || `Brevo event: ${payload.event}`;
+        }
       }
     }
 
-    // Track the latest Brevo event name + update the deliveryEvents array
+    // Only update lastBrevoEvent if the incoming event is chronologically newer
+    const incomingTimestamp = deliveryEvent.timestamp;
+    const existingTimestamp = logDoc.metadata?.lastBrevoEventAt;
+    const isNewerEvent =
+      !existingTimestamp || new Date(incomingTimestamp) >= new Date(existingTimestamp);
+
+    // Track the latest Brevo event name + update the deliveryEvents & webhookHistory arrays
     logDoc.metadata = {
       ...logDoc.metadata,
       deliveryEvents: existingEvents,
-      lastBrevoEvent: payload.event,
-      lastBrevoEventAt: deliveryEvent.timestamp,
+      webhookHistory: existingWebhookHistory,
+      ...(isNewerEvent
+        ? {
+            lastBrevoEvent: payload.event,
+            lastBrevoEventAt: incomingTimestamp,
+          }
+        : {}),
     };
 
     await logDoc.save();
@@ -633,6 +677,72 @@ export class CommunicationsService {
     return { success: true };
   }
 
+  /**
+   * Retrieves all senders registered on the Brevo account.
+   */
+  async getBrevoSenders(): Promise<any> {
+    const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
+    if (!brevoProvider) {
+      throw new BadRequestException('Brevo provider is not enabled or registered.');
+    }
+    const client = brevoProvider.getClient();
+    if (!client) {
+      throw new BadRequestException('Brevo client is not initialized.');
+    }
+    try {
+      const response = await client.senders.getSenders();
+      return response;
+    } catch (err: any) {
+      this.logger.error(`Failed to fetch Brevo senders: ${err.message}`);
+      throw new BadRequestException(err.message || 'Failed to fetch Brevo senders.');
+    }
+  }
+
+  /**
+   * Registers a new sender with the Brevo API.
+   */
+  async createBrevoSender(dto: CreateBrevoSenderDto): Promise<any> {
+    const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
+    if (!brevoProvider) {
+      throw new BadRequestException('Brevo provider is not enabled or registered.');
+    }
+    const client = brevoProvider.getClient();
+    if (!client) {
+      throw new BadRequestException('Brevo client is not initialized.');
+    }
+    try {
+      const response = await client.senders.createSender({
+        email: dto.email,
+        name: dto.name,
+      });
+      return response;
+    } catch (err: any) {
+      this.logger.error(`Failed to create Brevo sender: ${err.message}`);
+      throw new BadRequestException(err.message || 'Failed to create Brevo sender.');
+    }
+  }
+
+  /**
+   * Deletes a sender from the Brevo account by its ID.
+   */
+  async deleteBrevoSender(id: number): Promise<any> {
+    const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
+    if (!brevoProvider) {
+      throw new BadRequestException('Brevo provider is not enabled or registered.');
+    }
+    const client = brevoProvider.getClient();
+    if (!client) {
+      throw new BadRequestException('Brevo client is not initialized.');
+    }
+    try {
+      await client.senders.deleteSender({ senderId: id });
+      return { success: true };
+    } catch (err: any) {
+      this.logger.error(`Failed to delete Brevo sender: ${err.message}`);
+      throw new BadRequestException(err.message || 'Failed to delete Brevo sender.');
+    }
+  }
+
   // 6. Event-Template Mappings CRUD
   async findAllEventMappings(): Promise<EventTemplateMapping[]> {
     return this.eventMappingModel
@@ -709,5 +819,118 @@ export class CommunicationsService {
       .findOne({ event, isActive: true, isDeleted: null })
       .populate('templateId')
       .exec();
+  }
+
+  async syncLogStatusWithProvider(id: string): Promise<CommunicationLog> {
+    const logDoc = await this.logModel.findOne({ _id: id, isDeleted: null }).exec();
+    if (!logDoc) {
+      throw new NotFoundException(`Communication log with ID ${id} not found`);
+    }
+
+    if (logDoc.channel !== CommunicationChannel.EMAIL) {
+      throw new BadRequestException('Status synchronization is only supported for Email communications.');
+    }
+
+    const messageId = logDoc.metadata?.brevoMessageId;
+    if (!messageId) {
+      throw new BadRequestException('This log does not have a Brevo Message ID associated with it.');
+    }
+
+    const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+    if (!brevoProvider) {
+      throw new BadRequestException('Brevo provider is not registered.');
+    }
+
+    const brevoClient = brevoProvider.getClient();
+    if (!brevoClient) {
+      throw new BadRequestException('Brevo client is not initialized. Check API configuration.');
+    }
+
+    try {
+      this.logger.debug(`Fetching latest update from Brevo for message ID: ${messageId}`);
+      const response = await brevoClient.transactionalEmails.getEmailEventReport({
+        messageId,
+      });
+
+      if (!response.events || response.events.length === 0) {
+        return logDoc;
+      }
+
+      const fetchedEvents = response.events.map((ev) => ({
+        event: ev.event,
+        timestamp: ev.date,
+        date: ev.date,
+        reason: ev.reason || null,
+        link: ev.link || null,
+        userAgent: null,
+        deviceUsed: null,
+        sendingIp: ev.ip || null,
+        ip: ev.ip || null,
+        receivedAt: new Date().toISOString(),
+      }));
+
+      const apiStatusMap: Record<string, CommunicationStatus | null> = {
+        requests: CommunicationStatus.REQUESTED,
+        deferred: CommunicationStatus.PENDING,
+        delivered: CommunicationStatus.DELIVERED,
+        opened: CommunicationStatus.OPENED,
+        clicks: CommunicationStatus.CLICKED,
+        bounces: CommunicationStatus.BOUNCED,
+        hardBounces: CommunicationStatus.BOUNCED,
+        softBounces: CommunicationStatus.BOUNCED,
+        blocked: CommunicationStatus.BLOCKED,
+        spam: CommunicationStatus.SPAM,
+        invalid: CommunicationStatus.FAILED,
+        error: CommunicationStatus.FAILED,
+      };
+
+      let highestStatus = logDoc.status;
+      let highestPrecedence = CommunicationsService.STATUS_PRECEDENCE[logDoc.status as CommunicationStatus] || 0;
+      let errorReason: string | null = logDoc.error || null;
+      let latestEvent = logDoc.metadata?.lastBrevoEvent || null;
+      let latestEventAt = logDoc.metadata?.lastBrevoEventAt || null;
+
+      for (const ev of response.events) {
+        const mapped = apiStatusMap[ev.event];
+        if (mapped) {
+          const prec = CommunicationsService.STATUS_PRECEDENCE[mapped] || 0;
+          if (prec >= highestPrecedence) {
+            highestStatus = mapped;
+            highestPrecedence = prec;
+            if (
+              [
+                CommunicationStatus.FAILED,
+                CommunicationStatus.BOUNCED,
+                CommunicationStatus.SPAM,
+                CommunicationStatus.BLOCKED,
+              ].includes(mapped)
+            ) {
+              errorReason = ev.reason || `Brevo API event: ${ev.event}`;
+            }
+          }
+        }
+
+        if (!latestEventAt || new Date(ev.date) >= new Date(latestEventAt)) {
+          latestEvent = ev.event;
+          latestEventAt = ev.date;
+        }
+      }
+
+      logDoc.status = highestStatus;
+      logDoc.error = errorReason;
+      logDoc.metadata = {
+        ...logDoc.metadata,
+        deliveryEvents: fetchedEvents,
+        webhookHistory: fetchedEvents,
+        ...(latestEvent ? { lastBrevoEvent: latestEvent, lastBrevoEventAt: latestEventAt } : {}),
+      };
+
+      await logDoc.save();
+      this.logger.log(`Manual sync completed for log ${id}. Mapped status: ${highestStatus}`);
+      return logDoc;
+    } catch (error) {
+      this.logger.error(`Failed to sync log status from Brevo: ${error.message}`);
+      throw new BadRequestException(`Failed to sync log status from Brevo: ${error.message}`);
+    }
   }
 }

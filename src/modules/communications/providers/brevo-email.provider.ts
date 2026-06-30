@@ -42,8 +42,12 @@ export class BrevoEmailProvider implements ICommunicationProvider {
 
     try {
       this.logger.debug(`Sending transactional email via Brevo SDK to ${payload.recipient}`);
+      const sender = payload.senderEmail
+        ? { name: payload.senderName || payload.senderEmail.split('@')[0], email: payload.senderEmail }
+        : { name: this.senderName, email: this.senderEmail };
+
       const response = await this.client.transactionalEmails.sendTransacEmail({
-        sender: { name: this.senderName, email: this.senderEmail },
+        sender,
         to: [{ email: payload.recipient }],
         subject: payload.title,
         htmlContent: payload.content,
@@ -74,8 +78,12 @@ export class BrevoEmailProvider implements ICommunicationProvider {
 
     try {
       this.logger.debug(`Sending template email via Brevo SDK to ${payload.recipient} using templateId ${payload.externalTemplateId}`);
+      const sender = payload.senderEmail
+        ? { name: payload.senderName || payload.senderEmail.split('@')[0], email: payload.senderEmail }
+        : { name: this.senderName, email: this.senderEmail };
+
       const response = await this.client.transactionalEmails.sendTransacEmail({
-        sender: { name: this.senderName, email: this.senderEmail },
+        sender,
         to: [{ email: payload.recipient, name: payload.recipientName }],
         templateId: payload.externalTemplateId,
         params: payload.params,
@@ -128,5 +136,13 @@ export class BrevoEmailProvider implements ICommunicationProvider {
   // Helper method for template syncing (specific to Brevo provider)
   getClient(): BrevoClient | null {
     return this.client;
+  }
+
+  getSenderEmail(): string {
+    return this.senderEmail;
+  }
+
+  getSenderName(): string {
+    return this.senderName;
   }
 }

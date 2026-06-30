@@ -48,6 +48,16 @@ export class CreateMessageTemplateDto {
   @IsOptional()
   variables?: string[];
 
+  @ApiPropertyOptional({ example: 'support@example.com', description: 'Template-specific override sender email' })
+  @IsString()
+  @IsOptional()
+  senderEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Support Team', description: 'Template-specific override sender display name' })
+  @IsString()
+  @IsOptional()
+  senderName?: string;
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()
@@ -90,4 +100,14 @@ export class SendTemplateMessageDto {
   @IsObject()
   @IsNotEmpty()
   params: Record<string, any>;
+
+  @ApiPropertyOptional({ example: 'sender@example.com' })
+  @IsString()
+  @IsOptional()
+  senderEmail?: string;
+
+  @ApiPropertyOptional({ example: 'Sender Name' })
+  @IsString()
+  @IsOptional()
+  senderName?: string;
 }

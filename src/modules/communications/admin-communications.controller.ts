@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -31,6 +32,7 @@ import {
   CreateCommunicationProviderDto,
   UpdateCommunicationProviderDto,
   RegisterBrevoWebhookDto,
+  CreateBrevoSenderDto,
 } from './dto/communication-provider.dto';
 import {
   CreateMessageTemplateDto,
@@ -46,6 +48,7 @@ import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
+import { AppEvents } from '@modules/events/event-definitions';
 
 @ApiTags('Admin | Communications')
 @ApiBearerAuth()
@@ -74,6 +77,15 @@ export class AdminCommunicationsController {
   @ApiResponse({ status: 404, description: 'Not Found' })
   findOneLog(@Param('id') id: string) {
     return this.communicationsService.findOneLog(id);
+  }
+
+  @Post('logs/:id/sync')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
+  @ApiOperation({ summary: 'Manual sync / fetch latest status update from provider for a communication log' })
+  @ApiResponse({ status: 200, description: 'Success' })
+  @ApiResponse({ status: 404, description: 'Not Found' })
+  syncLogStatus(@Param('id') id: string) {
+    return this.communicationsService.syncLogStatusWithProvider(id);
   }
 
   @Post('send')
@@ -165,6 +177,13 @@ export class AdminCommunicationsController {
   }
 
   // Bidirectional Synchronization Endpoints
+  @Post('templates/sync')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @ApiOperation({ summary: 'Perform bidirectional sync of all templates with Brevo' })
+  async syncAllTemplates() {
+    return this.templateService.syncAllWithBrevo();
+  }
+
   @Post('templates/:id/sync/to-provider')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @ApiOperation({ summary: 'Push local design template to Brevo SMTP templates' })
@@ -242,7 +261,49 @@ export class AdminCommunicationsController {
     return this.communicationsService.unregisterBrevoWebhook();
   }
 
-  // 6. Event-Template Mappings CRUD
+  @Get('providers/brevo/senders')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
+  @ApiOperation({ summary: 'Retrieve all senders registered on Brevo' })
+  getBrevoSenders() {
+    return this.communicationsService.getBrevoSenders();
+  }
+
+  @Post('providers/brevo/senders')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @ApiOperation({ summary: 'Register a new sender with Brevo' })
+  createBrevoSender(@Body() dto: CreateBrevoSenderDto) {
+    return this.communicationsService.createBrevoSender(dto);
+  }
+
+  @Delete('providers/brevo/senders/:id')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a registered sender from Brevo' })
+  deleteBrevoSender(@Param('id') id: string) {
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) {
+      throw new BadRequestException('Sender ID must be a numeric value.');
+    }
+    return this.communicationsService.deleteBrevoSender(numericId);
+  }
+
+  // 6. System Events Discovery
+  @Get('system-events')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
+  @ApiOperation({ summary: 'List all registered system event names for mapping' })
+  @ApiResponse({ status: 200, description: 'Returns categorised system events' })
+  getSystemEvents() {
+    const categories: Record<string, { key: string; value: string }[]> = {};
+
+    for (const [key, value] of Object.entries(AppEvents)) {
+      const category = (value as string).split('.')[0];
+      if (!categories[category]) categories[category] = [];
+      categories[category].push({ key, value: value as string });
+    }
+
+    return { events: Object.values(AppEvents), categories };
+  }
+
+  // 7. Event-Template Mappings CRUD
   @Get('event-mappings')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
   @ApiOperation({ summary: 'List all event-template mappings' })
