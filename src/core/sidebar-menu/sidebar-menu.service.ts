@@ -41,18 +41,11 @@ export class SidebarMenuService {
       dto.group = dto.group.toLowerCase();
     }
     // Check for duplicates
-    const existing = await this.sidebarMenuModel.findOne({
-      $or: [{ path: dto.path }, { permissionKey: dto.permissionKey }],
-    });
+    const existing = await this.sidebarMenuModel.findOne({ path: dto.path });
 
     if (existing) {
-      if (existing.path === dto.path) {
-        throw new ConflictException(
-          `SidebarMenu with path "${dto.path}" already exists`,
-        );
-      }
       throw new ConflictException(
-        `SidebarMenu with permission key "${dto.permissionKey}" already exists`,
+        `SidebarMenu with path "${dto.path}" already exists`,
       );
     }
 
@@ -77,23 +70,15 @@ export class SidebarMenuService {
       dto.group = dto.group.toLowerCase();
     }
     // Check for duplicates excluding current item
-    if (dto.path || dto.permissionKey) {
+    if (dto.path) {
       const existing = await this.sidebarMenuModel.findOne({
         _id: { $ne: id },
-        $or: [
-          ...(dto.path ? [{ path: dto.path }] : []),
-          ...(dto.permissionKey ? [{ permissionKey: dto.permissionKey }] : []),
-        ],
+        path: dto.path,
       });
 
       if (existing) {
-        if (dto.path && existing.path === dto.path) {
-          throw new ConflictException(
-            `SidebarMenu with path "${dto.path}" already exists`,
-          );
-        }
         throw new ConflictException(
-          `SidebarMenu with permission key "${dto.permissionKey}" already exists`,
+          `SidebarMenu with path "${dto.path}" already exists`,
         );
       }
     }

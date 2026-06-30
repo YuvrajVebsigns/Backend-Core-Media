@@ -157,15 +157,9 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
       },
     ];
 
-    const existingSidebarMenus =
-      await this.sidebarMenuService.getAllSidebarMenus(true, {
-        page: 1,
-        limit: 10,
-      });
-
+    // 1. Seed base menus
     for (const menuData of menus) {
       try {
-        // Check if menu exists by name (simplistic but works for seeds)
         const existing = await this.sidebarMenuService.getAllSidebarMenus(
           true,
           {
@@ -178,15 +172,95 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         if (existing.data.length === 0) {
           await this.sidebarMenuService.createSidebarMenu(menuData as any);
           console.log(`✅ SidebarMenu seeded: ${menuData.name}`);
-        } else {
-          // Optional: Update existing menu if needed
-          // await this.sidebarMenuService.updateSidebarMenu(existing.data[0].id, menuData as any);
         }
       } catch (error) {
         console.error(
           `❌ Failed to seed menu ${menuData.name}:`,
           error.message,
         );
+      }
+    }
+
+    // 2. Seed Communications Parent Menu
+    let commParent: any = null;
+    try {
+      const existing = await this.sidebarMenuService.getAllSidebarMenus(
+        true,
+        {
+          page: 1,
+          limit: 1,
+          search: 'Communications',
+        },
+      );
+
+      if (existing.data.length === 0) {
+        commParent = await this.sidebarMenuService.createSidebarMenu({
+          name: 'Communications',
+          path: '/communications',
+          permissionKey: 'communications.view',
+          icon: 'messages-square',
+          order: 6,
+          group: 'content management',
+        } as any);
+        console.log(`✅ Parent SidebarMenu seeded: Communications`);
+      } else {
+        commParent = existing.data[0];
+      }
+    } catch (error) {
+      console.error('❌ Failed to seed Communications parent menu:', error.message);
+    }
+
+    // 3. Seed Communications Child Menus if parent is resolved
+    if (commParent) {
+      const parentId = commParent.id || commParent._id;
+      const children = [
+        {
+          name: 'Delivery Report',
+          path: '/delivery-report',
+          permissionKey: 'communications.view',
+          icon: 'scroll-text',
+          order: 1,
+          group: 'content management',
+          parentId,
+        },
+        {
+          name: 'Templates',
+          path: '/templates',
+          permissionKey: 'communications.view',
+          icon: 'file-code',
+          order: 2,
+          group: 'content management',
+          parentId,
+        },
+        {
+          name: 'Providers / Plugins',
+          path: '/providers-plugins',
+          permissionKey: 'communications.view',
+          icon: 'activity',
+          order: 3,
+          group: 'super admin controls',
+          parentId,
+        },
+      ];
+
+      for (const child of children) {
+        try {
+          const existing = await this.sidebarMenuService.getAllSidebarMenus(
+            true,
+            {
+              page: 1,
+              limit: 1,
+              search: child.name,
+            },
+          );
+
+          if (existing.data.length === 0) {
+            await this.sidebarMenuService.createSidebarMenu(child as any);
+            console.log(`   ✅ Submenu seeded: ${child.name}`);
+          }
+        } catch (error) {
+          console.error(`   ❌ Failed to seed submenu ${child.name}:`, error.message);
+        }
       }
     }
   }

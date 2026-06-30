@@ -10,12 +10,20 @@ export enum CommunicationChannel {
   SMS = 'sms',
   PUSH = 'push',
   WEBHOOK = 'webhook',
+  WHATSAPP = 'whatsapp',
 }
 
 export enum CommunicationStatus {
   PENDING = 'pending',
   SENT = 'sent',
   FAILED = 'failed',
+  REQUESTED = 'requested',
+  DELIVERED = 'delivered',
+  OPENED = 'opened',
+  CLICKED = 'clicked',
+  BOUNCED = 'bounced',
+  SPAM = 'spam',
+  BLOCKED = 'blocked',
 }
 
 @Schema({
@@ -66,6 +74,9 @@ export const CommunicationLogSchema = SchemaFactory.createForClass(Communication
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(CommunicationLogSchema);
+
+// Index for fast Brevo webhook event matching by messageId
+CommunicationLogSchema.index({ 'metadata.brevoMessageId': 1 }, { sparse: true });
 
 CommunicationLogSchema.set('toJSON', {
   getters: true,
