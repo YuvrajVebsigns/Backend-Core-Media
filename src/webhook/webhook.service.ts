@@ -40,6 +40,31 @@ export const DEPLOY_REGISTRY: Record<
     cmdKey: 'DEPLOY_WEBSITE_2_CMD',
     branchKey: 'DEPLOY_WEBSITE_2_BRANCH',
   },
+  'website-3': {
+    dirKey: 'DEPLOY_WEBSITE_3_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_3_CMD',
+    branchKey: 'DEPLOY_WEBSITE_3_BRANCH',
+  },
+  'website-4': {
+    dirKey: 'DEPLOY_WEBSITE_4_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_4_CMD',
+    branchKey: 'DEPLOY_WEBSITE_4_BRANCH',
+  },
+  'website-5': {
+    dirKey: 'DEPLOY_WEBSITE_5_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_5_CMD',
+    branchKey: 'DEPLOY_WEBSITE_5_BRANCH',
+  },
+  'website-6': {
+    dirKey: 'DEPLOY_WEBSITE_6_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_6_CMD',
+    branchKey: 'DEPLOY_WEBSITE_6_BRANCH',
+  },
+  'website-7': {
+    dirKey: 'DEPLOY_WEBSITE_7_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_7_CMD',
+    branchKey: 'DEPLOY_WEBSITE_7_BRANCH',
+  },
 };
 
 @Injectable()
