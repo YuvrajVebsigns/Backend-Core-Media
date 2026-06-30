@@ -10,7 +10,7 @@ import {
   timestamps: true,
 })
 export class EventTemplateMapping extends BaseSchema {
-  @Prop({ required: true, index: true, trim: true })
+  @Prop({ required: true, trim: true })
   event: string;
 
   @Prop({
