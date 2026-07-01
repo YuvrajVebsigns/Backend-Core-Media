@@ -13,6 +13,12 @@ import {
   UpdateNominationStatusDto,
   QueryNominationDto,
 } from './dto/nomination.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  NominationSubmittedEvent,
+  NominationStatusChangedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class NominationsService {
@@ -21,6 +27,7 @@ export class NominationsService {
     private readonly nominationModel: Model<Nomination>,
     @InjectModel(Registree.name)
     private readonly registreeModel: Model<Registree>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -97,7 +104,20 @@ export class NominationsService {
     });
 
     const saved = await nomination.save();
-    return this.findOne(saved.id);
+    const result = await this.findOne(saved.id);
+
+    this.eventEmitter.emit(
+      AppEvents.NOMINATION_SUBMITTED,
+      new NominationSubmittedEvent(
+        result._id.toString(),
+        createDto.nominees?.[0]?.categoryId || '',
+        createDto.nominees ? createDto.nominees.map(n => n.contactName).join(', ') : '',
+        createDto.nominatorEmail,
+        websiteId,
+      ),
+    );
+
+    return result;
   }
 
   /**
@@ -456,6 +476,9 @@ export class NominationsService {
     id: string,
     updateStatusDto: UpdateNominationStatusDto,
   ): Promise<Nomination> {
+    const existing = await this.findOne(id);
+    const previousStatus = existing.status;
+
     const nomination = await this.nominationModel
       .findByIdAndUpdate(id, { status: updateStatusDto.status }, { new: true })
       .exec();
@@ -464,7 +487,18 @@ export class NominationsService {
       throw new NotFoundException(`Nomination with ID ${id} not found`);
     }
 
-    return this.findOne(id);
+    const result = await this.findOne(id);
+
+    this.eventEmitter.emit(
+      AppEvents.NOMINATION_STATUS_CHANGED,
+      new NominationStatusChangedEvent(
+        result._id.toString(),
+        previousStatus,
+        result.status,
+      ),
+    );
+
+    return result;
   }
 
   /**

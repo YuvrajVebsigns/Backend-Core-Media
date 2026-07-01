@@ -10,11 +10,18 @@ import * as bcrypt from 'bcrypt';
 import { QuerySystemUserDto } from './dto/system-user.dto';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 import { SystemUserRole } from '@common/enums/role.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  SystemUserCreatedEvent,
+  SystemUserUpdatedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class SystemUsersService {
   constructor(
     @InjectModel(SystemUser.name) private systemUserModel: Model<SystemUser>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private sanitizeImageUrls(dto: any) {
@@ -43,7 +50,18 @@ export class SystemUsersService {
 
     try {
       const savedUser = await newUser.save();
-      return savedUser.populate(['role', 'profileImageId']);
+      const populated = await savedUser.populate(['role', 'profileImageId']);
+
+      this.eventEmitter.emit(
+        AppEvents.SYSTEM_USER_CREATED,
+        new SystemUserCreatedEvent(
+          populated.id || populated._id.toString(),
+          populated.email,
+          populated.fullName,
+        ),
+      );
+
+      return populated;
     } catch (error: any) {
       if (error.code === 11000) {
         throw new ConflictException(
@@ -230,6 +248,14 @@ export class SystemUsersService {
     if (!updatedUser) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.SYSTEM_USER_UPDATED,
+      new SystemUserUpdatedEvent(
+        updatedUser.id || updatedUser._id.toString(),
+        updateDto,
+      ),
+    );
 
     return updatedUser;
   }

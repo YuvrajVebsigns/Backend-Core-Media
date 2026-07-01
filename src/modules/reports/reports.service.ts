@@ -15,6 +15,12 @@ import {
   QueryReportDto,
   DownloadReportDto,
 } from './dto/report.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  ReportCreatedEvent,
+  ReportDownloadedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class ReportsService {
@@ -22,6 +28,7 @@ export class ReportsService {
     @InjectModel(Report.name) private readonly reportModel: Model<Report>,
     @InjectModel(Registree.name) private readonly registreeModel: Model<Registree>,
     private readonly filesService: FilesService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ─── Admin Operations ──────────────────────────────────────────────────────
@@ -55,7 +62,18 @@ export class ReportsService {
     });
 
     const saved = await report.save();
-    return this.findOne(saved.id);
+    const result = await this.findOne(saved.id);
+
+    this.eventEmitter.emit(
+      AppEvents.REPORT_CREATED,
+      new ReportCreatedEvent(
+        result._id.toString(),
+        result.title,
+        userId,
+      ),
+    );
+
+    return result;
   }
 
   async update(
@@ -265,6 +283,15 @@ export class ReportsService {
       const fileRes = this.filesService.mapToResponse(fileDoc);
       downloadUrl = fileRes.url;
     }
+
+    this.eventEmitter.emit(
+      AppEvents.REPORT_DOWNLOADED,
+      new ReportDownloadedEvent(
+        report._id.toString(),
+        email,
+        websiteId,
+      ),
+    );
 
     return {
       downloadUrl,

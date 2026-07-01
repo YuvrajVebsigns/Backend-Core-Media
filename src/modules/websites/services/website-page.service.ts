@@ -10,6 +10,11 @@ import { SectionService } from './section.service';
 import { SeoService } from './seo.service';
 import { WebsiteCacheService } from './website-cache.service';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  WebsitePagePublishedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class WebsitePageService {
@@ -19,6 +24,7 @@ export class WebsitePageService {
     private readonly sectionService: SectionService,
     private readonly seoService: SeoService,
     private readonly cacheService: WebsiteCacheService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   private async unsetHomepageForSite(siteId: string): Promise<void> {
@@ -55,6 +61,20 @@ export class WebsitePageService {
 
     const saved = await page.save();
     await this.cacheService.invalidatePage(createDto.siteId, saved.slug);
+
+    if (saved.status === PageStatus.PUBLISHED) {
+      this.eventEmitter.emit(
+        AppEvents.WEBSITE_PAGE_PUBLISHED,
+        new WebsitePagePublishedEvent(
+          saved._id.toString(),
+          saved.siteId.toString(),
+          saved.slug,
+          userId,
+          saved.publishedAt || new Date(),
+        ),
+      );
+    }
+
     return saved;
   }
 
@@ -187,6 +207,19 @@ export class WebsitePageService {
       await this.cacheService.invalidatePage(existing.siteId.toString(), updated.slug);
     }
 
+    if (updated.status === PageStatus.PUBLISHED && existing.status !== PageStatus.PUBLISHED) {
+      this.eventEmitter.emit(
+        AppEvents.WEBSITE_PAGE_PUBLISHED,
+        new WebsitePagePublishedEvent(
+          updated._id.toString(),
+          updated.siteId.toString(),
+          updated.slug,
+          userId,
+          updated.publishedAt || new Date(),
+        ),
+      );
+    }
+
     return updated;
   }
 
@@ -204,6 +237,18 @@ export class WebsitePageService {
     const saved = await page.save();
 
     await this.cacheService.invalidatePage(page.siteId.toString(), page.slug);
+
+    this.eventEmitter.emit(
+      AppEvents.WEBSITE_PAGE_PUBLISHED,
+      new WebsitePagePublishedEvent(
+        saved._id.toString(),
+        saved.siteId.toString(),
+        saved.slug,
+        userId,
+        saved.publishedAt,
+      ),
+    );
+
     return saved;
   }
 

@@ -13,6 +13,14 @@ import { UrlService } from '@core/files/services/url.service';
 import { FilesService } from '@core/files/services/files.service';
 import { FileModule } from '@core/files/enums/file-module.enum';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  EventCreatedEvent,
+  EventUpdatedEvent,
+  EventDeletedEvent,
+  EventMeetingCreatedEvent,
+} from '@modules/events/event-definitions';
 
 /** Only fetch the fields we need from the File document when populating */
 const IMAGE_POPULATE_SELECT = '_id key variants metadata';
@@ -26,6 +34,7 @@ export class EventsService {
     private eventMeetingModel: Model<EventMeeting>,
     private readonly urlService: UrlService,
     private readonly filesService: FilesService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   /**
@@ -142,7 +151,19 @@ export class EventsService {
       await this.uploadAndSetBanner(savedEvent._id.toString(), bannerFile, uploadedBy);
     }
 
-    return this.findOne(savedEvent._id.toString());
+    const saved = await this.findOne(savedEvent._id.toString());
+
+    this.eventEmitter.emit(
+      AppEvents.EVENT_CREATED,
+      new EventCreatedEvent(
+        saved._id.toString(),
+        saved.title,
+        saved.type,
+        uploadedBy || '',
+      ),
+    );
+
+    return saved;
   }
 
   async findAll(
@@ -451,6 +472,16 @@ export class EventsService {
 
     const eventJson = this.transformImageFields(updatedEvent);
     eventJson.totalRegistrations = totalRegistrations;
+
+    this.eventEmitter.emit(
+      AppEvents.EVENT_UPDATED,
+      new EventUpdatedEvent(
+        updatedEvent._id.toString(),
+        updatedEvent.title,
+        updateEventDto,
+      ),
+    );
+
     return eventJson as any;
   }
 
@@ -498,6 +529,14 @@ export class EventsService {
     if (!result) {
       throw new NotFoundException(`Event with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.EVENT_DELETED,
+      new EventDeletedEvent(
+        result._id.toString(),
+        result.title,
+      ),
+    );
   }
 
   async createMeeting(eventId: string, createDto: CreateEventMeetingDto): Promise<EventMeeting> {
@@ -510,7 +549,27 @@ export class EventsService {
       eventId,
     });
     const savedMeeting = await createdMeeting.save();
-    return this.findMeetingById(savedMeeting._id.toString());
+    const result = await this.findMeetingById(savedMeeting._id.toString());
+
+    const eventTitle = event.title || '';
+    const time = result.agendaTime || '';
+    const date = event.startDate ? new Date(event.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const eventDetails = event.excerpt || '';
+
+    this.eventEmitter.emit(
+      AppEvents.EVENT_MEETING_CREATED,
+      new EventMeetingCreatedEvent(
+        result._id.toString(),
+        eventId,
+        result.agendaTitle,
+        eventTitle,
+        time,
+        date,
+        eventDetails,
+      ),
+    );
+
+    return result;
   }
 
   async findMeetingsByEvent(eventId: string): Promise<EventMeeting[]> {

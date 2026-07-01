@@ -18,6 +18,15 @@ import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 import { BlogStatus } from './enums/blog-status.enum';
 import { AutoArchiveDuration } from './enums/auto-archive-duration.enum';
 import { UrlService } from '@core/files/services/url.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  BlogCreatedEvent,
+  BlogUpdatedEvent,
+  BlogDeletedEvent,
+  BlogCommentAddedEvent,
+  BlogLikedEvent,
+} from '@modules/events/event-definitions';
 
 /** Only fetch the fields we need from the File document when populating */
 const IMAGE_POPULATE_SELECT = '_id key variants metadata';
@@ -31,6 +40,7 @@ export class BlogsService {
     @InjectQueue('blog-engagement') private engagementQueue: Queue,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly urlService: UrlService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   /**
@@ -164,7 +174,18 @@ export class BlogsService {
       ...createDto,
       author: authorId,
     });
-    return newBlog.save();
+    const saved = await newBlog.save();
+
+    this.eventEmitter.emit(
+      AppEvents.BLOG_CREATED,
+      new BlogCreatedEvent(
+        saved._id.toString(),
+        saved.title,
+        authorId,
+      ),
+    );
+
+    return saved;
   }
 
   private buildMatchQuery(queryDto: QueryBlogDto): any {
@@ -362,17 +383,32 @@ export class BlogsService {
       throw new NotFoundException(`Blog with ID ${id} not found`);
     }
 
+    this.eventEmitter.emit(
+      AppEvents.BLOG_UPDATED,
+      new BlogUpdatedEvent(
+        blog._id.toString(),
+        blog.title,
+      ),
+    );
+
     return blog;
   }
 
   async remove(id: string): Promise<void> {
     const result = await this.blogModel
-      .updateOne({ _id: id }, { isDeleted: new Date() })
+      .findByIdAndUpdate(id, { isDeleted: new Date() })
       .exec();
 
-    if (result.matchedCount === 0) {
+    if (!result) {
       throw new NotFoundException(`Blog with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.BLOG_DELETED,
+      new BlogDeletedEvent(
+        result._id.toString(),
+      ),
+    );
   }
 
   private async bufferEngagement(
@@ -413,6 +449,14 @@ export class BlogsService {
     const bufferedLikes =
       (await this.cacheManager.get<number>(`blog:engagement:${id}:likes`)) || 0;
     blog.engagement.likes += 1; // For immediate UI feedback if returned
+
+    this.eventEmitter.emit(
+      AppEvents.BLOG_LIKED,
+      new BlogLikedEvent(
+        blog._id.toString(),
+      ),
+    );
+
     return blog;
   }
 
@@ -436,12 +480,22 @@ export class BlogsService {
       status: 'Pending',
     });
 
-    await comment.save();
+    const savedComment = await comment.save();
 
     // Buffer the comment count increment
     await this.bufferEngagement(blogId, 'comments');
 
-    return comment;
+    this.eventEmitter.emit(
+      AppEvents.BLOG_COMMENT_ADDED,
+      new BlogCommentAddedEvent(
+        blogId,
+        savedComment._id.toString(),
+        savedComment.authorName,
+        savedComment.authorEmail,
+      ),
+    );
+
+    return savedComment;
   }
 
   async getComments(

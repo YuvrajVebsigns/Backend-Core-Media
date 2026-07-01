@@ -16,6 +16,12 @@ import {
   QueryWebsiteDto,
 } from './dto/website.dto';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  WebsiteCreatedEvent,
+  WebsiteUpdatedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class WebsitesService {
@@ -23,6 +29,7 @@ export class WebsitesService {
     @InjectModel(Website.name) private websiteModel: Model<Website>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   private sanitizeImageUrls(dto: any) {
@@ -50,7 +57,18 @@ export class WebsitesService {
     this.sanitizeImageUrls(createDto);
 
     const newWebsite = new this.websiteModel(createDto);
-    return newWebsite.save();
+    const saved = await newWebsite.save();
+
+    this.eventEmitter.emit(
+      AppEvents.WEBSITE_CREATED,
+      new WebsiteCreatedEvent(
+        saved._id.toString(),
+        saved.name,
+        saved.domain,
+      ),
+    );
+
+    return saved;
   }
 
   async findAll(
@@ -132,6 +150,15 @@ export class WebsitesService {
     if (!website) {
       throw new NotFoundException(`Website with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.WEBSITE_UPDATED,
+      new WebsiteUpdatedEvent(
+        website._id.toString(),
+        website.name,
+        updateDto,
+      ),
+    );
 
     return website;
   }
