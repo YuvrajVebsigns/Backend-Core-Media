@@ -157,6 +157,10 @@ export class EventMeetingCreatedEvent {
     public readonly meetingId: string,
     public readonly eventId: string,
     public readonly title: string,
+    public readonly eventTitle: string,
+    public readonly time: string,
+    public readonly date: string,
+    public readonly eventDetails: string,
     public readonly createdAt: Date = new Date(),
   ) {}
 }
@@ -215,6 +219,9 @@ export class ContactSubmittedEvent {
     public readonly contactId: string,
     public readonly fullName: string,
     public readonly email: string,
+    public readonly phone: string,
+    public readonly service: string,
+    public readonly message: string,
     public readonly websiteId: string,
     public readonly submittedAt: Date = new Date(),
   ) {}
@@ -427,3 +434,256 @@ export const AppEvents = {
   // Files
   FILE_UPLOADED: 'file.uploaded',
 } as const;
+
+// ──────────────────────────────────────────────
+// Event Payload Registry
+// Maps each event to its real payload DTO fields.
+// Used by the admin frontend to display available
+// template variables as chips on the template editor.
+// ──────────────────────────────────────────────
+
+export const EventPayloadRegistry: Record<
+  string,
+  { field: string; type: string; description: string }[]
+> = {
+  // Auth Events
+  [AppEvents.USER_SIGNED_UP]: [
+    { field: 'userId', type: 'string', description: 'User ID' },
+    { field: 'email', type: 'string', description: 'User email address' },
+    { field: 'name', type: 'string', description: 'User display name' },
+    { field: 'roleKey', type: 'string', description: 'Assigned role key' },
+    { field: 'createdAt', type: 'Date', description: 'Sign-up timestamp' },
+  ],
+  [AppEvents.USER_LOGGED_IN]: [
+    { field: 'userId', type: 'string', description: 'User ID' },
+    { field: 'email', type: 'string', description: 'User email address' },
+    { field: 'loggedInAt', type: 'Date', description: 'Login timestamp' },
+  ],
+  [AppEvents.PASSWORD_RESET]: [
+    { field: 'userId', type: 'string', description: 'User ID' },
+    { field: 'email', type: 'string', description: 'User email address' },
+    { field: 'resetAt', type: 'Date', description: 'Password reset timestamp' },
+  ],
+
+  // System User Events
+  [AppEvents.SYSTEM_USER_CREATED]: [
+    { field: 'userId', type: 'string', description: 'System user ID' },
+    { field: 'email', type: 'string', description: 'System user email' },
+    { field: 'name', type: 'string', description: 'System user name' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.SYSTEM_USER_UPDATED]: [
+    { field: 'userId', type: 'string', description: 'System user ID' },
+    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
+  ],
+
+  // Attendee Events
+  [AppEvents.ATTENDEE_REGISTERED]: [
+    { field: 'registreeId', type: 'string', description: 'Registree ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'name', type: 'string', description: 'Attendee name' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'websiteId', type: 'string', description: 'Source website ID' },
+    { field: 'registeredAt', type: 'Date', description: 'Registration timestamp' },
+  ],
+  [AppEvents.ATTENDEE_APPROVED]: [
+    { field: 'attendeeId', type: 'string', description: 'Attendee ID' },
+    { field: 'registreeId', type: 'string', description: 'Registree ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'name', type: 'string', description: 'Attendee name' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'passCode', type: 'string', description: 'Assigned pass code' },
+    { field: 'approvedAt', type: 'Date', description: 'Approval timestamp' },
+  ],
+  [AppEvents.ATTENDEE_REJECTED]: [
+    { field: 'registreeId', type: 'string', description: 'Registree ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'rejectedAt', type: 'Date', description: 'Rejection timestamp' },
+  ],
+  [AppEvents.ATTENDEE_BLOCKED]: [
+    { field: 'registreeId', type: 'string', description: 'Registree ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'blockedAt', type: 'Date', description: 'Block timestamp' },
+  ],
+  [AppEvents.ATTENDEE_CHECKED_IN]: [
+    { field: 'attendeeId', type: 'string', description: 'Attendee ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'name', type: 'string', description: 'Attendee name' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'passCode', type: 'string', description: 'Pass code used' },
+    { field: 'checkedInAt', type: 'Date', description: 'Check-in timestamp' },
+  ],
+  [AppEvents.ATTENDEE_CREATED_BY_ADMIN]: [
+    { field: 'attendeeId', type: 'string', description: 'Attendee ID' },
+    { field: 'email', type: 'string', description: 'Attendee email' },
+    { field: 'name', type: 'string', description: 'Attendee name' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'passCode', type: 'string', description: 'Assigned pass code' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+
+  // Event Management Events
+  [AppEvents.EVENT_CREATED]: [
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'title', type: 'string', description: 'Event title' },
+    { field: 'type', type: 'string', description: 'Event type' },
+    { field: 'createdBy', type: 'string', description: 'Creator user ID' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.EVENT_UPDATED]: [
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'title', type: 'string', description: 'Event title' },
+    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
+  ],
+  [AppEvents.EVENT_DELETED]: [
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'title', type: 'string', description: 'Event title' },
+    { field: 'deletedAt', type: 'Date', description: 'Deletion timestamp' },
+  ],
+  [AppEvents.EVENT_MEETING_CREATED]: [
+    { field: 'meetingId', type: 'string', description: 'Meeting ID' },
+    { field: 'eventId', type: 'string', description: 'Parent event ID' },
+    { field: 'title', type: 'string', description: 'Meeting title' },
+    { field: 'eventTitle', type: 'string', description: 'Parent event title' },
+    { field: 'time', type: 'string', description: 'Meeting time' },
+    { field: 'date', type: 'string', description: 'Meeting date' },
+    { field: 'eventDetails', type: 'string', description: 'Parent event details' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+
+  // Blog Events
+  [AppEvents.BLOG_CREATED]: [
+    { field: 'blogId', type: 'string', description: 'Blog post ID' },
+    { field: 'title', type: 'string', description: 'Blog title' },
+    { field: 'authorId', type: 'string', description: 'Author user ID' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.BLOG_UPDATED]: [
+    { field: 'blogId', type: 'string', description: 'Blog post ID' },
+    { field: 'title', type: 'string', description: 'Blog title' },
+    { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
+  ],
+  [AppEvents.BLOG_DELETED]: [
+    { field: 'blogId', type: 'string', description: 'Blog post ID' },
+    { field: 'deletedAt', type: 'Date', description: 'Deletion timestamp' },
+  ],
+  [AppEvents.BLOG_COMMENT_ADDED]: [
+    { field: 'blogId', type: 'string', description: 'Blog post ID' },
+    { field: 'commentId', type: 'string', description: 'Comment ID' },
+    { field: 'authorName', type: 'string', description: 'Comment author name' },
+    { field: 'authorEmail', type: 'string', description: 'Comment author email' },
+    { field: 'createdAt', type: 'Date', description: 'Comment timestamp' },
+  ],
+  [AppEvents.BLOG_LIKED]: [
+    { field: 'blogId', type: 'string', description: 'Blog post ID' },
+    { field: 'likedAt', type: 'Date', description: 'Like timestamp' },
+  ],
+
+  // Contact Events
+  [AppEvents.CONTACT_SUBMITTED]: [
+    { field: 'contactId', type: 'string', description: 'Contact submission ID' },
+    { field: 'fullName', type: 'string', description: 'Full name of the submitter' },
+    { field: 'email', type: 'string', description: 'Email of the submitter' },
+    { field: 'phone', type: 'string', description: 'Phone number' },
+    { field: 'service', type: 'string', description: 'Selected service or topic' },
+    { field: 'message', type: 'string', description: 'Contact message body' },
+    { field: 'websiteId', type: 'string', description: 'Source website ID' },
+    { field: 'submittedAt', type: 'Date', description: 'Submission timestamp' },
+  ],
+  [AppEvents.CONTACT_REPLIED]: [
+    { field: 'contactId', type: 'string', description: 'Contact submission ID' },
+    { field: 'email', type: 'string', description: 'Email of original submitter' },
+    { field: 'repliedBy', type: 'string', description: 'Admin user ID who replied' },
+    { field: 'repliedAt', type: 'Date', description: 'Reply timestamp' },
+  ],
+
+  // Sponsor Events
+  [AppEvents.SPONSOR_CREATED]: [
+    { field: 'sponsorId', type: 'string', description: 'Sponsor ID' },
+    { field: 'name', type: 'string', description: 'Sponsor name' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.SPONSOR_UPDATED]: [
+    { field: 'sponsorId', type: 'string', description: 'Sponsor ID' },
+    { field: 'name', type: 'string', description: 'Sponsor name' },
+    { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
+  ],
+  [AppEvents.SPONSOR_DELETED]: [
+    { field: 'sponsorId', type: 'string', description: 'Sponsor ID' },
+    { field: 'deletedAt', type: 'Date', description: 'Deletion timestamp' },
+  ],
+
+  // Nomination Events
+  [AppEvents.NOMINATION_SUBMITTED]: [
+    { field: 'nominationId', type: 'string', description: 'Nomination ID' },
+    { field: 'categoryId', type: 'string', description: 'Nomination category ID' },
+    { field: 'nomineeName', type: 'string', description: 'Name of the nominee' },
+    { field: 'submittedBy', type: 'string', description: 'Submitter identifier' },
+    { field: 'websiteId', type: 'string', description: 'Source website ID' },
+    { field: 'submittedAt', type: 'Date', description: 'Submission timestamp' },
+  ],
+  [AppEvents.NOMINATION_STATUS_CHANGED]: [
+    { field: 'nominationId', type: 'string', description: 'Nomination ID' },
+    { field: 'previousStatus', type: 'string', description: 'Previous status value' },
+    { field: 'newStatus', type: 'string', description: 'New status value' },
+    { field: 'changedAt', type: 'Date', description: 'Status change timestamp' },
+  ],
+
+  // Website Events
+  [AppEvents.WEBSITE_CREATED]: [
+    { field: 'websiteId', type: 'string', description: 'Website ID' },
+    { field: 'name', type: 'string', description: 'Website name' },
+    { field: 'domain', type: 'string', description: 'Website domain' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.WEBSITE_UPDATED]: [
+    { field: 'websiteId', type: 'string', description: 'Website ID' },
+    { field: 'name', type: 'string', description: 'Website name' },
+    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
+  ],
+  [AppEvents.WEBSITE_PAGE_PUBLISHED]: [
+    { field: 'pageId', type: 'string', description: 'Page ID' },
+    { field: 'websiteId', type: 'string', description: 'Website ID' },
+    { field: 'slug', type: 'string', description: 'Page slug' },
+    { field: 'publishedBy', type: 'string', description: 'Publisher user ID' },
+    { field: 'publishedAt', type: 'Date', description: 'Publish timestamp' },
+  ],
+
+  // Report Events
+  [AppEvents.REPORT_CREATED]: [
+    { field: 'reportId', type: 'string', description: 'Report ID' },
+    { field: 'title', type: 'string', description: 'Report title' },
+    { field: 'createdBy', type: 'string', description: 'Creator user ID' },
+    { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
+  ],
+  [AppEvents.REPORT_DOWNLOADED]: [
+    { field: 'reportId', type: 'string', description: 'Report ID' },
+    { field: 'downloadedBy', type: 'string', description: 'Downloader user ID' },
+    { field: 'websiteId', type: 'string', description: 'Website ID' },
+    { field: 'downloadedAt', type: 'Date', description: 'Download timestamp' },
+  ],
+
+  // Communication Events
+  [AppEvents.COMMUNICATION_DISPATCHED]: [
+    { field: 'logId', type: 'string', description: 'Communication log ID' },
+    { field: 'channel', type: 'string', description: 'Communication channel (email/sms/push)' },
+    { field: 'recipient', type: 'string', description: 'Recipient identifier' },
+    { field: 'templateSlug', type: 'string', description: 'Template slug if template-based' },
+    { field: 'dispatchedAt', type: 'Date', description: 'Dispatch timestamp' },
+  ],
+
+  // File Events
+  [AppEvents.FILE_UPLOADED]: [
+    { field: 'fileId', type: 'string', description: 'File ID' },
+    { field: 'filename', type: 'string', description: 'Original filename' },
+    { field: 'mimetype', type: 'string', description: 'File MIME type' },
+    { field: 'size', type: 'number', description: 'File size in bytes' },
+    { field: 'uploadedBy', type: 'string', description: 'Uploader user ID' },
+    { field: 'uploadedAt', type: 'Date', description: 'Upload timestamp' },
+  ],
+};
