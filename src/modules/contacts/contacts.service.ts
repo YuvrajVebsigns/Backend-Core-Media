@@ -1,17 +1,24 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Contact, ContactStatus } from './schemas/contact.schema';
 import {
   CreateContactDto,
   ReplyContactDto,
   QueryContactDto,
 } from './dto/contact.dto';
+import {
+  ContactSubmittedEvent,
+  ContactRepliedEvent,
+  AppEvents,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class ContactsService {
   constructor(
     @InjectModel(Contact.name) private readonly contactModel: Model<Contact>,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -23,7 +30,22 @@ export class ContactsService {
       websiteId: new Types.ObjectId(websiteId),
       status: ContactStatus.PENDING,
     });
-    return contact.save();
+    const saved = await contact.save();
+
+    this.eventEmitter.emit(
+      AppEvents.CONTACT_SUBMITTED,
+      new ContactSubmittedEvent(
+        saved._id.toString(),
+        saved.fullName,
+        saved.email,
+        saved.phone,
+        saved.service,
+        saved.message,
+        websiteId,
+      ),
+    );
+
+    return saved;
   }
 
   /**
@@ -114,6 +136,15 @@ export class ContactsService {
     contact.repliedBy = new Types.ObjectId(userId) as any;
 
     await contact.save();
+
+    this.eventEmitter.emit(
+      AppEvents.CONTACT_REPLIED,
+      new ContactRepliedEvent(
+        contact._id.toString(),
+        contact.email,
+        userId,
+      ),
+    );
 
     return this.findOne(id);
   }

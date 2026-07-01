@@ -20,6 +20,16 @@ import { JobsService } from '@core/jobs/jobs.service';
 import * as QRCode from 'qrcode';
 import { randomBytes } from 'crypto';
 import { Types } from 'mongoose';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  AttendeeRegisteredEvent,
+  AttendeeApprovedEvent,
+  AttendeeRejectedEvent,
+  AttendeeBlockedEvent,
+  AttendeeCheckedInEvent,
+  AttendeeCreatedByAdminEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class AttendeesService {
@@ -28,6 +38,7 @@ export class AttendeesService {
     @InjectModel(Registree.name) private registreeModel: Model<Registree>,
     private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async register(
@@ -120,6 +131,17 @@ export class AttendeesService {
 
     await registree.save();
 
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_REGISTERED,
+      new AttendeeRegisteredEvent(
+        registree._id.toString(),
+        registerDto.email,
+        registerDto.name,
+        registerDto.eventId,
+        websiteId,
+      ),
+    );
+
     return {
       success: true,
       message: 'Event Registration submitted successfully.',
@@ -160,7 +182,21 @@ export class AttendeesService {
       attendee.markModified('registrationDetails');
     }
 
-    return attendee.save();
+    const saved = await attendee.save();
+
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_CHECKED_IN,
+      new AttendeeCheckedInEvent(
+        saved._id.toString(),
+        saved.email,
+        saved.name,
+        saved.eventId.toString(),
+        saved.passCode,
+        saved.checkedInAt,
+      ),
+    );
+
+    return saved;
   }
 
   async findByPassCode(passCode: string): Promise<Attendee> {
@@ -382,6 +418,18 @@ export class AttendeesService {
     } catch (e) {
       // Background email fallback
     }
+
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_CREATED_BY_ADMIN,
+      new AttendeeCreatedByAdminEvent(
+        saved._id.toString(),
+        saved.email,
+        saved.name,
+        saved.eventId.toString(),
+        saved.passCode,
+        saved.createdAt || new Date(),
+      ),
+    );
 
     return this.findOne(saved.id);
   }
@@ -818,6 +866,18 @@ export class AttendeesService {
       console.error('Failed to queue registration email:', err);
     }
 
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_APPROVED,
+      new AttendeeApprovedEvent(
+        savedAttendee._id.toString(),
+        registreeId,
+        registree.email,
+        registration.name || registree.name,
+        eventId,
+        passCode,
+      ),
+    );
+
     return { message: 'Registration approved successfully', attendee: savedAttendee };
   }
 
@@ -837,6 +897,15 @@ export class AttendeesService {
     registration.status = 'REJECTED';
     registree.markModified('registrations');
     await registree.save();
+
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_REJECTED,
+      new AttendeeRejectedEvent(
+        registreeId,
+        registree.email,
+        eventId,
+      ),
+    );
 
     return { message: 'Registration rejected successfully' };
   }
@@ -867,6 +936,15 @@ export class AttendeesService {
       attendee.status = AttendeeStatus.BLOCKED;
       await attendee.save();
     }
+
+    this.eventEmitter.emit(
+      AppEvents.ATTENDEE_BLOCKED,
+      new AttendeeBlockedEvent(
+        registreeId,
+        registree.email,
+        eventId,
+      ),
+    );
 
     return { message: 'Registration blocked successfully' };
   }

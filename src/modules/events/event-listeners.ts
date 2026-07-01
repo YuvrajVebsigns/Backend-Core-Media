@@ -69,11 +69,24 @@ export class EventListeners {
         recipient = payload.email;
       } else if (payload.recipient) {
         recipient = payload.recipient;
+      } else if (payload.authorEmail) {
+        recipient = payload.authorEmail;
+      } else if (payload.downloadedBy && payload.downloadedBy.includes('@')) {
+        recipient = payload.downloadedBy;
+      } else if (payload.submittedBy && payload.submittedBy.includes('@')) {
+        recipient = payload.submittedBy;
       } else if (payload.userId) {
         const user = await this.systemUsersService.findOne(payload.userId);
         if (user) {
           recipient = user.email;
         }
+      } else if (payload.createdBy) {
+        try {
+          const user = await this.systemUsersService.findOne(payload.createdBy);
+          if (user) {
+            recipient = user.email;
+          }
+        } catch {}
       }
 
       if (!recipient) {
@@ -81,11 +94,37 @@ export class EventListeners {
         return;
       }
 
+      // Format date and time
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      // Determine a friendly eventDetails if not present
+      let eventDetails = '';
+      if (payload.message) {
+        eventDetails = payload.message;
+      } else if (payload.changes) {
+        eventDetails = `Updated fields: ${Object.keys(payload.changes).join(', ')}`;
+      }
+
+      // Convert class instance to plain object to allow safe modification
+      const rawPayloadObj = payload && typeof payload.toObject === 'function'
+        ? payload.toObject()
+        : JSON.parse(JSON.stringify(payload));
+
+      const enrichedParams = {
+        ...rawPayloadObj,
+        eventTitle: rawPayloadObj.eventTitle || rawPayloadObj.title || rawPayloadObj.eventName || eventName,
+        eventDetails: rawPayloadObj.eventDetails || rawPayloadObj.details || eventDetails || '',
+        date: rawPayloadObj.date || dateStr,
+        time: rawPayloadObj.time || timeStr,
+      };
+
       this.logger.log(`Dispatching template "${template.slug}" for event: ${eventName} to: ${recipient}`);
       await this.communicationsService.dispatchTemplateMessage({
         slug: template.slug,
         recipient,
-        params: payload,
+        params: enrichedParams,
         senderEmail: mapping.senderEmail,
         senderName: mapping.senderName,
       });

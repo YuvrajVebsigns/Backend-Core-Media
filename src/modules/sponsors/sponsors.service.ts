@@ -8,6 +8,13 @@ import {
   QuerySponsorDto,
 } from './dto/sponsor.dto';
 import { UrlService } from '@core/files/services/url.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  SponsorCreatedEvent,
+  SponsorUpdatedEvent,
+  SponsorDeletedEvent,
+} from '@modules/events/event-definitions';
 
 const IMAGE_POPULATE_SELECT = '_id metadata key variants';
 
@@ -16,6 +23,7 @@ export class SponsorsService {
   constructor(
     @InjectModel(Sponsor.name) private sponsorModel: Model<Sponsor>,
     private readonly urlService: UrlService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -105,7 +113,17 @@ export class SponsorsService {
   async create(createDto: CreateSponsorDto): Promise<Sponsor> {
     this.sanitizeImageUrls(createDto);
     const sponsor = new this.sponsorModel(createDto);
-    return sponsor.save();
+    const saved = await sponsor.save();
+
+    this.eventEmitter.emit(
+      AppEvents.SPONSOR_CREATED,
+      new SponsorCreatedEvent(
+        saved._id.toString(),
+        saved.name,
+      ),
+    );
+
+    return saved;
   }
 
   async findAll(queryDto: QuerySponsorDto) {
@@ -206,6 +224,15 @@ export class SponsorsService {
     if (!sponsor) {
       throw new NotFoundException(`Sponsor with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.SPONSOR_UPDATED,
+      new SponsorUpdatedEvent(
+        sponsor._id.toString(),
+        sponsor.name,
+      ),
+    );
+
     return this.transformImageFields(sponsor);
   }
 
@@ -216,5 +243,12 @@ export class SponsorsService {
     if (!result) {
       throw new NotFoundException(`Sponsor with ID ${id} not found`);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.SPONSOR_DELETED,
+      new SponsorDeletedEvent(
+        result._id.toString(),
+      ),
+    );
   }
 }

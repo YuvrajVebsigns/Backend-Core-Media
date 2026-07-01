@@ -58,6 +58,11 @@ export class CreateMessageTemplateDto {
   @IsOptional()
   senderName?: string;
 
+  @ApiPropertyOptional({ example: 'contact.submitted', description: 'System event this template is designed for (enables variable discovery)' })
+  @IsString()
+  @IsOptional()
+  linkedEvent?: string;
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()

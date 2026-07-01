@@ -14,6 +14,13 @@ import type { Cache } from 'cache-manager';
 
 import { RolesService } from '@core/roles/roles.service';
 import { SystemUserRole } from '@common/enums/role.enum';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  AppEvents,
+  UserSignedUpEvent,
+  UserLoggedInEvent,
+  PasswordResetEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +30,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly eventEmitter: EventEmitter2,
   ) { }
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -59,6 +67,14 @@ export class AuthService {
       refreshToken: hashedRefreshToken,
       lastLogin: new Date(),
     });
+
+    this.eventEmitter.emit(
+      AppEvents.USER_LOGGED_IN,
+      new UserLoggedInEvent(
+        user.id || user._id.toString(),
+        user.email,
+      ),
+    );
 
     return {
       access_token: accessToken,
@@ -132,10 +148,22 @@ export class AuthService {
     if (!role) {
       throw new NotFoundException('Default role STAFF not found');
     }
-    return this.systemUsersService.create({
+    const user = await this.systemUsersService.create({
       ...signupDto,
       role: role._id,
     });
+
+    this.eventEmitter.emit(
+      AppEvents.USER_SIGNED_UP,
+      new UserSignedUpEvent(
+        user.id || (user as any)._id.toString(),
+        user.email,
+        user.fullName,
+        role.roleKey,
+      ),
+    );
+
+    return user;
   }
 
   async sendOtp(email: string) {
@@ -188,6 +216,14 @@ export class AuthService {
       }
 
       await this.systemUsersService.update(user.id, { password: newPassword });
+
+      this.eventEmitter.emit(
+        AppEvents.PASSWORD_RESET,
+        new PasswordResetEvent(
+          user.id || (user as any)._id.toString(),
+          user.email,
+        ),
+      );
 
       return { message: 'Password reset successfully' };
     } catch (error) {

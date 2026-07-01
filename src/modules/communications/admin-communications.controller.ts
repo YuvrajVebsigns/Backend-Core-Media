@@ -48,7 +48,7 @@ import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
-import { AppEvents } from '@modules/events/event-definitions';
+import { AppEvents, EventPayloadRegistry } from '@modules/events/event-definitions';
 
 @ApiTags('Admin | Communications')
 @ApiBearerAuth()
@@ -300,7 +300,7 @@ export class AdminCommunicationsController {
       categories[category].push({ key, value: value as string });
     }
 
-    return { events: Object.values(AppEvents), categories };
+    return { events: Object.values(AppEvents), categories, payloadRegistry: EventPayloadRegistry };
   }
 
   // 7. Event-Template Mappings CRUD
