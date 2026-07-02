@@ -132,7 +132,7 @@ export class FilesService {
           destination: '',
           filename: '',
           path: '',
-        } as Express.Multer.File;
+        };
       } catch (error) {
         this.logger.error(
           `Error fetching file from URL: ${dto.url}`,
@@ -181,7 +181,7 @@ export class FilesService {
     );
 
     // 5. Extract image metadata (non-blocking for non-images)
-    let metadata: any = {
+    const metadata: any = {
       alt: dto.alt ?? '',
       width: null,
       height: null,
@@ -252,12 +252,15 @@ export class FilesService {
     dto: UploadFileDto,
     uploadedBy: string,
   ): Promise<any> {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp =
+      /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = youtubeUrl.match(regExp);
     const videoId = match && match[2].length === 11 ? match[2] : null;
 
     if (!videoId) {
-      throw new BadRequestException('Could not parse a valid YouTube Video ID from the link.');
+      throw new BadRequestException(
+        'Could not parse a valid YouTube Video ID from the link.',
+      );
     }
 
     const filename = `youtube-${videoId}`;
@@ -309,7 +312,9 @@ export class FilesService {
     });
 
     const saved = await fileDoc.save();
-    this.logger.log(`Virtual YouTube File created: ${saved.id} for Video ID: ${videoId}`);
+    this.logger.log(
+      `Virtual YouTube File created: ${saved.id} for Video ID: ${videoId}`,
+    );
     return this.mapToResponse(saved);
   }
 
@@ -518,7 +523,9 @@ export class FilesService {
 
   getUrl(file: File): { url: string; variants: Record<string, string> } {
     if (file.mimeType === 'video/youtube') {
-      const resolvedId = (file.metadata as any)?.videoResourceId || file.filename.replace('youtube-', '');
+      const resolvedId =
+        (file.metadata as any)?.videoResourceId ||
+        file.filename.replace('youtube-', '');
       return {
         url: `https://www.youtube.com/watch?v=${resolvedId}`,
         variants: {

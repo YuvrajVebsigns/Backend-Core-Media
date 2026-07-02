@@ -48,7 +48,10 @@ import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
-import { AppEvents, EventPayloadRegistry } from '@modules/events/event-definitions';
+import {
+  AppEvents,
+  EventPayloadRegistry,
+} from '@modules/events/event-definitions';
 
 @ApiTags('Admin | Communications')
 @ApiBearerAuth()
@@ -64,7 +67,9 @@ export class AdminCommunicationsController {
   // 1. Communication Logs
   @Get('logs')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @ApiOperation({ summary: 'Get all communication logs with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all communication logs with pagination and filters',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   findAllLogs(@Query() queryDto: QueryCommunicationLogDto) {
     return this.communicationsService.findAllLogs(queryDto);
@@ -81,7 +86,10 @@ export class AdminCommunicationsController {
 
   @Post('logs/:id/sync')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @ApiOperation({ summary: 'Manual sync / fetch latest status update from provider for a communication log' })
+  @ApiOperation({
+    summary:
+      'Manual sync / fetch latest status update from provider for a communication log',
+  })
   @ApiResponse({ status: 200, description: 'Success' })
   @ApiResponse({ status: 404, description: 'Not Found' })
   syncLogStatus(@Param('id') id: string) {
@@ -90,7 +98,9 @@ export class AdminCommunicationsController {
 
   @Post('send')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Trigger a manual communication alert (email/sms/push)' })
+  @ApiOperation({
+    summary: 'Trigger a manual communication alert (email/sms/push)',
+  })
   @ApiResponse({ status: 201, description: 'Message queued successfully' })
   sendManualMessage(@Body() dto: SendManualMessageDto) {
     return this.communicationsService.dispatch(
@@ -120,7 +130,10 @@ export class AdminCommunicationsController {
   @Patch('providers/:id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @ApiOperation({ summary: 'Update provider config or credentials' })
-  updateProvider(@Param('id') id: string, @Body() dto: UpdateCommunicationProviderDto) {
+  updateProvider(
+    @Param('id') id: string,
+    @Body() dto: UpdateCommunicationProviderDto,
+  ) {
     return this.communicationsService.updateProvider(id, dto);
   }
 
@@ -164,8 +177,13 @@ export class AdminCommunicationsController {
 
   @Patch('templates/:id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Update a local template and push updates to Brevo' })
-  updateTemplate(@Param('id') id: string, @Body() dto: UpdateMessageTemplateDto) {
+  @ApiOperation({
+    summary: 'Update a local template and push updates to Brevo',
+  })
+  updateTemplate(
+    @Param('id') id: string,
+    @Body() dto: UpdateMessageTemplateDto,
+  ) {
     return this.templateService.update(id, dto);
   }
 
@@ -179,14 +197,18 @@ export class AdminCommunicationsController {
   // Bidirectional Synchronization Endpoints
   @Post('templates/sync')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Perform bidirectional sync of all templates with Brevo' })
+  @ApiOperation({
+    summary: 'Perform bidirectional sync of all templates with Brevo',
+  })
   async syncAllTemplates() {
     return this.templateService.syncAllWithBrevo();
   }
 
   @Post('templates/:id/sync/to-provider')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Push local design template to Brevo SMTP templates' })
+  @ApiOperation({
+    summary: 'Push local design template to Brevo SMTP templates',
+  })
   async syncLocalTemplate(@Param('id') id: string) {
     const template = await this.templateService.findOne(id);
     await this.templateService.syncToBrevo(template);
@@ -195,7 +217,10 @@ export class AdminCommunicationsController {
 
   @Post('templates/sync/from-provider/:externalId')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Fetch template design from Brevo and import/update local template' })
+  @ApiOperation({
+    summary:
+      'Fetch template design from Brevo and import/update local template',
+  })
   syncFromProvider(@Param('externalId') externalId: number) {
     return this.templateService.syncFromBrevo(Number(externalId));
   }
@@ -249,7 +274,9 @@ export class AdminCommunicationsController {
   // 5. Programmatic Brevo Webhook Management
   @Post('providers/brevo/webhook')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @ApiOperation({ summary: 'Programmatically register/configure webhook with Brevo' })
+  @ApiOperation({
+    summary: 'Programmatically register/configure webhook with Brevo',
+  })
   registerBrevoWebhook(@Body() dto: RegisterBrevoWebhookDto) {
     return this.communicationsService.registerBrevoWebhook(dto.url);
   }
@@ -289,18 +316,27 @@ export class AdminCommunicationsController {
   // 6. System Events Discovery
   @Get('system-events')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @ApiOperation({ summary: 'List all registered system event names for mapping' })
-  @ApiResponse({ status: 200, description: 'Returns categorised system events' })
+  @ApiOperation({
+    summary: 'List all registered system event names for mapping',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns categorised system events',
+  })
   getSystemEvents() {
     const categories: Record<string, { key: string; value: string }[]> = {};
 
     for (const [key, value] of Object.entries(AppEvents)) {
       const category = (value as string).split('.')[0];
       if (!categories[category]) categories[category] = [];
-      categories[category].push({ key, value: value as string });
+      categories[category].push({ key, value: value });
     }
 
-    return { events: Object.values(AppEvents), categories, payloadRegistry: EventPayloadRegistry };
+    return {
+      events: Object.values(AppEvents),
+      categories,
+      payloadRegistry: EventPayloadRegistry,
+    };
   }
 
   // 7. Event-Template Mappings CRUD

@@ -5,7 +5,10 @@ import {
   NominationCategory,
   NominationCategorySchema,
 } from './schemas/nomination-category.schema';
-import { Registree, RegistreeSchema } from '@modules/attendees/schemas/registree.schema';
+import {
+  Registree,
+  RegistreeSchema,
+} from '@modules/attendees/schemas/registree.schema';
 import { NominationsService } from './nominations.service';
 import { NominationCategoriesService } from './nomination-categories.service';
 import { AdminNominationsController } from './nominations.controller';

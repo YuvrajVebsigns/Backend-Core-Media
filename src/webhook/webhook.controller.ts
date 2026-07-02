@@ -86,7 +86,7 @@ export class WebhookController {
   constructor(
     private readonly webhookService: WebhookService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Post('github')
   @HttpCode(HttpStatus.OK)
@@ -111,8 +111,14 @@ export class WebhookController {
     type: GitHubWebhookDto,
     description: 'GitHub Webhook payload containing push details.',
   })
-  @ApiResponse({ status: 200, description: 'Webhook event processed successfully.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized – invalid or missing HMAC signature.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Webhook event processed successfully.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized – invalid or missing HMAC signature.',
+  })
   async handleGitHubWebhook(
     @Req() req: any,
     @Headers('x-hub-signature-256') signature: string,
@@ -129,7 +135,9 @@ export class WebhookController {
 
     // 2. HMAC-SHA256 signature verification
     if (!this.webhookService.verifySignature(req.rawBody, signature)) {
-      this.logger.error('Webhook signature verification failed. Rejecting request.');
+      this.logger.error(
+        'Webhook signature verification failed. Rejecting request.',
+      );
       throw new UnauthorizedException('Invalid webhook signature');
     }
 

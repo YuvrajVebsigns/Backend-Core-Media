@@ -31,7 +31,10 @@ export class BlogSeoDto {
   @IsOptional()
   keywords?: string[];
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   ogImage?: ImageLinksDto;
 
@@ -69,7 +72,10 @@ export class CreateBlogDto {
   @IsOptional()
   excerpt?: string;
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   featureImage?: ImageLinksDto;
 

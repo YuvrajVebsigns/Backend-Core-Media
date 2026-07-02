@@ -60,7 +60,11 @@ export class SponsorsService {
   }
 
   private sanitizeImageUrls(dto: any) {
-    if (dto.logoId && typeof dto.logo === 'string' && dto.logo?.startsWith('http')) {
+    if (
+      dto.logoId &&
+      typeof dto.logo === 'string' &&
+      dto.logo?.startsWith('http')
+    ) {
       delete dto.logo;
     }
   }
@@ -117,10 +121,7 @@ export class SponsorsService {
 
     this.eventEmitter.emit(
       AppEvents.SPONSOR_CREATED,
-      new SponsorCreatedEvent(
-        saved._id.toString(),
-        saved.name,
-      ),
+      new SponsorCreatedEvent(saved._id.toString(), saved.name),
     );
 
     return saved;
@@ -227,10 +228,7 @@ export class SponsorsService {
 
     this.eventEmitter.emit(
       AppEvents.SPONSOR_UPDATED,
-      new SponsorUpdatedEvent(
-        sponsor._id.toString(),
-        sponsor.name,
-      ),
+      new SponsorUpdatedEvent(sponsor._id.toString(), sponsor.name),
     );
 
     return this.transformImageFields(sponsor);
@@ -246,9 +244,7 @@ export class SponsorsService {
 
     this.eventEmitter.emit(
       AppEvents.SPONSOR_DELETED,
-      new SponsorDeletedEvent(
-        result._id.toString(),
-      ),
+      new SponsorDeletedEvent(result._id.toString()),
     );
   }
 }

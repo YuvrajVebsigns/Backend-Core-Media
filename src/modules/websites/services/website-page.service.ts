@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { WebsitePage } from '../schemas/website-page.schema';
@@ -19,13 +23,14 @@ import {
 @Injectable()
 export class WebsitePageService {
   constructor(
-    @InjectModel(WebsitePage.name) private readonly pageModel: Model<WebsitePage>,
+    @InjectModel(WebsitePage.name)
+    private readonly pageModel: Model<WebsitePage>,
     private readonly slugService: SlugService,
     private readonly sectionService: SectionService,
     private readonly seoService: SeoService,
     private readonly cacheService: WebsiteCacheService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   private async unsetHomepageForSite(siteId: string): Promise<void> {
     await this.pageModel.updateMany(
@@ -37,7 +42,9 @@ export class WebsitePageService {
   async create(createDto: CreatePageDto, userId: string): Promise<WebsitePage> {
     if (createDto.sections) {
       this.sectionService.validateSections(createDto.sections);
-      createDto.sections = this.sectionService.reorderSections(createDto.sections);
+      createDto.sections = this.sectionService.reorderSections(
+        createDto.sections,
+      );
     }
 
     if (createDto.seo) {
@@ -45,8 +52,14 @@ export class WebsitePageService {
     }
 
     const slug = createDto.slug
-      ? await this.slugService.generateUniqueSlug(createDto.siteId, createDto.slug)
-      : await this.slugService.generateUniqueSlug(createDto.siteId, createDto.title);
+      ? await this.slugService.generateUniqueSlug(
+          createDto.siteId,
+          createDto.slug,
+        )
+      : await this.slugService.generateUniqueSlug(
+          createDto.siteId,
+          createDto.title,
+        );
 
     if (createDto.isHomepage) {
       await this.unsetHomepageForSite(createDto.siteId);
@@ -56,7 +69,8 @@ export class WebsitePageService {
       ...createDto,
       slug,
       createdBy: userId,
-      publishedAt: createDto.status === PageStatus.PUBLISHED ? new Date() : null,
+      publishedAt:
+        createDto.status === PageStatus.PUBLISHED ? new Date() : null,
     });
 
     const saved = await page.save();
@@ -78,8 +92,18 @@ export class WebsitePageService {
     return saved;
   }
 
-  async findAll(queryDto: QueryPageDto): Promise<PaginatedResponseDto<WebsitePage>> {
-    const { siteId, search, status, pageType, page = 1, limit = 10, sort } = queryDto;
+  async findAll(
+    queryDto: QueryPageDto,
+  ): Promise<PaginatedResponseDto<WebsitePage>> {
+    const {
+      siteId,
+      search,
+      status,
+      pageType,
+      page = 1,
+      limit = 10,
+      sort,
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const query: any = { isDeleted: null };
@@ -125,14 +149,20 @@ export class WebsitePageService {
   }
 
   async findOne(id: string): Promise<WebsitePage> {
-    const page = await this.pageModel.findOne({ _id: id, isDeleted: null }).exec();
+    const page = await this.pageModel
+      .findOne({ _id: id, isDeleted: null })
+      .exec();
     if (!page) {
       throw new NotFoundException(`Page with ID ${id} not found`);
     }
     return page;
   }
 
-  async findBySlug(siteId: string, slug: string, skipCache = false): Promise<WebsitePage> {
+  async findBySlug(
+    siteId: string,
+    slug: string,
+    skipCache = false,
+  ): Promise<WebsitePage> {
     if (!skipCache) {
       const cached = await this.cacheService.getPage(siteId, slug);
       if (cached) return cached;
@@ -143,7 +173,9 @@ export class WebsitePageService {
       .exec();
 
     if (!page) {
-      throw new NotFoundException(`Page with slug '${slug}' not found for this website`);
+      throw new NotFoundException(
+        `Page with slug '${slug}' not found for this website`,
+      );
     }
 
     if (!skipCache && page.status === PageStatus.PUBLISHED) {
@@ -153,12 +185,18 @@ export class WebsitePageService {
     return page;
   }
 
-  async update(id: string, updateDto: UpdatePageDto, userId: string): Promise<WebsitePage> {
+  async update(
+    id: string,
+    updateDto: UpdatePageDto,
+    userId: string,
+  ): Promise<WebsitePage> {
     const existing = await this.findOne(id);
 
     if (updateDto.sections) {
       this.sectionService.validateSections(updateDto.sections);
-      updateDto.sections = this.sectionService.reorderSections(updateDto.sections);
+      updateDto.sections = this.sectionService.reorderSections(
+        updateDto.sections,
+      );
     }
 
     if (updateDto.seo) {
@@ -174,12 +212,17 @@ export class WebsitePageService {
     }
 
     if (updateDto.isHomepage && !existing.isHomepage) {
-      await this.unsetHomepageForSite(updateDto.siteId || existing.siteId.toString());
+      await this.unsetHomepageForSite(
+        updateDto.siteId || existing.siteId.toString(),
+      );
     }
 
     const updateData: any = { ...updateDto, updatedBy: userId };
 
-    if (updateDto.status !== undefined && updateDto.status !== existing.status) {
+    if (
+      updateDto.status !== undefined &&
+      updateDto.status !== existing.status
+    ) {
       if (updateDto.status === PageStatus.PUBLISHED) {
         updateData.publishedAt = new Date();
       } else if (
@@ -191,23 +234,28 @@ export class WebsitePageService {
     }
 
     const updated = await this.pageModel
-      .findOneAndUpdate(
-        { _id: id },
-        updateData,
-        { new: true },
-      )
+      .findOneAndUpdate({ _id: id }, updateData, { new: true })
       .exec();
 
     if (!updated) {
       throw new NotFoundException(`Page with ID ${id} not found`);
     }
 
-    await this.cacheService.invalidatePage(existing.siteId.toString(), existing.slug);
+    await this.cacheService.invalidatePage(
+      existing.siteId.toString(),
+      existing.slug,
+    );
     if (updated.slug !== existing.slug) {
-      await this.cacheService.invalidatePage(existing.siteId.toString(), updated.slug);
+      await this.cacheService.invalidatePage(
+        existing.siteId.toString(),
+        updated.slug,
+      );
     }
 
-    if (updated.status === PageStatus.PUBLISHED && existing.status !== PageStatus.PUBLISHED) {
+    if (
+      updated.status === PageStatus.PUBLISHED &&
+      existing.status !== PageStatus.PUBLISHED
+    ) {
       this.eventEmitter.emit(
         AppEvents.WEBSITE_PAGE_PUBLISHED,
         new WebsitePagePublishedEvent(
@@ -225,8 +273,13 @@ export class WebsitePageService {
 
   async remove(id: string): Promise<void> {
     const existing = await this.findOne(id);
-    await this.pageModel.updateOne({ _id: id }, { isDeleted: new Date() }).exec();
-    await this.cacheService.invalidatePage(existing.siteId.toString(), existing.slug);
+    await this.pageModel
+      .updateOne({ _id: id }, { isDeleted: new Date() })
+      .exec();
+    await this.cacheService.invalidatePage(
+      existing.siteId.toString(),
+      existing.slug,
+    );
   }
 
   async publish(id: string, userId: string): Promise<WebsitePage> {
@@ -267,7 +320,10 @@ export class WebsitePageService {
     const page = await this.findOne(id);
 
     const newTitle = `${page.title} (Copy)`;
-    const newSlug = await this.slugService.generateUniqueSlug(page.siteId.toString(), `${page.slug}-copy`);
+    const newSlug = await this.slugService.generateUniqueSlug(
+      page.siteId.toString(),
+      `${page.slug}-copy`,
+    );
 
     const duplicated = new this.pageModel({
       siteId: page.siteId,
@@ -289,24 +345,39 @@ export class WebsitePageService {
 
   async findAllForWebsite(siteId: string): Promise<Partial<WebsitePage>[]> {
     return this.pageModel
-      .find({ siteId: siteId as any, status: PageStatus.PUBLISHED, isDeleted: null })
+      .find({
+        siteId: siteId as any,
+        status: PageStatus.PUBLISHED,
+        isDeleted: null,
+      })
       .sort({ createdAt: -1 })
       .select('title slug isHomepage status pageType createdAt updatedAt')
       .exec();
   }
 
-  async findBySlugForWebsite(siteId: string, slug: string, skipCache = false): Promise<WebsitePage> {
+  async findBySlugForWebsite(
+    siteId: string,
+    slug: string,
+    skipCache = false,
+  ): Promise<WebsitePage> {
     if (!skipCache) {
       const cached = await this.cacheService.getPage(siteId, slug);
       if (cached) return cached;
     }
 
     const page = await this.pageModel
-      .findOne({ siteId: siteId as any, status: PageStatus.PUBLISHED, slug, isDeleted: null })
+      .findOne({
+        siteId: siteId as any,
+        status: PageStatus.PUBLISHED,
+        slug,
+        isDeleted: null,
+      })
       .exec();
 
     if (!page) {
-      throw new NotFoundException(`Page with slug '${slug}' not found for this website`);
+      throw new NotFoundException(
+        `Page with slug '${slug}' not found for this website`,
+      );
     }
 
     if (!skipCache && page.status === PageStatus.PUBLISHED) {
@@ -316,4 +387,3 @@ export class WebsitePageService {
     return page;
   }
 }
-

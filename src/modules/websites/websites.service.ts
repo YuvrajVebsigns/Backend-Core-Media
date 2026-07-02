@@ -61,11 +61,7 @@ export class WebsitesService {
 
     this.eventEmitter.emit(
       AppEvents.WEBSITE_CREATED,
-      new WebsiteCreatedEvent(
-        saved._id.toString(),
-        saved.name,
-        saved.domain,
-      ),
+      new WebsiteCreatedEvent(saved._id.toString(), saved.name, saved.domain),
     );
 
     return saved;
@@ -153,11 +149,7 @@ export class WebsitesService {
 
     this.eventEmitter.emit(
       AppEvents.WEBSITE_UPDATED,
-      new WebsiteUpdatedEvent(
-        website._id.toString(),
-        website.name,
-        updateDto,
-      ),
+      new WebsiteUpdatedEvent(website._id.toString(), website.name, updateDto),
     );
 
     return website;
@@ -233,7 +225,8 @@ export class WebsitesService {
     };
 
     const token = this.jwtService.sign(payload, {
-      expiresIn: (this.configService.get<string>('JWT_WEBSITE_EXPIRES_IN') || '1d') as any,
+      expiresIn: (this.configService.get<string>('JWT_WEBSITE_EXPIRES_IN') ||
+        '1d') as any,
     });
 
     return {

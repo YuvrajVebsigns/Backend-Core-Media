@@ -16,7 +16,10 @@ export class CreateWebhookSubscriptionDto {
   @IsUrl({}, { message: 'Must be a valid HTTP/HTTPS URL' })
   url: string;
 
-  @ApiProperty({ example: ['blog.published', 'event.created'], description: 'List of events to subscribe to, or ["*"] for all' })
+  @ApiProperty({
+    example: ['blog.published', 'event.created'],
+    description: 'List of events to subscribe to, or ["*"] for all',
+  })
   @IsArray()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
@@ -33,7 +36,9 @@ export class CreateWebhookSubscriptionDto {
   isActive?: boolean;
 }
 
-export class UpdateWebhookSubscriptionDto extends PartialType(CreateWebhookSubscriptionDto) {}
+export class UpdateWebhookSubscriptionDto extends PartialType(
+  CreateWebhookSubscriptionDto,
+) {}
 
 export class QueryWebhookSubscriptionDto extends PaginationQueryDto {
   @IsOptional()

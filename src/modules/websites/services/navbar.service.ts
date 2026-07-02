@@ -15,7 +15,10 @@ export class NavbarService {
     private readonly cacheService: WebsiteCacheService,
   ) {}
 
-  async create(createDto: CreateNavbarItemDto, userId: string): Promise<Navbar> {
+  async create(
+    createDto: CreateNavbarItemDto,
+    userId: string,
+  ): Promise<Navbar> {
     const navbar = new this.navbarModel({
       ...createDto,
       createdBy: userId,
@@ -25,7 +28,11 @@ export class NavbarService {
     return saved;
   }
 
-  async findAll(siteId: string, position?: string, nested = true): Promise<any[]> {
+  async findAll(
+    siteId: string,
+    position?: string,
+    nested = true,
+  ): Promise<any[]> {
     if (position && nested) {
       const cached = await this.cacheService.getNavbar(siteId, position);
       if (cached) return cached;
@@ -36,10 +43,7 @@ export class NavbarService {
       query.position = position;
     }
 
-    const items = await this.navbarModel
-      .find(query)
-      .sort({ order: 1 })
-      .exec();
+    const items = await this.navbarModel.find(query).sort({ order: 1 }).exec();
 
     let result: any[] = items;
     if (nested) {
@@ -54,14 +58,20 @@ export class NavbarService {
   }
 
   async findOne(id: string): Promise<Navbar> {
-    const item = await this.navbarModel.findOne({ _id: id, isDeleted: null }).exec();
+    const item = await this.navbarModel
+      .findOne({ _id: id, isDeleted: null })
+      .exec();
     if (!item) {
       throw new NotFoundException(`Navbar item with ID ${id} not found`);
     }
     return item;
   }
 
-  async update(id: string, updateDto: UpdateNavbarItemDto, userId: string): Promise<Navbar> {
+  async update(
+    id: string,
+    updateDto: UpdateNavbarItemDto,
+    userId: string,
+  ): Promise<Navbar> {
     const existing = await this.findOne(id);
     const updated = await this.navbarModel
       .findOneAndUpdate(
@@ -75,9 +85,15 @@ export class NavbarService {
       throw new NotFoundException(`Navbar item with ID ${id} not found`);
     }
 
-    await this.cacheService.invalidateNavbar(existing.siteId.toString(), existing.position);
+    await this.cacheService.invalidateNavbar(
+      existing.siteId.toString(),
+      existing.position,
+    );
     if (updateDto.position && updateDto.position !== existing.position) {
-      await this.cacheService.invalidateNavbar(existing.siteId.toString(), updateDto.position);
+      await this.cacheService.invalidateNavbar(
+        existing.siteId.toString(),
+        updateDto.position,
+      );
     }
 
     return updated;
@@ -85,8 +101,13 @@ export class NavbarService {
 
   async remove(id: string): Promise<void> {
     const existing = await this.findOne(id);
-    await this.navbarModel.updateOne({ _id: id }, { isDeleted: new Date() }).exec();
-    await this.cacheService.invalidateNavbar(existing.siteId.toString(), existing.position);
+    await this.navbarModel
+      .updateOne({ _id: id }, { isDeleted: new Date() })
+      .exec();
+    await this.cacheService.invalidateNavbar(
+      existing.siteId.toString(),
+      existing.position,
+    );
   }
 
   async reorder(reorderDto: ReorderNavbarDto): Promise<void> {
@@ -99,9 +120,14 @@ export class NavbarService {
 
     if (bulkOps.length > 0) {
       await this.navbarModel.bulkWrite(bulkOps);
-      const firstItem = await this.navbarModel.findById(reorderDto.orders[0].id).exec();
+      const firstItem = await this.navbarModel
+        .findById(reorderDto.orders[0].id)
+        .exec();
       if (firstItem) {
-        await this.cacheService.invalidateNavbar(firstItem.siteId.toString(), firstItem.position);
+        await this.cacheService.invalidateNavbar(
+          firstItem.siteId.toString(),
+          firstItem.position,
+        );
       }
     }
   }

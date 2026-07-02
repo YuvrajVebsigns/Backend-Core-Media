@@ -89,7 +89,7 @@ export class SidebarMenuService {
       .exec();
     if (!updated) throw new NotFoundException('SidebarMenu not found');
     await this.clearSidebarMenuCache();
-    return updated as any;
+    return updated;
   }
 
   async deleteSidebarMenu(id: string): Promise<void> {

@@ -24,7 +24,10 @@ export class ContactsService {
   /**
    * Public contact submission
    */
-  async create(createDto: CreateContactDto, websiteId: string): Promise<Contact> {
+  async create(
+    createDto: CreateContactDto,
+    websiteId: string,
+  ): Promise<Contact> {
     const contact = new this.contactModel({
       ...createDto,
       websiteId: new Types.ObjectId(websiteId),
@@ -139,11 +142,7 @@ export class ContactsService {
 
     this.eventEmitter.emit(
       AppEvents.CONTACT_REPLIED,
-      new ContactRepliedEvent(
-        contact._id.toString(),
-        contact.email,
-        userId,
-      ),
+      new ContactRepliedEvent(contact._id.toString(), contact.email, userId),
     );
 
     return this.findOne(id);

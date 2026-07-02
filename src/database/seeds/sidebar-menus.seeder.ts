@@ -155,6 +155,14 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         order: 16,
         group: 'super admin controls',
       },
+      {
+        name: 'Deployment Control',
+        path: '/deployments',
+        permissionKey: 'deployments.view',
+        icon: 'terminal',
+        order: 17,
+        group: 'super admin controls',
+      },
     ];
 
     // 1. Seed base menus
@@ -170,7 +178,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
         );
 
         if (existing.data.length === 0) {
-          await this.sidebarMenuService.createSidebarMenu(menuData as any);
+          await this.sidebarMenuService.createSidebarMenu(menuData);
           console.log(`✅ SidebarMenu seeded: ${menuData.name}`);
         }
       } catch (error) {
@@ -184,14 +192,11 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
     // 2. Seed Communications Parent Menu
     let commParent: any = null;
     try {
-      const existing = await this.sidebarMenuService.getAllSidebarMenus(
-        true,
-        {
-          page: 1,
-          limit: 1,
-          search: 'Communications',
-        },
-      );
+      const existing = await this.sidebarMenuService.getAllSidebarMenus(true, {
+        page: 1,
+        limit: 1,
+        search: 'Communications',
+      });
 
       if (existing.data.length === 0) {
         commParent = await this.sidebarMenuService.createSidebarMenu({
@@ -201,13 +206,16 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
           icon: 'messages-square',
           order: 6,
           group: 'content management',
-        } as any);
+        });
         console.log(`✅ Parent SidebarMenu seeded: Communications`);
       } else {
         commParent = existing.data[0];
       }
     } catch (error) {
-      console.error('❌ Failed to seed Communications parent menu:', error.message);
+      console.error(
+        '❌ Failed to seed Communications parent menu:',
+        error.message,
+      );
     }
 
     // 3. Seed Communications Child Menus if parent is resolved
@@ -255,11 +263,14 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
           );
 
           if (existing.data.length === 0) {
-            await this.sidebarMenuService.createSidebarMenu(child as any);
+            await this.sidebarMenuService.createSidebarMenu(child);
             console.log(`   ✅ Submenu seeded: ${child.name}`);
           }
         } catch (error) {
-          console.error(`   ❌ Failed to seed submenu ${child.name}:`, error.message);
+          console.error(
+            `   ❌ Failed to seed submenu ${child.name}:`,
+            error.message,
+          );
         }
       }
     }

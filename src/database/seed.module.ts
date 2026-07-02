@@ -15,8 +15,14 @@ import { EventsSeeder } from '@database/seeds/events.seeder';
 import { SponsorsSeeder } from '@database/seeds/sponsors.seeder';
 import { CommunicationsProviderSeeder } from '@database/seeds/communications-provider.seeder';
 import { EventManagementModule } from '@modules/event-management/event-management.module';
-import { Sponsor, SponsorSchema } from '@modules/sponsors/schemas/sponsor.schema';
-import { CommunicationProvider, CommunicationProviderSchema } from '@modules/communications/schemas/communication-provider.schema';
+import {
+  Sponsor,
+  SponsorSchema,
+} from '@modules/sponsors/schemas/sponsor.schema';
+import {
+  CommunicationProvider,
+  CommunicationProviderSchema,
+} from '@modules/communications/schemas/communication-provider.schema';
 
 @Module({
   imports: [
@@ -43,4 +49,4 @@ import { CommunicationProvider, CommunicationProviderSchema } from '@modules/com
     CommunicationsProviderSeeder,
   ],
 })
-export class SeedModule { }
+export class SeedModule {}

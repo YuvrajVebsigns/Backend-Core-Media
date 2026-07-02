@@ -26,7 +26,8 @@ import {
 export class ReportsService {
   constructor(
     @InjectModel(Report.name) private readonly reportModel: Model<Report>,
-    @InjectModel(Registree.name) private readonly registreeModel: Model<Registree>,
+    @InjectModel(Registree.name)
+    private readonly registreeModel: Model<Registree>,
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -48,7 +49,9 @@ export class ReportsService {
     try {
       await this.filesService.findById(createDto.fileId);
     } catch {
-      throw new NotFoundException(`File with ID "${createDto.fileId}" not found`);
+      throw new NotFoundException(
+        `File with ID "${createDto.fileId}" not found`,
+      );
     }
 
     const report = new this.reportModel({
@@ -66,11 +69,7 @@ export class ReportsService {
 
     this.eventEmitter.emit(
       AppEvents.REPORT_CREATED,
-      new ReportCreatedEvent(
-        result._id.toString(),
-        result.title,
-        userId,
-      ),
+      new ReportCreatedEvent(result._id.toString(), result.title, userId),
     );
 
     return result;
@@ -103,7 +102,9 @@ export class ReportsService {
       try {
         await this.filesService.findById(updateDto.fileId);
       } catch {
-        throw new NotFoundException(`File with ID "${updateDto.fileId}" not found`);
+        throw new NotFoundException(
+          `File with ID "${updateDto.fileId}" not found`,
+        );
       }
     }
 
@@ -195,7 +196,10 @@ export class ReportsService {
 
   async remove(id: string): Promise<void> {
     const result = await this.reportModel
-      .updateOne({ _id: id, isDeleted: null }, { $set: { isDeleted: new Date() } })
+      .updateOne(
+        { _id: id, isDeleted: null },
+        { $set: { isDeleted: new Date() } },
+      )
       .exec();
 
     if (result.matchedCount === 0) {
@@ -207,7 +211,11 @@ export class ReportsService {
 
   async downloadReport(downloadDto: DownloadReportDto, websiteId?: string) {
     const report = await this.reportModel
-      .findOne({ _id: downloadDto.reportId, isDeleted: null, isPublished: true })
+      .findOne({
+        _id: downloadDto.reportId,
+        isDeleted: null,
+        isPublished: true,
+      })
       .exec();
     if (!report) {
       throw new NotFoundException(
@@ -286,11 +294,7 @@ export class ReportsService {
 
     this.eventEmitter.emit(
       AppEvents.REPORT_DOWNLOADED,
-      new ReportDownloadedEvent(
-        report._id.toString(),
-        email,
-        websiteId,
-      ),
+      new ReportDownloadedEvent(report._id.toString(), email, websiteId),
     );
 
     return {
@@ -306,12 +310,16 @@ export class ReportsService {
         'downloadedReports.reportId': new Types.ObjectId(reportId),
         isDeleted: null,
       })
-      .select('name email phoneNumber countryCode organization downloadedReports')
+      .select(
+        'name email phoneNumber countryCode organization downloadedReports',
+      )
       .exec();
 
     const downloaders = registrees.map((reg) => {
       const downloads = reg.downloadedReports || [];
-      const match = downloads.find((d) => d.reportId && d.reportId.toString() === reportId);
+      const match = downloads.find(
+        (d) => d.reportId && d.reportId.toString() === reportId,
+      );
       return {
         registreeId: reg._id.toString(),
         email: reg.email,
@@ -328,12 +336,17 @@ export class ReportsService {
     });
 
     downloaders.sort((a, b) => {
-      const dateA = a.downloadedAt instanceof Date ? a.downloadedAt.getTime() : new Date(a.downloadedAt).getTime();
-      const dateB = b.downloadedAt instanceof Date ? b.downloadedAt.getTime() : new Date(b.downloadedAt).getTime();
+      const dateA =
+        a.downloadedAt instanceof Date
+          ? a.downloadedAt.getTime()
+          : new Date(a.downloadedAt).getTime();
+      const dateB =
+        b.downloadedAt instanceof Date
+          ? b.downloadedAt.getTime()
+          : new Date(b.downloadedAt).getTime();
       return dateB - dateA;
     });
 
     return downloaders;
   }
 }
-

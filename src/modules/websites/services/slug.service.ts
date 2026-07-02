@@ -11,7 +11,11 @@ export class SlugService {
     private readonly pageModel: Model<WebsitePage>,
   ) {}
 
-  async generateUniqueSlug(siteId: string, title: string, excludePageId?: string): Promise<string> {
+  async generateUniqueSlug(
+    siteId: string,
+    title: string,
+    excludePageId?: string,
+  ): Promise<string> {
     const baseSlug = generateSlug(title);
     let uniqueSlug = baseSlug;
     let counter = 1;

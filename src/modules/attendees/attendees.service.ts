@@ -39,7 +39,7 @@ export class AttendeesService {
     private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async register(
     registerDto: RegisterAttendeeDto,
@@ -48,13 +48,17 @@ export class AttendeesService {
     const event = await this.eventService.findOne(registerDto.eventId);
 
     // CRM business logic: Find or create the Registree by email first
-    let registree = await this.registreeModel.findOne({ email: registerDto.email }).exec();
+    let registree = await this.registreeModel
+      .findOne({ email: registerDto.email })
+      .exec();
 
     // Check if user is blocked globally or for any registrations
-    const blockedAttendee = await this.attendeeModel.findOne({
-      email: registerDto.email,
-      status: AttendeeStatus.BLOCKED,
-    }).exec();
+    const blockedAttendee = await this.attendeeModel
+      .findOne({
+        email: registerDto.email,
+        status: AttendeeStatus.BLOCKED,
+      })
+      .exec();
 
     const hasBlockedRegistration = registree?.registrations?.some(
       (r: any) => r.status === 'BLOCKED',
@@ -65,24 +69,31 @@ export class AttendeesService {
     }
 
     // Check if already registered (pending or approved)
-    const existingAttendee = await this.attendeeModel.findOne({
-      eventId: registerDto.eventId as any,
-      email: registerDto.email,
-    }).exec();
+    const existingAttendee = await this.attendeeModel
+      .findOne({
+        eventId: registerDto.eventId as any,
+        email: registerDto.email,
+      })
+      .exec();
 
     if (existingAttendee) {
       throw new ConflictException('You are already registered for this event');
     }
 
     const existingReg = registree?.registrations?.find(
-      (r: any) => r.eventId.toString() === registerDto.eventId && r.status !== 'REJECTED',
+      (r: any) =>
+        r.eventId.toString() === registerDto.eventId && r.status !== 'REJECTED',
     );
 
     if (existingReg) {
       if (existingReg.status === 'APPROVED') {
-        throw new ConflictException('You are already registered for this event');
+        throw new ConflictException(
+          'You are already registered for this event',
+        );
       } else if (existingReg.status === 'PENDING') {
-        throw new ConflictException('Your registration for this event is pending approval');
+        throw new ConflictException(
+          'Your registration for this event is pending approval',
+        );
       } else if (existingReg.status === 'BLOCKED') {
         throw new BadRequestException('Your registration is blocked');
       }
@@ -96,7 +107,9 @@ export class AttendeesService {
         phoneNumber: registerDto.phoneNumber || '',
         organization: registerDto.organization || '',
         tags: ['registree'],
-        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
+        websiteId: websiteId
+          ? (new Types.ObjectId(websiteId) as any)
+          : undefined,
       });
     } else {
       registree.name = registerDto.name;
@@ -119,7 +132,7 @@ export class AttendeesService {
     }
 
     registree.registrations.push({
-      eventId: new Types.ObjectId(registerDto.eventId) as any,
+      eventId: new Types.ObjectId(registerDto.eventId),
       name: registerDto.name,
       email: registerDto.email,
       countryCode: registerDto.countryCode || '',
@@ -230,7 +243,9 @@ export class AttendeesService {
   }
 
   async getCountByEvent(eventId: string): Promise<number> {
-    return this.attendeeModel.countDocuments({ eventId: eventId as any }).exec();
+    return this.attendeeModel
+      .countDocuments({ eventId: eventId as any })
+      .exec();
   }
 
   async findAll(query: QueryAttendeeDto) {
@@ -279,7 +294,10 @@ export class AttendeesService {
     const [data, total] = await Promise.all([
       this.attendeeModel
         .find(matchQuery)
-        .populate('eventId', 'title type status startDate endDate bannerImage location')
+        .populate(
+          'eventId',
+          'title type status startDate endDate bannerImage location',
+        )
         .populate('websiteId', 'name domain logo')
         .populate('registreeId')
         .sort({ createdAt: -1 })
@@ -335,7 +353,9 @@ export class AttendeesService {
     // CRM business logic: Find or create the Registree by email first
     let registreeId: any = undefined;
     try {
-      let registree = await this.registreeModel.findOne({ email: createDto.email }).exec();
+      let registree = await this.registreeModel
+        .findOne({ email: createDto.email })
+        .exec();
 
       if (!registree) {
         registree = new this.registreeModel({
@@ -345,7 +365,9 @@ export class AttendeesService {
           phoneNumber: createDto.phoneNumber || '',
           organization: createDto.organization || '',
           tags: ['registree'],
-          websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
+          websiteId: createDto.websiteId
+            ? (new Types.ObjectId(createDto.websiteId) as any)
+            : undefined,
         });
       } else {
         registree.name = createDto.name;
@@ -379,19 +401,26 @@ export class AttendeesService {
       passCode,
       qrCode,
       status: createDto.status || AttendeeStatus.REGISTERED,
-      ...(createDto.websiteId ? { websiteId: new Types.ObjectId(createDto.websiteId) } : {}),
-      ...(registreeId ? { registreeId: registreeId as any } : {}),
+      ...(createDto.websiteId
+        ? { websiteId: new Types.ObjectId(createDto.websiteId) }
+        : {}),
+      ...(registreeId ? { registreeId: registreeId } : {}),
       registrationDetails: {
         name: createDto.name,
         countryCode: createDto.countryCode || '',
         phoneNumber: createDto.phoneNumber || '',
         organization: createDto.organization || '',
-        websiteId: createDto.websiteId ? new Types.ObjectId(createDto.websiteId) as any : undefined,
+        websiteId: createDto.websiteId
+          ? (new Types.ObjectId(createDto.websiteId) as any)
+          : undefined,
         eventId: new Types.ObjectId(event.id) as any,
         passCode,
         qrCode,
         attended: createDto.status === AttendeeStatus.CHECKED_IN,
-        attendedAt: createDto.status === AttendeeStatus.CHECKED_IN ? new Date() : undefined,
+        attendedAt:
+          createDto.status === AttendeeStatus.CHECKED_IN
+            ? new Date()
+            : undefined,
         savedAt: new Date(),
       },
       registeredAt: new Date(),
@@ -441,7 +470,10 @@ export class AttendeesService {
     }
 
     if (updateDto.status !== undefined) {
-      if (updateDto.status === AttendeeStatus.CHECKED_IN && attendee.status !== AttendeeStatus.CHECKED_IN) {
+      if (
+        updateDto.status === AttendeeStatus.CHECKED_IN &&
+        attendee.status !== AttendeeStatus.CHECKED_IN
+      ) {
         attendee.checkedInAt = new Date();
         if (attendee.registrationDetails) {
           attendee.registrationDetails.attended = true;
@@ -487,15 +519,21 @@ export class AttendeesService {
       await this.eventService.findOne(updateDto.eventId);
       attendee.eventId = new Types.ObjectId(updateDto.eventId) as any;
       if (attendee.registrationDetails) {
-        attendee.registrationDetails.eventId = new Types.ObjectId(updateDto.eventId) as any;
+        attendee.registrationDetails.eventId = new Types.ObjectId(
+          updateDto.eventId,
+        ) as any;
         attendee.markModified('registrationDetails');
       }
     }
 
     if (updateDto.websiteId !== undefined) {
-      attendee.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
+      attendee.websiteId = updateDto.websiteId
+        ? (new Types.ObjectId(updateDto.websiteId) as any)
+        : undefined;
       if (attendee.registrationDetails) {
-        attendee.registrationDetails.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
+        attendee.registrationDetails.websiteId = updateDto.websiteId
+          ? (new Types.ObjectId(updateDto.websiteId) as any)
+          : undefined;
         attendee.markModified('registrationDetails');
       }
     }
@@ -527,27 +565,31 @@ export class AttendeesService {
 
     if (query.eventId) {
       const attendees = await this.attendeeModel
-        .find({ 
-          eventId: new Types.ObjectId(query.eventId) as any, 
-          isDeleted: null 
+        .find({
+          eventId: new Types.ObjectId(query.eventId) as any,
+          isDeleted: null,
         })
         .select('registreeId')
         .exec();
-      const approvedRegistreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      const approvedRegistreeIds = attendees
+        .map((a) => a.registreeId)
+        .filter(Boolean);
       matchQuery.$or = [
         { _id: { $in: approvedRegistreeIds } },
-        { 'registrations.eventId': new Types.ObjectId(query.eventId) }
+        { 'registrations.eventId': new Types.ObjectId(query.eventId) },
       ];
     } else {
       const attendees = await this.attendeeModel
         .find({ isDeleted: null })
         .select('registreeId')
         .exec();
-      const approvedRegistreeIds = attendees.map((a) => a.registreeId).filter(Boolean);
+      const approvedRegistreeIds = attendees
+        .map((a) => a.registreeId)
+        .filter(Boolean);
       matchQuery.$or = [
         { _id: { $in: approvedRegistreeIds } },
         { 'registrations.0': { $exists: true } },
-        { 'downloadedReports.0': { $exists: true } }
+        { 'downloadedReports.0': { $exists: true } },
       ];
     }
 
@@ -575,7 +617,10 @@ export class AttendeesService {
       this.registreeModel
         .find(matchQuery)
         .populate('websiteId', 'name domain logo')
-        .populate('registrations.eventId', 'title type status startDate endDate bannerImage location')
+        .populate(
+          'registrations.eventId',
+          'title type status startDate endDate bannerImage location',
+        )
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -587,7 +632,10 @@ export class AttendeesService {
     const registreeIds = data.map((r) => r._id);
     const allAttendees = await this.attendeeModel
       .find({ registreeId: { $in: registreeIds as any[] } })
-      .populate('eventId', 'title type status startDate endDate bannerImage location')
+      .populate(
+        'eventId',
+        'title type status startDate endDate bannerImage location',
+      )
       .populate('websiteId', 'name')
       .exec();
 
@@ -621,7 +669,10 @@ export class AttendeesService {
         return {
           ...plainAttendee.registrationDetails,
           id: plainAttendee.id || plainAttendee._id?.toString(),
-          eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+          eventId:
+            eventObj?._id?.toString() ||
+            eventObj?.id ||
+            plainAttendee.registrationDetails?.eventId?.toString(),
           event: eventObj,
           status: 'APPROVED',
           attended: a.status === AttendeeStatus.CHECKED_IN,
@@ -636,7 +687,10 @@ export class AttendeesService {
           const eventObj = r.eventId;
           return {
             id: r._id?.toString(),
-            eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || r.eventId?.toString(),
+            eventId:
+              eventObj?._id?.toString() ||
+              eventObj?.id ||
+              r.eventId?.toString(),
             event: eventObj,
             name: r.name,
             email: r.email,
@@ -668,7 +722,10 @@ export class AttendeesService {
     const registree = await this.registreeModel
       .findById(id)
       .populate('websiteId')
-      .populate('registrations.eventId', 'title type status startDate endDate bannerImage location')
+      .populate(
+        'registrations.eventId',
+        'title type status startDate endDate bannerImage location',
+      )
       .exec();
 
     if (!registree) {
@@ -677,7 +734,10 @@ export class AttendeesService {
 
     const regAttendees = await this.attendeeModel
       .find({ registreeId: new Types.ObjectId(id) as any })
-      .populate('eventId', 'title type status startDate endDate bannerImage location')
+      .populate(
+        'eventId',
+        'title type status startDate endDate bannerImage location',
+      )
       .populate('websiteId', 'name')
       .exec();
 
@@ -698,7 +758,10 @@ export class AttendeesService {
       return {
         ...plainAttendee.registrationDetails,
         id: plainAttendee.id || plainAttendee._id?.toString(),
-        eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || plainAttendee.registrationDetails?.eventId?.toString(),
+        eventId:
+          (eventObj as any)?._id?.toString() ||
+          (eventObj as any)?.id ||
+          plainAttendee.registrationDetails?.eventId?.toString(),
         event: eventObj,
         status: 'APPROVED',
         attended: a.status === AttendeeStatus.CHECKED_IN,
@@ -713,7 +776,8 @@ export class AttendeesService {
         const eventObj = r.eventId;
         return {
           id: r._id?.toString(),
-          eventId: (eventObj as any)?._id?.toString() || (eventObj as any)?.id || r.eventId?.toString(),
+          eventId:
+            eventObj?._id?.toString() || eventObj?.id || r.eventId?.toString(),
           event: eventObj,
           name: r.name,
           email: r.email,
@@ -731,7 +795,10 @@ export class AttendeesService {
     return regObj;
   }
 
-  async updateRegistree(id: string, updateDto: UpdateRegistreeDto): Promise<Registree> {
+  async updateRegistree(
+    id: string,
+    updateDto: UpdateRegistreeDto,
+  ): Promise<Registree> {
     const registree = await this.registreeModel.findById(id).exec();
     if (!registree) {
       throw new NotFoundException(`Registree with ID ${id} not found`);
@@ -741,9 +808,13 @@ export class AttendeesService {
       registree.name = updateDto.name;
     }
     if (updateDto.email !== undefined) {
-      const existing = await this.registreeModel.findOne({ email: updateDto.email, _id: { $ne: id } }).exec();
+      const existing = await this.registreeModel
+        .findOne({ email: updateDto.email, _id: { $ne: id } })
+        .exec();
       if (existing) {
-        throw new ConflictException('Email already registered by another contact');
+        throw new ConflictException(
+          'Email already registered by another contact',
+        );
       }
       registree.email = updateDto.email;
     }
@@ -764,7 +835,9 @@ export class AttendeesService {
       registree.tags = updateDto.tags;
     }
     if (updateDto.websiteId !== undefined) {
-      registree.websiteId = updateDto.websiteId ? new Types.ObjectId(updateDto.websiteId) as any : undefined;
+      registree.websiteId = updateDto.websiteId
+        ? (new Types.ObjectId(updateDto.websiteId) as any)
+        : undefined;
     }
 
     await registree.save();
@@ -781,7 +854,10 @@ export class AttendeesService {
     }
   }
 
-  async approveRegistration(registreeId: string, eventId: string): Promise<any> {
+  async approveRegistration(
+    registreeId: string,
+    eventId: string,
+  ): Promise<any> {
     const registree = await this.registreeModel.findById(registreeId).exec();
     if (!registree) {
       throw new NotFoundException(`Registree with ID ${registreeId} not found`);
@@ -791,7 +867,9 @@ export class AttendeesService {
       (r: any) => r.eventId.toString() === eventId,
     );
     if (!registration) {
-      throw new NotFoundException(`Registration for event ${eventId} not found`);
+      throw new NotFoundException(
+        `Registration for event ${eventId} not found`,
+      );
     }
 
     if (registration.status === 'APPROVED') {
@@ -802,10 +880,12 @@ export class AttendeesService {
       throw new BadRequestException('This registration is blocked');
     }
 
-    const existingAttendee = await this.attendeeModel.findOne({
-      eventId: eventId as any,
-      email: registree.email,
-    }).exec();
+    const existingAttendee = await this.attendeeModel
+      .findOne({
+        eventId: eventId as any,
+        email: registree.email,
+      })
+      .exec();
 
     if (existingAttendee) {
       throw new ConflictException('Attendee already exists for this event');
@@ -878,7 +958,10 @@ export class AttendeesService {
       ),
     );
 
-    return { message: 'Registration approved successfully', attendee: savedAttendee };
+    return {
+      message: 'Registration approved successfully',
+      attendee: savedAttendee,
+    };
   }
 
   async rejectRegistration(registreeId: string, eventId: string): Promise<any> {
@@ -891,7 +974,9 @@ export class AttendeesService {
       (r: any) => r.eventId.toString() === eventId,
     );
     if (!registration) {
-      throw new NotFoundException(`Registration for event ${eventId} not found`);
+      throw new NotFoundException(
+        `Registration for event ${eventId} not found`,
+      );
     }
 
     registration.status = 'REJECTED';
@@ -900,11 +985,7 @@ export class AttendeesService {
 
     this.eventEmitter.emit(
       AppEvents.ATTENDEE_REJECTED,
-      new AttendeeRejectedEvent(
-        registreeId,
-        registree.email,
-        eventId,
-      ),
+      new AttendeeRejectedEvent(registreeId, registree.email, eventId),
     );
 
     return { message: 'Registration rejected successfully' };
@@ -920,17 +1001,21 @@ export class AttendeesService {
       (r: any) => r.eventId.toString() === eventId,
     );
     if (!registration) {
-      throw new NotFoundException(`Registration for event ${eventId} not found`);
+      throw new NotFoundException(
+        `Registration for event ${eventId} not found`,
+      );
     }
 
     registration.status = 'BLOCKED';
     registree.markModified('registrations');
     await registree.save();
 
-    const attendee = await this.attendeeModel.findOne({
-      eventId: eventId as any,
-      email: registree.email,
-    }).exec();
+    const attendee = await this.attendeeModel
+      .findOne({
+        eventId: eventId as any,
+        email: registree.email,
+      })
+      .exec();
 
     if (attendee) {
       attendee.status = AttendeeStatus.BLOCKED;
@@ -939,11 +1024,7 @@ export class AttendeesService {
 
     this.eventEmitter.emit(
       AppEvents.ATTENDEE_BLOCKED,
-      new AttendeeBlockedEvent(
-        registreeId,
-        registree.email,
-        eventId,
-      ),
+      new AttendeeBlockedEvent(registreeId, registree.email, eventId),
     );
 
     return { message: 'Registration blocked successfully' };

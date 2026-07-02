@@ -44,9 +44,15 @@ export class AdminAttendeesController {
     summary: 'Mark attendance at registration desk',
     description: 'Verifies the passcode and marks the attendee as checked in.',
   })
-  @ApiParam({ name: 'passCode', description: 'Unique passcode of the attendee.' })
+  @ApiParam({
+    name: 'passCode',
+    description: 'Unique passcode of the attendee.',
+  })
   @ApiResponse({ status: 200, description: 'Successfully checked in.' })
-  @ApiResponse({ status: 400, description: 'Attendee is already checked in or blocked.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Attendee is already checked in or blocked.',
+  })
   @ApiResponse({ status: 404, description: 'Passcode is invalid.' })
   checkIn(@Param('passCode') passCode: string, @Request() req: any) {
     const user = req?.user;
@@ -65,10 +71,14 @@ export class AdminAttendeesController {
   @Permission('registrations.view')
   @ApiOperation({
     summary: 'Get all attendees for an event',
-    description: 'Fetches the list of all registered attendees for a specific event with nested event and sponsor details.',
+    description:
+      'Fetches the list of all registered attendees for a specific event with nested event and sponsor details.',
   })
   @ApiParam({ name: 'eventId', description: 'MongoDB ID of the event.' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved attendees list.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved attendees list.',
+  })
   @ApiResponse({ status: 404, description: 'Event not found.' })
   findAllByEvent(@Param('eventId') eventId: string) {
     return this.attendeesService.findAllByEvent(eventId);
@@ -79,10 +89,14 @@ export class AdminAttendeesController {
   @Permission('registrations.view')
   @ApiOperation({
     summary: 'Get attendee count for an event',
-    description: 'Fetches the count of all registered attendees for a specific event.',
+    description:
+      'Fetches the count of all registered attendees for a specific event.',
   })
   @ApiParam({ name: 'eventId', description: 'MongoDB ID of the event.' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved attendee count.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved attendee count.',
+  })
   getCountByEvent(@Param('eventId') eventId: string) {
     return this.attendeesService.getCountByEvent(eventId);
   }

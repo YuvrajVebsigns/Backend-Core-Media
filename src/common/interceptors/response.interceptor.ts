@@ -24,7 +24,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
   constructor(
     private reflector: Reflector,
     private urlService: UrlService,
-  ) { }
+  ) {}
 
   intercept(
     context: ExecutionContext,
@@ -80,7 +80,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
       }
 
       // Handle Mongoose documents or POJOs
-      let result =
+      const result =
         typeof data.toObject === 'function' ? data.toObject() : { ...data };
 
       // If this object looks like a populated File, ensure it has a URL
@@ -137,7 +137,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
       }
 
       // Handle Mongoose documents or POJOs
-      let obj =
+      const obj =
         typeof data.toObject === 'function' ? data.toObject() : { ...data };
 
       // Standardize ID and remove internal Mongoose fields

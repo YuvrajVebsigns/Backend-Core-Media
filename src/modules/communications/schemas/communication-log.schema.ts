@@ -70,13 +70,17 @@ export class CommunicationLog extends BaseSchema {
   retryCount: number;
 }
 
-export const CommunicationLogSchema = SchemaFactory.createForClass(CommunicationLog);
+export const CommunicationLogSchema =
+  SchemaFactory.createForClass(CommunicationLog);
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(CommunicationLogSchema);
 
 // Index for fast Brevo webhook event matching by messageId
-CommunicationLogSchema.index({ 'metadata.brevoMessageId': 1 }, { sparse: true });
+CommunicationLogSchema.index(
+  { 'metadata.brevoMessageId': 1 },
+  { sparse: true },
+);
 
 CommunicationLogSchema.set('toJSON', {
   getters: true,

@@ -9,27 +9,43 @@ import {
 } from 'class-validator';
 
 export class CreateReportDto {
-  @ApiProperty({ example: 'CIO Outlook Survey 2021', description: 'Title of the report' })
+  @ApiProperty({
+    example: 'CIO Outlook Survey 2021',
+    description: 'Title of the report',
+  })
   @IsString()
   @IsNotEmpty()
   title: string;
 
-  @ApiProperty({ example: 'cio-outlook-survey-2021', description: 'URL friendly slug' })
+  @ApiProperty({
+    example: 'cio-outlook-survey-2021',
+    description: 'URL friendly slug',
+  })
   @IsString()
   @IsNotEmpty()
   slug: string;
 
-  @ApiProperty({ example: 'This is the description of the CIO survey report', required: false })
+  @ApiProperty({
+    example: 'This is the description of the CIO survey report',
+    required: false,
+  })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @ApiProperty({ example: '665abc1234567890abcdef12', description: 'File document ID' })
+  @ApiProperty({
+    example: '665abc1234567890abcdef12',
+    description: 'File document ID',
+  })
   @IsMongoId()
   @IsNotEmpty()
   fileId: string;
 
-  @ApiProperty({ example: '665abc1234567890abcdef13', required: false, description: 'Website scope ID' })
+  @ApiProperty({
+    example: '665abc1234567890abcdef13',
+    required: false,
+    description: 'Website scope ID',
+  })
   @IsMongoId()
   @IsOptional()
   websiteId?: string;
@@ -81,7 +97,10 @@ export class QueryReportDto {
   @IsOptional()
   limit?: number;
 
-  @ApiProperty({ required: false, description: 'Search reports by title or description' })
+  @ApiProperty({
+    required: false,
+    description: 'Search reports by title or description',
+  })
   @IsString()
   @IsOptional()
   search?: string;
@@ -112,7 +131,10 @@ export class DownloadReportDto {
   @IsNotEmpty()
   lastName: string;
 
-  @ApiProperty({ example: '9876543210', description: 'User mobile number without country code' })
+  @ApiProperty({
+    example: '9876543210',
+    description: 'User mobile number without country code',
+  })
   @IsString()
   @IsNotEmpty()
   phoneNumber: string;
@@ -122,7 +144,10 @@ export class DownloadReportDto {
   @IsNotEmpty()
   countryCode: string;
 
-  @ApiProperty({ example: 'Acme Corporation', description: 'User company name' })
+  @ApiProperty({
+    example: 'Acme Corporation',
+    description: 'User company name',
+  })
   @IsString()
   @IsNotEmpty()
   companyName: string;
@@ -132,12 +157,18 @@ export class DownloadReportDto {
   @IsNotEmpty()
   designation: string;
 
-  @ApiProperty({ example: 'Information Technology', description: 'User industry category' })
+  @ApiProperty({
+    example: 'Information Technology',
+    description: 'User industry category',
+  })
   @IsString()
   @IsNotEmpty()
   industry: string;
 
-  @ApiProperty({ example: '665abc1234567890abcdef12', description: 'ID of the report to download' })
+  @ApiProperty({
+    example: '665abc1234567890abcdef12',
+    description: 'ID of the report to download',
+  })
   @IsMongoId()
   @IsNotEmpty()
   reportId: string;

@@ -13,7 +13,13 @@ export class Registree extends BaseSchema {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ required: true, trim: true, lowercase: true, unique: true, index: true })
+  @Prop({
+    required: true,
+    trim: true,
+    lowercase: true,
+    unique: true,
+    index: true,
+  })
   email: string;
 
   @Prop({ trim: true, index: true })
@@ -43,17 +49,19 @@ export class Registree extends BaseSchema {
   websiteId?: MongooseSchema.Types.ObjectId;
 
   @Prop({
-    type: [{
-      reportId: { type: MongooseSchema.Types.ObjectId, ref: 'Report' },
-      downloadedAt: { type: Date, default: Date.now },
-      firstName: String,
-      lastName: String,
-      companyName: String,
-      designation: String,
-      industry: String,
-      phoneNumber: String,
-      countryCode: String,
-    }],
+    type: [
+      {
+        reportId: { type: MongooseSchema.Types.ObjectId, ref: 'Report' },
+        downloadedAt: { type: Date, default: Date.now },
+        firstName: String,
+        lastName: String,
+        companyName: String,
+        designation: String,
+        industry: String,
+        phoneNumber: String,
+        countryCode: String,
+      },
+    ],
     default: [],
   })
   downloadedReports?: Array<{
@@ -69,16 +77,26 @@ export class Registree extends BaseSchema {
   }>;
 
   @Prop({
-    type: [{
-      eventId: { type: MongooseSchema.Types.ObjectId, ref: 'Event', required: true },
-      name: String,
-      email: String,
-      countryCode: String,
-      phoneNumber: String,
-      organization: String,
-      status: { type: String, enum: ['PENDING', 'APPROVED', 'REJECTED', 'BLOCKED'], default: 'PENDING' },
-      registeredAt: { type: Date, default: Date.now },
-    }],
+    type: [
+      {
+        eventId: {
+          type: MongooseSchema.Types.ObjectId,
+          ref: 'Event',
+          required: true,
+        },
+        name: String,
+        email: String,
+        countryCode: String,
+        phoneNumber: String,
+        organization: String,
+        status: {
+          type: String,
+          enum: ['PENDING', 'APPROVED', 'REJECTED', 'BLOCKED'],
+          default: 'PENDING',
+        },
+        registeredAt: { type: Date, default: Date.now },
+      },
+    ],
     default: [],
   })
   registrations?: Array<{

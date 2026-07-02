@@ -41,7 +41,7 @@ export class BlogsService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly urlService: UrlService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   /**
    * Transform populated File references into lean image objects:
@@ -55,7 +55,11 @@ export class BlogsService {
     const obj = blog.toJSON ? blog.toJSON() : { ...blog };
 
     // Transform featureImageId — only if it was actually populated (has 'key')
-    if (obj.featureImageId && typeof obj.featureImageId === 'object' && obj.featureImageId.key) {
+    if (
+      obj.featureImageId &&
+      typeof obj.featureImageId === 'object' &&
+      obj.featureImageId.key
+    ) {
       const file = obj.featureImageId;
       const url = this.urlService.getPublicUrl(file.key);
       const urlVariants = file.variants
@@ -77,7 +81,11 @@ export class BlogsService {
     }
 
     // Transform seo.ogImageId — only if it was actually populated (has 'key')
-    if (obj.seo?.ogImageId && typeof obj.seo.ogImageId === 'object' && obj.seo.ogImageId.key) {
+    if (
+      obj.seo?.ogImageId &&
+      typeof obj.seo.ogImageId === 'object' &&
+      obj.seo.ogImageId.key
+    ) {
       const file = obj.seo.ogImageId;
       const url = this.urlService.getPublicUrl(file.key);
       const urlVariants = file.variants
@@ -178,11 +186,7 @@ export class BlogsService {
 
     this.eventEmitter.emit(
       AppEvents.BLOG_CREATED,
-      new BlogCreatedEvent(
-        saved._id.toString(),
-        saved.title,
-        authorId,
-      ),
+      new BlogCreatedEvent(saved._id.toString(), saved.title, authorId),
     );
 
     return saved;
@@ -385,10 +389,7 @@ export class BlogsService {
 
     this.eventEmitter.emit(
       AppEvents.BLOG_UPDATED,
-      new BlogUpdatedEvent(
-        blog._id.toString(),
-        blog.title,
-      ),
+      new BlogUpdatedEvent(blog._id.toString(), blog.title),
     );
 
     return blog;
@@ -405,9 +406,7 @@ export class BlogsService {
 
     this.eventEmitter.emit(
       AppEvents.BLOG_DELETED,
-      new BlogDeletedEvent(
-        result._id.toString(),
-      ),
+      new BlogDeletedEvent(result._id.toString()),
     );
   }
 
@@ -452,9 +451,7 @@ export class BlogsService {
 
     this.eventEmitter.emit(
       AppEvents.BLOG_LIKED,
-      new BlogLikedEvent(
-        blog._id.toString(),
-      ),
+      new BlogLikedEvent(blog._id.toString()),
     );
 
     return blog;

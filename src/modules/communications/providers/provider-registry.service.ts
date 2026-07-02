@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FeatureFlagService } from '@core/feature-flags/feature-flag.service';
@@ -29,11 +34,15 @@ export class ProviderRegistryService implements OnModuleInit {
 
   registerProvider(provider: ICommunicationProvider) {
     this.providers.set(provider.name, provider);
-    this.logger.log(`Registered provider: ${provider.name} for channel: ${provider.channel}`);
+    this.logger.log(
+      `Registered provider: ${provider.name} for channel: ${provider.channel}`,
+    );
   }
 
   async reloadProviders(): Promise<void> {
-    const dbProviders = await this.providerModel.find({ isDeleted: null }).exec();
+    const dbProviders = await this.providerModel
+      .find({ isDeleted: null })
+      .exec();
 
     for (const [name, provider] of this.providers.entries()) {
       const dbConfig = dbProviders.find((p) => p.name === name);
@@ -43,7 +52,9 @@ export class ProviderRegistryService implements OnModuleInit {
       try {
         provider.initialize(credentials, config);
       } catch (error) {
-        this.logger.error(`Failed to initialize provider ${name}: ${error.message}`);
+        this.logger.error(
+          `Failed to initialize provider ${name}: ${error.message}`,
+        );
       }
     }
   }
@@ -51,7 +62,9 @@ export class ProviderRegistryService implements OnModuleInit {
   getProvider(name: string): ICommunicationProvider {
     const provider = this.providers.get(name);
     if (!provider) {
-      throw new NotFoundException(`Communication provider "${name}" not found.`);
+      throw new NotFoundException(
+        `Communication provider "${name}" not found.`,
+      );
     }
     return provider;
   }
@@ -69,8 +82,10 @@ export class ProviderRegistryService implements OnModuleInit {
    * Returns all registered providers with their database and feature flag status
    */
   async getAllProviders(): Promise<any[]> {
-    const dbProviders = await this.providerModel.find({ isDeleted: null }).exec();
-    
+    const dbProviders = await this.providerModel
+      .find({ isDeleted: null })
+      .exec();
+
     return Array.from(this.providers.values()).map((provider) => {
       const dbConfig = dbProviders.find((p) => p.name === provider.name);
       return {
@@ -90,7 +105,9 @@ export class ProviderRegistryService implements OnModuleInit {
   /**
    * Resolves the active provider for a given communication channel based on priority and enablement
    */
-  async resolveActiveProvider(channel: CommunicationChannel): Promise<ICommunicationProvider | null> {
+  async resolveActiveProvider(
+    channel: CommunicationChannel,
+  ): Promise<ICommunicationProvider | null> {
     const dbProviders = await this.providerModel
       .find({ channel, isDeleted: null })
       .sort({ priority: -1 })

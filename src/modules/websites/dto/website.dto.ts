@@ -29,7 +29,10 @@ class SeoMetadataDto {
   @IsString({ each: true })
   metaKeywords?: string[];
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   ogImage?: ImageLinksDto;
 
@@ -55,7 +58,10 @@ export class CreateWebsiteDto {
   @IsString()
   domain: string;
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   logo?: ImageLinksDto;
 
@@ -86,7 +92,10 @@ export class CreateWebsiteDto {
   seo?: SeoMetadataDto;
 
   @ApiPropertyOptional({
-    example: ['website.uatcoremedia.vebsigns.com', 'staging.coremediagroup.com'],
+    example: [
+      'website.uatcoremedia.vebsigns.com',
+      'staging.coremediagroup.com',
+    ],
     description:
       'Additional (whitelabel / staging / UAT) domains that are allowed to obtain a token for this website.',
   })

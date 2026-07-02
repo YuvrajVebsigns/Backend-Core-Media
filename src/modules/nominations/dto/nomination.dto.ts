@@ -17,7 +17,10 @@ import { NominationStatus } from '../schemas/nomination.schema';
  * DTO for a single nominee in the form submission
  */
 export class NomineeDto {
-  @ApiProperty({ example: '60d5ecb8b392d7001f3e3a4b', description: 'CIO nomination category ID' })
+  @ApiProperty({
+    example: '60d5ecb8b392d7001f3e3a4b',
+    description: 'CIO nomination category ID',
+  })
   @IsMongoId()
   categoryId: string;
 
@@ -29,11 +32,18 @@ export class NomineeDto {
   @IsString()
   companyName: string;
 
-  @ApiProperty({ example: 'jane@infosys.com', description: 'CIO Contact Email' })
+  @ApiProperty({
+    example: 'jane@infosys.com',
+    description: 'CIO Contact Email',
+  })
   @IsEmail()
   contactEmail: string;
 
-  @ApiProperty({ example: '9876543210', required: false, description: 'CIO Mobile No' })
+  @ApiProperty({
+    example: '9876543210',
+    required: false,
+    description: 'CIO Mobile No',
+  })
   @IsString()
   @IsOptional()
   mobileNo?: string;
@@ -48,7 +58,10 @@ export class CreateNominationDto {
   @IsString()
   nominatorName: string;
 
-  @ApiProperty({ example: 'Acme Corp', description: 'Name of the Nominator\'s Company' })
+  @ApiProperty({
+    example: 'Acme Corp',
+    description: "Name of the Nominator's Company",
+  })
   @IsString()
   nominatorCompany: string;
 
@@ -56,7 +69,11 @@ export class CreateNominationDto {
   @IsString()
   nominatorCity: string;
 
-  @ApiProperty({ example: '9876543210', required: false, description: 'Nominator Contact No' })
+  @ApiProperty({
+    example: '9876543210',
+    required: false,
+    description: 'Nominator Contact No',
+  })
   @IsString()
   @IsOptional()
   nominatorPhone?: string;

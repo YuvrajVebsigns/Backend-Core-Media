@@ -27,7 +27,8 @@ export class CommunicationsProviderSeeder implements OnApplicationBootstrap {
           apiKey: process.env.BREVO_API_KEY || '',
         },
         config: {
-          senderEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@coremediagroup.com',
+          senderEmail:
+            process.env.BREVO_SENDER_EMAIL || 'noreply@coremediagroup.com',
           senderName: process.env.BREVO_SENDER_NAME || 'Core Media',
         },
       });

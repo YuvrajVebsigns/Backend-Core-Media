@@ -70,7 +70,10 @@ class EventSeoDto {
   @IsOptional()
   keywords?: string[];
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   ogImage?: ImageLinksDto;
 
@@ -126,7 +129,10 @@ export class CreateEventDto {
   @IsOptional()
   meetingLink?: string;
 
-  @ApiPropertyOptional({ type: () => ImageLinksDto, description: 'Image links object' })
+  @ApiPropertyOptional({
+    type: () => ImageLinksDto,
+    description: 'Image links object',
+  })
   @IsOptional()
   bannerImage?: ImageLinksDto;
 

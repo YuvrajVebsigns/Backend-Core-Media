@@ -31,7 +31,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.systemUsersService.findByEmail(email);
@@ -58,7 +58,10 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
       { sub: user.id },
-      { expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any },
+      {
+        expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+          '7d') as any,
+      },
     );
 
     // Store hashed refresh token and update last login in database
@@ -70,10 +73,7 @@ export class AuthService {
 
     this.eventEmitter.emit(
       AppEvents.USER_LOGGED_IN,
-      new UserLoggedInEvent(
-        user.id || user._id.toString(),
-        user.email,
-      ),
+      new UserLoggedInEvent(user.id || user._id.toString(), user.email),
     );
 
     return {
@@ -124,7 +124,10 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
       { sub: user.id },
-      { expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any },
+      {
+        expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+          '7d') as any,
+      },
     );
 
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
@@ -195,7 +198,10 @@ export class AuthService {
 
     // Generate a temporary token for password reset/creation
     const payload = { email, type: 'password_reset' };
-    const resetToken = this.jwtService.sign(payload, { expiresIn: (this.configService.get<string>('JWT_RESET_EXPIRES_IN') || '15m') as any });
+    const resetToken = this.jwtService.sign(payload, {
+      expiresIn: (this.configService.get<string>('JWT_RESET_EXPIRES_IN') ||
+        '15m') as any,
+    });
 
     return {
       message: 'OTP verified successfully',

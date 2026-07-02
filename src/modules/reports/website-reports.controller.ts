@@ -36,7 +36,10 @@ export class WebsiteReportsController {
     summary: 'List published reports for the authenticated website',
   })
   @ApiResponse({ status: 200, description: 'Reports list' })
-  async findAll(@CurrentWebsite() website: any, @Query() query: QueryReportDto) {
+  async findAll(
+    @CurrentWebsite() website: any,
+    @Query() query: QueryReportDto,
+  ) {
     const siteId = website.id || website._id;
     return this.reportsService.findAll({
       ...query,
@@ -56,9 +59,13 @@ export class WebsiteReportsController {
 
   @Post('download')
   @ApiOperation({
-    summary: 'Submit the report download form, track user as a registree, and generate download link',
+    summary:
+      'Submit the report download form, track user as a registree, and generate download link',
   })
-  @ApiResponse({ status: 201, description: 'Form submitted and download link generated successfully' })
+  @ApiResponse({
+    status: 201,
+    description: 'Form submitted and download link generated successfully',
+  })
   async downloadReport(
     @CurrentWebsite() website: any,
     @Body() downloadDto: DownloadReportDto,

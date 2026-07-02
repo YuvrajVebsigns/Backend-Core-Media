@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { InjectQueue } from '@nestjs/bull';
@@ -108,22 +115,38 @@ export class CommunicationsService {
    * Helper to dispatch template-based messages.
    * Resolves active provider, formats the subject, records log, and adds to queue.
    */
-  async dispatchTemplateMessage(dto: SendTemplateMessageDto): Promise<CommunicationLog> {
-    const template = await this.templateModel.findOne({ slug: dto.slug, isDeleted: null }).exec();
+  async dispatchTemplateMessage(
+    dto: SendTemplateMessageDto,
+  ): Promise<CommunicationLog> {
+    const template = await this.templateModel
+      .findOne({ slug: dto.slug, isDeleted: null })
+      .exec();
     if (!template) {
-      throw new NotFoundException(`Template with slug "${dto.slug}" not found.`);
+      throw new NotFoundException(
+        `Template with slug "${dto.slug}" not found.`,
+      );
     }
 
-    const provider = await this.providerRegistry.resolveActiveProvider(template.channel);
+    const provider = await this.providerRegistry.resolveActiveProvider(
+      template.channel,
+    );
     if (!provider) {
-      throw new Error(`No active / enabled provider plugin found for channel ${template.channel}. Ensure feature flags are enabled.`);
+      throw new Error(
+        `No active / enabled provider plugin found for channel ${template.channel}. Ensure feature flags are enabled.`,
+      );
     }
 
     // Format subject with template params
     let subject = template.subject || '';
     for (const [key, val] of Object.entries(dto.params)) {
-      subject = subject.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), String(val));
-      subject = subject.replace(new RegExp(`{{\\s*params.${key}\\s*}}`, 'g'), String(val));
+      subject = subject.replace(
+        new RegExp(`{{\\s*${key}\\s*}}`, 'g'),
+        String(val),
+      );
+      subject = subject.replace(
+        new RegExp(`{{\\s*params.${key}\\s*}}`, 'g'),
+        String(val),
+      );
     }
 
     // Create pending log
@@ -142,12 +165,15 @@ export class CommunicationsService {
         params: dto.params,
         recipientName: dto.recipientName,
         providerName: provider.name,
-        ...(finalSenderEmail ? { senderEmail: finalSenderEmail, senderName: finalSenderName } : {}),
+        ...(finalSenderEmail
+          ? { senderEmail: finalSenderEmail, senderName: finalSenderName }
+          : {}),
       },
     });
     const savedLog = await log.save();
 
-    const externalTemplateId = template.providerSync?.[provider.name]?.templateId;
+    const externalTemplateId =
+      template.providerSync?.[provider.name]?.templateId;
 
     // Dispatch Bull job
     await this.communicationsQueue.add(
@@ -180,16 +206,38 @@ export class CommunicationsService {
   }
 
   // Internal high-level APIs
-  async sendEmail(to: string, subject: string, body: string, metadata?: Record<string, any>) {
-    return this.dispatch(CommunicationChannel.EMAIL, to, subject, body, metadata);
+  async sendEmail(
+    to: string,
+    subject: string,
+    body: string,
+    metadata?: Record<string, any>,
+  ) {
+    return this.dispatch(
+      CommunicationChannel.EMAIL,
+      to,
+      subject,
+      body,
+      metadata,
+    );
   }
 
   async sendSms(to: string, message: string, metadata?: Record<string, any>) {
     return this.dispatch(CommunicationChannel.SMS, to, '', message, metadata);
   }
 
-  async sendPush(token: string, title: string, body: string, metadata?: Record<string, any>) {
-    return this.dispatch(CommunicationChannel.PUSH, token, title, body, metadata);
+  async sendPush(
+    token: string,
+    title: string,
+    body: string,
+    metadata?: Record<string, any>,
+  ) {
+    return this.dispatch(
+      CommunicationChannel.PUSH,
+      token,
+      title,
+      body,
+      metadata,
+    );
   }
 
   /**
@@ -284,20 +332,27 @@ export class CommunicationsService {
   }
 
   // Provider CRUD APIs
-  async createProvider(dto: CreateCommunicationProviderDto): Promise<CommunicationProvider> {
+  async createProvider(
+    dto: CreateCommunicationProviderDto,
+  ): Promise<CommunicationProvider> {
     const provider = new this.providerModel(dto);
     const saved = await provider.save();
     await this.providerRegistry.reloadProviders();
     return saved;
   }
 
-  async updateProvider(id: string, dto: UpdateCommunicationProviderDto): Promise<CommunicationProvider> {
+  async updateProvider(
+    id: string,
+    dto: UpdateCommunicationProviderDto,
+  ): Promise<CommunicationProvider> {
     const provider = await this.providerModel
       .findOneAndUpdate({ _id: id, isDeleted: null }, dto, { new: true })
       .exec();
 
     if (!provider) {
-      throw new NotFoundException(`Communication provider with ID ${id} not found`);
+      throw new NotFoundException(
+        `Communication provider with ID ${id} not found`,
+      );
     }
 
     await this.providerRegistry.reloadProviders();
@@ -310,7 +365,9 @@ export class CommunicationsService {
       .exec();
 
     if (result.matchedCount === 0) {
-      throw new NotFoundException(`Communication provider with ID ${id} not found`);
+      throw new NotFoundException(
+        `Communication provider with ID ${id} not found`,
+      );
     }
 
     await this.providerRegistry.reloadProviders();
@@ -370,7 +427,9 @@ export class CommunicationsService {
       .findOne({ _id: id, isDeleted: null })
       .exec();
     if (!sub) {
-      throw new NotFoundException(`Webhook subscription with ID ${id} not found`);
+      throw new NotFoundException(
+        `Webhook subscription with ID ${id} not found`,
+      );
     }
     return sub;
   }
@@ -386,7 +445,9 @@ export class CommunicationsService {
       .exec();
 
     if (!sub) {
-      throw new NotFoundException(`Webhook subscription with ID ${id} not found`);
+      throw new NotFoundException(
+        `Webhook subscription with ID ${id} not found`,
+      );
     }
     return sub;
   }
@@ -397,7 +458,9 @@ export class CommunicationsService {
       .exec();
 
     if (result.matchedCount === 0) {
-      throw new NotFoundException(`Webhook subscription with ID ${id} not found`);
+      throw new NotFoundException(
+        `Webhook subscription with ID ${id} not found`,
+      );
     }
   }
 
@@ -406,7 +469,10 @@ export class CommunicationsService {
   /**
    * Brevo event → CommunicationLog status mapping:
    */
-  private static readonly BREVO_STATUS_MAP: Record<string, CommunicationStatus | null> = {
+  private static readonly BREVO_STATUS_MAP: Record<
+    string,
+    CommunicationStatus | null
+  > = {
     request: CommunicationStatus.REQUESTED,
     deferred: CommunicationStatus.PENDING,
     delivered: CommunicationStatus.DELIVERED,
@@ -424,7 +490,10 @@ export class CommunicationsService {
     unsubscribed: null,
   };
 
-  private static readonly STATUS_PRECEDENCE: Record<CommunicationStatus, number> = {
+  private static readonly STATUS_PRECEDENCE: Record<
+    CommunicationStatus,
+    number
+  > = {
     [CommunicationStatus.PENDING]: 0,
     [CommunicationStatus.REQUESTED]: 1,
     [CommunicationStatus.SENT]: 2,
@@ -451,10 +520,12 @@ export class CommunicationsService {
     }
 
     // Find the communication log that matches this Brevo messageId
-    const logDoc = await this.logModel.findOne({
-      'metadata.brevoMessageId': messageId,
-      isDeleted: null,
-    }).exec();
+    const logDoc = await this.logModel
+      .findOne({
+        'metadata.brevoMessageId': messageId,
+        isDeleted: null,
+      })
+      .exec();
 
     if (!logDoc) {
       this.logger.warn(
@@ -490,8 +561,10 @@ export class CommunicationsService {
     const mappedStatus = CommunicationsService.BREVO_STATUS_MAP[payload.event];
 
     if (mappedStatus) {
-      const currentPrecedence = CommunicationsService.STATUS_PRECEDENCE[logDoc.status as CommunicationStatus] || 0;
-      const newPrecedence = CommunicationsService.STATUS_PRECEDENCE[mappedStatus] || 0;
+      const currentPrecedence =
+        CommunicationsService.STATUS_PRECEDENCE[logDoc.status] || 0;
+      const newPrecedence =
+        CommunicationsService.STATUS_PRECEDENCE[mappedStatus] || 0;
 
       // Only update log status if the new status has equal or higher precedence
       // This prevents out-of-order events from downgrading status (e.g. request arriving after delivered)
@@ -516,7 +589,8 @@ export class CommunicationsService {
     const incomingTimestamp = deliveryEvent.timestamp;
     const existingTimestamp = logDoc.metadata?.lastBrevoEventAt;
     const isNewerEvent =
-      !existingTimestamp || new Date(incomingTimestamp) >= new Date(existingTimestamp);
+      !existingTimestamp ||
+      new Date(incomingTimestamp) >= new Date(existingTimestamp);
 
     // Track the latest Brevo event name + update the deliveryEvents & webhookHistory arrays
     logDoc.metadata = {
@@ -543,21 +617,30 @@ export class CommunicationsService {
    * and saves the webhook ID to the Brevo provider's configuration.
    */
   async registerBrevoWebhook(url: string): Promise<any> {
-    const brevoProvider = await this.providerModel.findOne({ name: 'brevo', isDeleted: null }).exec();
+    const brevoProvider = await this.providerModel
+      .findOne({ name: 'brevo', isDeleted: null })
+      .exec();
     if (!brevoProvider) {
-      throw new BadRequestException('Brevo provider configuration not found in database. Please configure it first.');
+      throw new BadRequestException(
+        'Brevo provider configuration not found in database. Please configure it first.',
+      );
     }
 
-    const apiKey = brevoProvider.credentials?.apiKey || process.env.BREVO_API_KEY;
+    const apiKey =
+      brevoProvider.credentials?.apiKey || process.env.BREVO_API_KEY;
     if (!apiKey) {
-      throw new BadRequestException('Brevo API key is not configured. Please set the API key under credentials.');
+      throw new BadRequestException(
+        'Brevo API key is not configured. Please set the API key under credentials.',
+      );
     }
 
     // 1. If there's an existing webhook ID, clean it up first
     const existingWebhookId = brevoProvider.config?.brevoWebhookId;
     if (existingWebhookId) {
       try {
-        this.logger.log(`Cleaning up existing Brevo webhook (ID: ${existingWebhookId}) before registering new one.`);
+        this.logger.log(
+          `Cleaning up existing Brevo webhook (ID: ${existingWebhookId}) before registering new one.`,
+        );
         await fetch(`https://api.brevo.com/v3/webhooks/${existingWebhookId}`, {
           method: 'DELETE',
           headers: {
@@ -566,7 +649,9 @@ export class CommunicationsService {
           },
         });
       } catch (err) {
-        this.logger.warn(`Failed to clean up existing Brevo webhook ${existingWebhookId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to clean up existing Brevo webhook ${existingWebhookId}: ${err.message}`,
+        );
       }
     }
 
@@ -602,8 +687,12 @@ export class CommunicationsService {
     const data = await response.json();
 
     if (!response.ok) {
-      this.logger.error(`Brevo Webhook Registration failed: ${JSON.stringify(data)}`);
-      throw new BadRequestException(data?.message || 'Failed to register webhook with Brevo.');
+      this.logger.error(
+        `Brevo Webhook Registration failed: ${JSON.stringify(data)}`,
+      );
+      throw new BadRequestException(
+        data?.message || 'Failed to register webhook with Brevo.',
+      );
     }
 
     const webhookId = data.id;
@@ -630,36 +719,50 @@ export class CommunicationsService {
    * and removes its info from the Brevo provider's configuration.
    */
   async unregisterBrevoWebhook(): Promise<any> {
-    const brevoProvider = await this.providerModel.findOne({ name: 'brevo', isDeleted: null }).exec();
+    const brevoProvider = await this.providerModel
+      .findOne({ name: 'brevo', isDeleted: null })
+      .exec();
     if (!brevoProvider) {
-      throw new BadRequestException('Brevo provider configuration not found in database.');
+      throw new BadRequestException(
+        'Brevo provider configuration not found in database.',
+      );
     }
 
-    const apiKey = brevoProvider.credentials?.apiKey || process.env.BREVO_API_KEY;
+    const apiKey =
+      brevoProvider.credentials?.apiKey || process.env.BREVO_API_KEY;
     if (!apiKey) {
       throw new BadRequestException('Brevo API key is not configured.');
     }
 
     const webhookId = brevoProvider.config?.brevoWebhookId;
     if (!webhookId) {
-      throw new BadRequestException('No Brevo webhook is currently registered in configuration.');
+      throw new BadRequestException(
+        'No Brevo webhook is currently registered in configuration.',
+      );
     }
 
     // Call Brevo API to delete the webhook
     this.logger.log(`Deleting Brevo webhook ID: ${webhookId}`);
-    const response = await fetch(`https://api.brevo.com/v3/webhooks/${webhookId}`, {
-      method: 'DELETE',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `https://api.brevo.com/v3/webhooks/${webhookId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     // Accept 204 or 404 (already deleted)
     if (!response.ok && response.status !== 404) {
       const data = await response.json().catch(() => ({}));
-      this.logger.error(`Brevo Webhook Deletion failed: ${JSON.stringify(data)}`);
-      throw new BadRequestException(data?.message || 'Failed to delete webhook from Brevo.');
+      this.logger.error(
+        `Brevo Webhook Deletion failed: ${JSON.stringify(data)}`,
+      );
+      throw new BadRequestException(
+        data?.message || 'Failed to delete webhook from Brevo.',
+      );
     }
 
     // Remove from database provider config
@@ -683,7 +786,9 @@ export class CommunicationsService {
   async getBrevoSenders(): Promise<any> {
     const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
     if (!brevoProvider) {
-      throw new BadRequestException('Brevo provider is not enabled or registered.');
+      throw new BadRequestException(
+        'Brevo provider is not enabled or registered.',
+      );
     }
     const client = brevoProvider.getClient();
     if (!client) {
@@ -694,7 +799,9 @@ export class CommunicationsService {
       return response;
     } catch (err: any) {
       this.logger.error(`Failed to fetch Brevo senders: ${err.message}`);
-      throw new BadRequestException(err.message || 'Failed to fetch Brevo senders.');
+      throw new BadRequestException(
+        err.message || 'Failed to fetch Brevo senders.',
+      );
     }
   }
 
@@ -704,7 +811,9 @@ export class CommunicationsService {
   async createBrevoSender(dto: CreateBrevoSenderDto): Promise<any> {
     const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
     if (!brevoProvider) {
-      throw new BadRequestException('Brevo provider is not enabled or registered.');
+      throw new BadRequestException(
+        'Brevo provider is not enabled or registered.',
+      );
     }
     const client = brevoProvider.getClient();
     if (!client) {
@@ -718,7 +827,9 @@ export class CommunicationsService {
       return response;
     } catch (err: any) {
       this.logger.error(`Failed to create Brevo sender: ${err.message}`);
-      throw new BadRequestException(err.message || 'Failed to create Brevo sender.');
+      throw new BadRequestException(
+        err.message || 'Failed to create Brevo sender.',
+      );
     }
   }
 
@@ -728,7 +839,9 @@ export class CommunicationsService {
   async deleteBrevoSender(id: number): Promise<any> {
     const brevoProvider = this.providerRegistry.getProvider('brevo') as any;
     if (!brevoProvider) {
-      throw new BadRequestException('Brevo provider is not enabled or registered.');
+      throw new BadRequestException(
+        'Brevo provider is not enabled or registered.',
+      );
     }
     const client = brevoProvider.getClient();
     if (!client) {
@@ -739,7 +852,9 @@ export class CommunicationsService {
       return { success: true };
     } catch (err: any) {
       this.logger.error(`Failed to delete Brevo sender: ${err.message}`);
-      throw new BadRequestException(err.message || 'Failed to delete Brevo sender.');
+      throw new BadRequestException(
+        err.message || 'Failed to delete Brevo sender.',
+      );
     }
   }
 
@@ -793,7 +908,9 @@ export class CommunicationsService {
     if (dto.templateId) {
       const template = await this.templateModel.findById(dto.templateId).exec();
       if (!template) {
-        throw new NotFoundException(`Template ID "${dto.templateId}" not found.`);
+        throw new NotFoundException(
+          `Template ID "${dto.templateId}" not found.`,
+        );
       }
     }
     Object.assign(mapping, dto);
@@ -822,35 +939,48 @@ export class CommunicationsService {
   }
 
   async syncLogStatusWithProvider(id: string): Promise<CommunicationLog> {
-    const logDoc = await this.logModel.findOne({ _id: id, isDeleted: null }).exec();
+    const logDoc = await this.logModel
+      .findOne({ _id: id, isDeleted: null })
+      .exec();
     if (!logDoc) {
       throw new NotFoundException(`Communication log with ID ${id} not found`);
     }
 
     if (logDoc.channel !== CommunicationChannel.EMAIL) {
-      throw new BadRequestException('Status synchronization is only supported for Email communications.');
+      throw new BadRequestException(
+        'Status synchronization is only supported for Email communications.',
+      );
     }
 
     const messageId = logDoc.metadata?.brevoMessageId;
     if (!messageId) {
-      throw new BadRequestException('This log does not have a Brevo Message ID associated with it.');
+      throw new BadRequestException(
+        'This log does not have a Brevo Message ID associated with it.',
+      );
     }
 
-    const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+    const brevoProvider = this.providerRegistry.getProvider(
+      'brevo',
+    ) as BrevoEmailProvider;
     if (!brevoProvider) {
       throw new BadRequestException('Brevo provider is not registered.');
     }
 
     const brevoClient = brevoProvider.getClient();
     if (!brevoClient) {
-      throw new BadRequestException('Brevo client is not initialized. Check API configuration.');
+      throw new BadRequestException(
+        'Brevo client is not initialized. Check API configuration.',
+      );
     }
 
     try {
-      this.logger.debug(`Fetching latest update from Brevo for message ID: ${messageId}`);
-      const response = await brevoClient.transactionalEmails.getEmailEventReport({
-        messageId,
-      });
+      this.logger.debug(
+        `Fetching latest update from Brevo for message ID: ${messageId}`,
+      );
+      const response =
+        await brevoClient.transactionalEmails.getEmailEventReport({
+          messageId,
+        });
 
       if (!response.events || response.events.length === 0) {
         return logDoc;
@@ -885,7 +1015,8 @@ export class CommunicationsService {
       };
 
       let highestStatus = logDoc.status;
-      let highestPrecedence = CommunicationsService.STATUS_PRECEDENCE[logDoc.status as CommunicationStatus] || 0;
+      let highestPrecedence =
+        CommunicationsService.STATUS_PRECEDENCE[logDoc.status] || 0;
       let errorReason: string | null = logDoc.error || null;
       let latestEvent = logDoc.metadata?.lastBrevoEvent || null;
       let latestEventAt = logDoc.metadata?.lastBrevoEventAt || null;
@@ -922,15 +1053,23 @@ export class CommunicationsService {
         ...logDoc.metadata,
         deliveryEvents: fetchedEvents,
         webhookHistory: fetchedEvents,
-        ...(latestEvent ? { lastBrevoEvent: latestEvent, lastBrevoEventAt: latestEventAt } : {}),
+        ...(latestEvent
+          ? { lastBrevoEvent: latestEvent, lastBrevoEventAt: latestEventAt }
+          : {}),
       };
 
       await logDoc.save();
-      this.logger.log(`Manual sync completed for log ${id}. Mapped status: ${highestStatus}`);
+      this.logger.log(
+        `Manual sync completed for log ${id}. Mapped status: ${highestStatus}`,
+      );
       return logDoc;
     } catch (error) {
-      this.logger.error(`Failed to sync log status from Brevo: ${error.message}`);
-      throw new BadRequestException(`Failed to sync log status from Brevo: ${error.message}`);
+      this.logger.error(
+        `Failed to sync log status from Brevo: ${error.message}`,
+      );
+      throw new BadRequestException(
+        `Failed to sync log status from Brevo: ${error.message}`,
+      );
     }
   }
 }

@@ -87,4 +87,3 @@ export class AdminReportsController {
     return { message: 'Report deleted successfully' };
   }
 }
-

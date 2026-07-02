@@ -13,7 +13,10 @@ import {
 } from '../schemas/communication-log.schema';
 
 export class QueryCommunicationLogDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ example: 'test@example.com', description: 'Search logs by recipient, title, or content' })
+  @ApiPropertyOptional({
+    example: 'test@example.com',
+    description: 'Search logs by recipient, title, or content',
+  })
   @IsOptional()
   @IsString()
   search?: string;
@@ -30,12 +33,18 @@ export class QueryCommunicationLogDto extends PaginationQueryDto {
 }
 
 export class SendManualMessageDto {
-  @ApiProperty({ enum: CommunicationChannel, example: CommunicationChannel.EMAIL })
+  @ApiProperty({
+    enum: CommunicationChannel,
+    example: CommunicationChannel.EMAIL,
+  })
   @IsNotEmpty()
   @IsEnum(CommunicationChannel)
   channel: CommunicationChannel;
 
-  @ApiProperty({ example: 'user@example.com', description: 'Email address, phone number, device token, or webhook URL' })
+  @ApiProperty({
+    example: 'user@example.com',
+    description: 'Email address, phone number, device token, or webhook URL',
+  })
   @IsNotEmpty()
   @IsString()
   recipient: string;

@@ -53,7 +53,9 @@ export class PaginationQueryDto {
   @IsOptional()
   showMetadata?: any;
 
-  @ApiPropertyOptional({ description: 'Show metadata in response (alternative casing)' })
+  @ApiPropertyOptional({
+    description: 'Show metadata in response (alternative casing)',
+  })
   @IsOptional()
   showMetaData?: any;
 }

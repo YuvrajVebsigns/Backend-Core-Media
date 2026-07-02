@@ -474,7 +474,11 @@ export const EventPayloadRegistry: Record<
   ],
   [AppEvents.SYSTEM_USER_UPDATED]: [
     { field: 'userId', type: 'string', description: 'System user ID' },
-    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    {
+      field: 'changes',
+      type: 'object',
+      description: 'Changed fields key-value map',
+    },
     { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
   ],
 
@@ -485,7 +489,11 @@ export const EventPayloadRegistry: Record<
     { field: 'name', type: 'string', description: 'Attendee name' },
     { field: 'eventId', type: 'string', description: 'Event ID' },
     { field: 'websiteId', type: 'string', description: 'Source website ID' },
-    { field: 'registeredAt', type: 'Date', description: 'Registration timestamp' },
+    {
+      field: 'registeredAt',
+      type: 'Date',
+      description: 'Registration timestamp',
+    },
   ],
   [AppEvents.ATTENDEE_APPROVED]: [
     { field: 'attendeeId', type: 'string', description: 'Attendee ID' },
@@ -536,7 +544,11 @@ export const EventPayloadRegistry: Record<
   [AppEvents.EVENT_UPDATED]: [
     { field: 'eventId', type: 'string', description: 'Event ID' },
     { field: 'title', type: 'string', description: 'Event title' },
-    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    {
+      field: 'changes',
+      type: 'object',
+      description: 'Changed fields key-value map',
+    },
     { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
   ],
   [AppEvents.EVENT_DELETED]: [
@@ -551,7 +563,11 @@ export const EventPayloadRegistry: Record<
     { field: 'eventTitle', type: 'string', description: 'Parent event title' },
     { field: 'time', type: 'string', description: 'Meeting time' },
     { field: 'date', type: 'string', description: 'Meeting date' },
-    { field: 'eventDetails', type: 'string', description: 'Parent event details' },
+    {
+      field: 'eventDetails',
+      type: 'string',
+      description: 'Parent event details',
+    },
     { field: 'createdAt', type: 'Date', description: 'Creation timestamp' },
   ],
 
@@ -575,7 +591,11 @@ export const EventPayloadRegistry: Record<
     { field: 'blogId', type: 'string', description: 'Blog post ID' },
     { field: 'commentId', type: 'string', description: 'Comment ID' },
     { field: 'authorName', type: 'string', description: 'Comment author name' },
-    { field: 'authorEmail', type: 'string', description: 'Comment author email' },
+    {
+      field: 'authorEmail',
+      type: 'string',
+      description: 'Comment author email',
+    },
     { field: 'createdAt', type: 'Date', description: 'Comment timestamp' },
   ],
   [AppEvents.BLOG_LIKED]: [
@@ -585,19 +605,43 @@ export const EventPayloadRegistry: Record<
 
   // Contact Events
   [AppEvents.CONTACT_SUBMITTED]: [
-    { field: 'contactId', type: 'string', description: 'Contact submission ID' },
-    { field: 'fullName', type: 'string', description: 'Full name of the submitter' },
+    {
+      field: 'contactId',
+      type: 'string',
+      description: 'Contact submission ID',
+    },
+    {
+      field: 'fullName',
+      type: 'string',
+      description: 'Full name of the submitter',
+    },
     { field: 'email', type: 'string', description: 'Email of the submitter' },
     { field: 'phone', type: 'string', description: 'Phone number' },
-    { field: 'service', type: 'string', description: 'Selected service or topic' },
+    {
+      field: 'service',
+      type: 'string',
+      description: 'Selected service or topic',
+    },
     { field: 'message', type: 'string', description: 'Contact message body' },
     { field: 'websiteId', type: 'string', description: 'Source website ID' },
     { field: 'submittedAt', type: 'Date', description: 'Submission timestamp' },
   ],
   [AppEvents.CONTACT_REPLIED]: [
-    { field: 'contactId', type: 'string', description: 'Contact submission ID' },
-    { field: 'email', type: 'string', description: 'Email of original submitter' },
-    { field: 'repliedBy', type: 'string', description: 'Admin user ID who replied' },
+    {
+      field: 'contactId',
+      type: 'string',
+      description: 'Contact submission ID',
+    },
+    {
+      field: 'email',
+      type: 'string',
+      description: 'Email of original submitter',
+    },
+    {
+      field: 'repliedBy',
+      type: 'string',
+      description: 'Admin user ID who replied',
+    },
     { field: 'repliedAt', type: 'Date', description: 'Reply timestamp' },
   ],
 
@@ -620,17 +664,37 @@ export const EventPayloadRegistry: Record<
   // Nomination Events
   [AppEvents.NOMINATION_SUBMITTED]: [
     { field: 'nominationId', type: 'string', description: 'Nomination ID' },
-    { field: 'categoryId', type: 'string', description: 'Nomination category ID' },
-    { field: 'nomineeName', type: 'string', description: 'Name of the nominee' },
-    { field: 'submittedBy', type: 'string', description: 'Submitter identifier' },
+    {
+      field: 'categoryId',
+      type: 'string',
+      description: 'Nomination category ID',
+    },
+    {
+      field: 'nomineeName',
+      type: 'string',
+      description: 'Name of the nominee',
+    },
+    {
+      field: 'submittedBy',
+      type: 'string',
+      description: 'Submitter identifier',
+    },
     { field: 'websiteId', type: 'string', description: 'Source website ID' },
     { field: 'submittedAt', type: 'Date', description: 'Submission timestamp' },
   ],
   [AppEvents.NOMINATION_STATUS_CHANGED]: [
     { field: 'nominationId', type: 'string', description: 'Nomination ID' },
-    { field: 'previousStatus', type: 'string', description: 'Previous status value' },
+    {
+      field: 'previousStatus',
+      type: 'string',
+      description: 'Previous status value',
+    },
     { field: 'newStatus', type: 'string', description: 'New status value' },
-    { field: 'changedAt', type: 'Date', description: 'Status change timestamp' },
+    {
+      field: 'changedAt',
+      type: 'Date',
+      description: 'Status change timestamp',
+    },
   ],
 
   // Website Events
@@ -643,7 +707,11 @@ export const EventPayloadRegistry: Record<
   [AppEvents.WEBSITE_UPDATED]: [
     { field: 'websiteId', type: 'string', description: 'Website ID' },
     { field: 'name', type: 'string', description: 'Website name' },
-    { field: 'changes', type: 'object', description: 'Changed fields key-value map' },
+    {
+      field: 'changes',
+      type: 'object',
+      description: 'Changed fields key-value map',
+    },
     { field: 'updatedAt', type: 'Date', description: 'Update timestamp' },
   ],
   [AppEvents.WEBSITE_PAGE_PUBLISHED]: [
@@ -663,7 +731,11 @@ export const EventPayloadRegistry: Record<
   ],
   [AppEvents.REPORT_DOWNLOADED]: [
     { field: 'reportId', type: 'string', description: 'Report ID' },
-    { field: 'downloadedBy', type: 'string', description: 'Downloader user ID' },
+    {
+      field: 'downloadedBy',
+      type: 'string',
+      description: 'Downloader user ID',
+    },
     { field: 'websiteId', type: 'string', description: 'Website ID' },
     { field: 'downloadedAt', type: 'Date', description: 'Download timestamp' },
   ],
@@ -671,9 +743,17 @@ export const EventPayloadRegistry: Record<
   // Communication Events
   [AppEvents.COMMUNICATION_DISPATCHED]: [
     { field: 'logId', type: 'string', description: 'Communication log ID' },
-    { field: 'channel', type: 'string', description: 'Communication channel (email/sms/push)' },
+    {
+      field: 'channel',
+      type: 'string',
+      description: 'Communication channel (email/sms/push)',
+    },
     { field: 'recipient', type: 'string', description: 'Recipient identifier' },
-    { field: 'templateSlug', type: 'string', description: 'Template slug if template-based' },
+    {
+      field: 'templateSlug',
+      type: 'string',
+      description: 'Template slug if template-based',
+    },
     { field: 'dispatchedAt', type: 'Date', description: 'Dispatch timestamp' },
   ],
 

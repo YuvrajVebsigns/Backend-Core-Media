@@ -19,7 +19,10 @@ export class BrevoEmailProvider implements ICommunicationProvider {
   private senderEmail = '';
   private senderName = '';
 
-  initialize(credentials: Record<string, any>, config: Record<string, any>): void {
+  initialize(
+    credentials: Record<string, any>,
+    config: Record<string, any>,
+  ): void {
     const apiKey = credentials.apiKey || process.env.BREVO_API_KEY;
     if (!apiKey) {
       this.logger.warn('Brevo API key is not configured.');
@@ -27,8 +30,16 @@ export class BrevoEmailProvider implements ICommunicationProvider {
     }
 
     this.client = new BrevoClient({ apiKey });
-    this.senderEmail = credentials.senderEmail || config.senderEmail || process.env.BREVO_SENDER_EMAIL || 'noreply@coremediagroup.com';
-    this.senderName = credentials.senderName || config.senderName || process.env.BREVO_SENDER_NAME || 'Core Media';
+    this.senderEmail =
+      credentials.senderEmail ||
+      config.senderEmail ||
+      process.env.BREVO_SENDER_EMAIL ||
+      'noreply@coremediagroup.com';
+    this.senderName =
+      credentials.senderName ||
+      config.senderName ||
+      process.env.BREVO_SENDER_NAME ||
+      'Core Media';
     this.logger.log('Brevo Email Provider initialized successfully.');
   }
 
@@ -41,9 +52,14 @@ export class BrevoEmailProvider implements ICommunicationProvider {
     }
 
     try {
-      this.logger.debug(`Sending transactional email via Brevo SDK to ${payload.recipient}`);
+      this.logger.debug(
+        `Sending transactional email via Brevo SDK to ${payload.recipient}`,
+      );
       const sender = payload.senderEmail
-        ? { name: payload.senderName || payload.senderEmail.split('@')[0], email: payload.senderEmail }
+        ? {
+            name: payload.senderName || payload.senderEmail.split('@')[0],
+            email: payload.senderEmail,
+          }
         : { name: this.senderName, email: this.senderEmail };
 
       const response = await this.client.transactionalEmails.sendTransacEmail({
@@ -68,7 +84,9 @@ export class BrevoEmailProvider implements ICommunicationProvider {
     }
   }
 
-  async sendWithTemplate(payload: SendTemplatePayload): Promise<ProviderSendResult> {
+  async sendWithTemplate(
+    payload: SendTemplatePayload,
+  ): Promise<ProviderSendResult> {
     if (!this.client) {
       return {
         success: false,
@@ -77,9 +95,14 @@ export class BrevoEmailProvider implements ICommunicationProvider {
     }
 
     try {
-      this.logger.debug(`Sending template email via Brevo SDK to ${payload.recipient} using templateId ${payload.externalTemplateId}`);
+      this.logger.debug(
+        `Sending template email via Brevo SDK to ${payload.recipient} using templateId ${payload.externalTemplateId}`,
+      );
       const sender = payload.senderEmail
-        ? { name: payload.senderName || payload.senderEmail.split('@')[0], email: payload.senderEmail }
+        ? {
+            name: payload.senderName || payload.senderEmail.split('@')[0],
+            email: payload.senderEmail,
+          }
         : { name: this.senderName, email: this.senderEmail };
 
       const response = await this.client.transactionalEmails.sendTransacEmail({
@@ -95,7 +118,9 @@ export class BrevoEmailProvider implements ICommunicationProvider {
         rawResponse: response,
       };
     } catch (error) {
-      this.logger.error(`Failed to send template email via Brevo: ${error.message}`);
+      this.logger.error(
+        `Failed to send template email via Brevo: ${error.message}`,
+      );
       return {
         success: false,
         error: error.message,
@@ -106,7 +131,10 @@ export class BrevoEmailProvider implements ICommunicationProvider {
 
   async healthCheck(): Promise<HealthCheckResult> {
     if (!this.client) {
-      return { isHealthy: false, error: 'Brevo client is not initialized. Please configure the API key.' };
+      return {
+        isHealthy: false,
+        error: 'Brevo client is not initialized. Please configure the API key.',
+      };
     }
     try {
       await this.client.account.getAccount();

@@ -31,11 +31,12 @@ export class EventTemplateMapping extends BaseSchema {
   isActive: boolean;
 }
 
-export const EventTemplateMappingSchema = SchemaFactory.createForClass(EventTemplateMapping);
+export const EventTemplateMappingSchema =
+  SchemaFactory.createForClass(EventTemplateMapping);
 
 EventTemplateMappingSchema.index(
   { event: 1 },
-  { unique: true, partialFilterExpression: { isDeleted: null } }
+  { unique: true, partialFilterExpression: { isDeleted: null } },
 );
 
 applySoftDeleteMiddleware(EventTemplateMappingSchema);
