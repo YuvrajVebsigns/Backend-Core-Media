@@ -19,6 +19,9 @@ import { ApiStandardResponse } from '@common/decorators/api-standard-response.de
 
 @ApiTags('Admin | Deployments')
 @ApiBearerAuth()
+@ApiResponse({ status: 401, description: 'Unauthorized - Invalid credentials or missing token' })
+@ApiResponse({ status: 403, description: 'Forbidden - Super Admin role required' })
+@ApiResponse({ status: 429, description: 'Rate limit exceeded' })
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(SystemUserRole.SUPER_ADMIN)
 @Controller('admin/deployments')
@@ -45,6 +48,8 @@ export class DeploymentsController {
     status: 200,
     description: 'Deployment initiated successfully',
   })
+  @ApiResponse({ status: 400, description: 'Bad Request - Target not active or invalid' })
+  @ApiResponse({ status: 404, description: 'Not Found - Deployment target not recognized' })
   async triggerDeploy(@Param('target') target: string) {
     return this.deploymentsService.triggerDeploy(target);
   }
@@ -56,6 +61,8 @@ export class DeploymentsController {
     description: 'Deployment logs retrieved successfully',
     type: LogResponseDto,
   })
+  @ApiResponse({ status: 400, description: 'Bad Request - Target invalid' })
+  @ApiResponse({ status: 404, description: 'Not Found - Target or deployment log file not found' })
   async getDeployLogs(
     @Param('target') target: string,
   ): Promise<LogResponseDto> {
@@ -82,6 +89,8 @@ export class DeploymentsController {
     description: 'PM2 logs retrieved successfully',
     type: LogResponseDto,
   })
+  @ApiResponse({ status: 400, description: 'Bad Request - Target invalid' })
+  @ApiResponse({ status: 404, description: 'Not Found - Process or logs not found' })
   async getPm2Logs(@Param('target') target: string): Promise<LogResponseDto> {
     const logs = await this.deploymentsService.getPm2Logs(target);
     return { target, logs };
@@ -94,6 +103,8 @@ export class DeploymentsController {
     description: 'Process restart triggered successfully',
     type: LogResponseDto,
   })
+  @ApiResponse({ status: 400, description: 'Bad Request - Target invalid or inactive' })
+  @ApiResponse({ status: 404, description: 'Not Found - Process not found or failed to restart' })
   async restartPm2(@Param('target') target: string): Promise<LogResponseDto> {
     const logs = await this.deploymentsService.restartPm2(target);
     return { target, logs };
@@ -106,6 +117,8 @@ export class DeploymentsController {
     description: 'Process restart command logs retrieved successfully',
     type: LogResponseDto,
   })
+  @ApiResponse({ status: 400, description: 'Bad Request - Target invalid' })
+  @ApiResponse({ status: 404, description: 'Not Found - Restart command log file not found' })
   async getRestartLogs(
     @Param('target') target: string,
   ): Promise<LogResponseDto> {
