@@ -18,52 +18,61 @@ import * as path from 'path';
  */
 export const DEPLOY_REGISTRY: Record<
   string,
-  { dirKey: string; cmdKey: string; branchKey: string }
+  { dirKey: string; cmdKey: string; branchKey: string; pm2Key: string }
 > = {
   backend: {
     dirKey: 'DEPLOY_BACKEND_DIR',
     cmdKey: 'DEPLOY_BACKEND_CMD',
     branchKey: 'DEPLOY_BACKEND_BRANCH',
+    pm2Key: 'DEPLOY_BACKEND_PM2_NAME',
   },
   frontend: {
     dirKey: 'DEPLOY_FRONTEND_DIR',
     cmdKey: 'DEPLOY_FRONTEND_CMD',
     branchKey: 'DEPLOY_FRONTEND_BRANCH',
+    pm2Key: 'DEPLOY_FRONTEND_PM2_NAME',
   },
   'website-1': {
     dirKey: 'DEPLOY_WEBSITE_1_DIR',
     cmdKey: 'DEPLOY_WEBSITE-1_CMD',
     branchKey: 'DEPLOY_WEBSITE_1_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_1_PM2_NAME',
   },
   'website-2': {
     dirKey: 'DEPLOY_WEBSITE_2_DIR',
     cmdKey: 'DEPLOY_WEBSITE_2_CMD',
     branchKey: 'DEPLOY_WEBSITE_2_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_2_PM2_NAME',
   },
   'website-3': {
     dirKey: 'DEPLOY_WEBSITE_3_DIR',
     cmdKey: 'DEPLOY_WEBSITE_3_CMD',
     branchKey: 'DEPLOY_WEBSITE_3_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_3_PM2_NAME',
   },
   'website-4': {
     dirKey: 'DEPLOY_WEBSITE_4_DIR',
     cmdKey: 'DEPLOY_WEBSITE_4_CMD',
     branchKey: 'DEPLOY_WEBSITE_4_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_4_PM2_NAME',
   },
   'website-5': {
     dirKey: 'DEPLOY_WEBSITE_5_DIR',
     cmdKey: 'DEPLOY_WEBSITE_5_CMD',
     branchKey: 'DEPLOY_WEBSITE_5_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_5_PM2_NAME',
   },
   'website-6': {
     dirKey: 'DEPLOY_WEBSITE_6_DIR',
     cmdKey: 'DEPLOY_WEBSITE_6_CMD',
     branchKey: 'DEPLOY_WEBSITE_6_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_6_PM2_NAME',
   },
   'website-7': {
     dirKey: 'DEPLOY_WEBSITE_7_DIR',
     cmdKey: 'DEPLOY_WEBSITE_7_CMD',
     branchKey: 'DEPLOY_WEBSITE_7_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_7_PM2_NAME',
   },
 };
 

@@ -130,6 +130,37 @@ export class DeploymentsService {
   }
 
   /**
+   * Retrieves the PM2 process name for a target from configuration or fallbacks
+   */
+  private async getPm2ProcessNameForTarget(
+    target: string,
+    prefetchedWebsites: any[] | null = null,
+  ): Promise<string> {
+    const entry = DEPLOY_REGISTRY[target];
+    if (!entry) return target;
+
+    const envName = this.configService.get<string>(entry.pm2Key);
+    if (envName) return envName;
+
+    // Fallbacks
+    if (target === 'backend') return 'core-media-backend';
+    if (target === 'frontend') return 'core-media-frontend';
+
+    // Website mapping
+    if (target.startsWith('website-')) {
+      const matchIdx = parseInt(target.replace('website-', ''), 10) - 1;
+      const websites = prefetchedWebsites || (await this.websitesService.findAll({
+        page: 1,
+        limit: 7,
+      })).data || [];
+      const ws = websites[matchIdx];
+      if (ws) return ws.slug;
+    }
+
+    return target;
+  }
+
+  /**
    * Retrieves all deployment targets (backend, frontend, website-1...website-7)
    */
   async getTargets(): Promise<DeploymentTargetResponseDto[]> {
@@ -170,6 +201,9 @@ export class DeploymentsService {
         }
       }
 
+      // Retrieve process name mapped to env var or fallback
+      const pm2ProcessName = await this.getPm2ProcessNameForTarget(key, websitesList);
+
       const { status, lastDeployed } = this.parseDeployLog(key);
 
       targets.push({
@@ -178,6 +212,7 @@ export class DeploymentsService {
         branch,
         directory: dir,
         command: cmd,
+        pm2ProcessName,
         isActive,
         websiteId,
         status,
@@ -262,7 +297,7 @@ export class DeploymentsService {
       let mockId = 0;
 
       for (const key of Object.keys(DEPLOY_REGISTRY)) {
-        let processName = '';
+        const processName = await this.getPm2ProcessNameForTarget(key, websitesList);
         let status = 'stopped';
         let cpu = 0;
         let memory = 0;
@@ -270,7 +305,6 @@ export class DeploymentsService {
         let restarts = 0;
 
         if (key === 'backend') {
-          processName = 'core-media-backend';
           status = 'online';
           cpu = Math.random() * 2 + 0.1; // 0.1% - 2.1%
           memory =
@@ -278,7 +312,6 @@ export class DeploymentsService {
           uptime = 1209600 + Math.floor(Math.random() * 3600); // ~14 days
           restarts = 1;
         } else if (key === 'frontend') {
-          processName = 'core-media-frontend';
           status = 'online';
           cpu = Math.random() * 1 + 0.05;
           memory =
@@ -289,7 +322,6 @@ export class DeploymentsService {
           const matchIdx = parseInt(key.replace('website-', ''), 10) - 1;
           const ws = websitesList[matchIdx];
           if (ws) {
-            processName = ws.slug;
             status = ws.isActive ? 'online' : 'stopped';
             cpu = ws.isActive ? Math.random() * 0.5 : 0;
             memory = ws.isActive
@@ -299,10 +331,6 @@ export class DeploymentsService {
               ? 259200 + Math.floor(Math.random() * 3600)
               : 0;
             restarts = ws.isActive ? Math.floor(Math.random() * 3) : 0;
-          } else {
-            // Unassigned website target is stopped
-            processName = `website-unassigned-${matchIdx + 1}`;
-            status = 'stopped';
           }
         }
 
@@ -334,19 +362,8 @@ export class DeploymentsService {
       const stdout = await this.runCommand('pm2 jlist');
       const processes = JSON.parse(stdout);
 
-      // Determine process name we are looking for
-      let targetProcName = 'core-media-backend';
-      if (target === 'frontend') {
-        targetProcName = 'core-media-frontend';
-      } else if (target.startsWith('website-')) {
-        const matchIdx = parseInt(target.replace('website-', ''), 10) - 1;
-        const dbWebsites = await this.websitesService.findAll({
-          page: 1,
-          limit: 7,
-        });
-        const ws = dbWebsites.data?.[matchIdx];
-        targetProcName = ws ? ws.slug : target;
-      }
+      // Determine process name we are looking for using the helper
+      const targetProcName = await this.getPm2ProcessNameForTarget(target);
 
       const proc = processes.find(
         (p: any) => p.name === targetProcName || p.name === target,
@@ -406,19 +423,8 @@ export class DeploymentsService {
       fs.mkdirSync(logsDir, { recursive: true });
     }
 
-    // Determine process name we are restarting
-    let targetProcName = 'core-media-backend';
-    if (target === 'frontend') {
-      targetProcName = 'core-media-frontend';
-    } else if (target.startsWith('website-')) {
-      const matchIdx = parseInt(target.replace('website-', ''), 10) - 1;
-      const dbWebsites = await this.websitesService.findAll({
-        page: 1,
-        limit: 7,
-      });
-      const ws = dbWebsites.data?.[matchIdx];
-      targetProcName = ws ? ws.slug : target;
-    }
+    // Determine process name we are restarting using the helper
+    const targetProcName = await this.getPm2ProcessNameForTarget(target);
 
     const timestamp = new Date().toISOString();
     let restartOutput = '';

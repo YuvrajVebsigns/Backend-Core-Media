@@ -29,6 +29,12 @@ export class DeploymentTargetResponseDto {
   command: string;
 
   @ApiProperty({
+    example: 'core-media-backend',
+    description: 'The PM2 process name associated with this target',
+  })
+  pm2ProcessName: string;
+
+  @ApiProperty({
     example: true,
     description: 'Whether the target is active (applicable for websites)',
   })
