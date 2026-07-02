@@ -21,7 +21,9 @@ export class SectionService {
       }
 
       if (orders.has(section.order)) {
-        throw new BadRequestException(`Duplicate section order found: ${section.order}`);
+        throw new BadRequestException(
+          `Duplicate section order found: ${section.order}`,
+        );
       }
 
       orders.add(section.order);

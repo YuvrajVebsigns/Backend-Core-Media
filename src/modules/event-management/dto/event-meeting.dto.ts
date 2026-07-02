@@ -25,7 +25,10 @@ export class CreateEventMeetingDto {
   @IsString()
   agendaTitle: string;
 
-  @ApiProperty({ type: [String], description: 'List of Attendee IDs mapped to this slot' })
+  @ApiProperty({
+    type: [String],
+    description: 'List of Attendee IDs mapped to this slot',
+  })
   @IsArray()
   @IsMongoId({ each: true })
   attendeeIds: string[];

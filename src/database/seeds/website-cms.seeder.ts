@@ -14,7 +14,8 @@ import { MenuType } from '@modules/websites/enums/menu-type.enum';
 @Injectable()
 export class WebsiteCmsSeeder implements OnApplicationBootstrap {
   constructor(
-    @InjectModel(WebsitePage.name) private readonly pageModel: Model<WebsitePage>,
+    @InjectModel(WebsitePage.name)
+    private readonly pageModel: Model<WebsitePage>,
     @InjectModel(Navbar.name) private readonly navbarModel: Model<Navbar>,
     private readonly websitesService: WebsitesService,
     private readonly systemUsersService: SystemUsersService,
@@ -31,24 +32,31 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
     // 1. Get first website (CIO Angel Network)
     const website = await this.websitesService.findBySlug('cio-angel-network');
     // 2. Get active admin to assign as creator
-    const admin = await this.systemUsersService.findByEmail('superadmin@gmail.com');
+    const admin = await this.systemUsersService.findByEmail(
+      'superadmin@gmail.com',
+    );
 
     if (!website || !admin) {
-      console.warn('⚠️ Skipping CMS seeding: Website (cio-angel-network) or Admin not found');
+      console.warn(
+        '⚠️ Skipping CMS seeding: Website (cio-angel-network) or Admin not found',
+      );
       return;
     }
 
     const siteId = website._id.toString();
     const adminId = admin._id.toString();
 
-    console.log(`🌱 Seeding pages and navigation for website: ${website.name} (${siteId})`);
+    console.log(
+      `🌱 Seeding pages and navigation for website: ${website.name} (${siteId})`,
+    );
 
     // Define core pages data
     const pagesData = [
       {
         title: 'Home',
         slug: 'home',
-        shortDescription: 'Welcome to CIO Angel Network. We fund the next generation of enterprise technology startups.',
+        shortDescription:
+          'Welcome to CIO Angel Network. We fund the next generation of enterprise technology startups.',
         pageType: PageType.LANDING_PAGE,
         isHomepage: true,
         sections: [
@@ -57,10 +65,12 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
             order: 0,
             data: {
               heading: 'Empowering Enterprise Tech Founders',
-              subheading: 'CIO Angel Network accelerates growth by connecting seed-stage startups with leading CIOs and corporate technology partners.',
+              subheading:
+                'CIO Angel Network accelerates growth by connecting seed-stage startups with leading CIOs and corporate technology partners.',
               ctaLabel: 'Apply for Funding',
               ctaLink: '/contact-us',
-              backgroundImage: 'https://images.unsplash.com/photo-1557804506-669a67965ba0',
+              backgroundImage:
+                'https://images.unsplash.com/photo-1557804506-669a67965ba0',
             },
           },
           {
@@ -97,9 +107,16 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
           },
         ],
         seo: {
-          metaTitle: 'CIO Angel Network | Seed Funding for Enterprise Tech Startups',
-          metaDescription: 'CIO Angel Network accelerates technology startups by offering seed funding and strategic access to leading Chief Information Officers.',
-          metaKeywords: ['angel investing', 'cio network', 'seed funding', 'enterprise tech'],
+          metaTitle:
+            'CIO Angel Network | Seed Funding for Enterprise Tech Startups',
+          metaDescription:
+            'CIO Angel Network accelerates technology startups by offering seed funding and strategic access to leading Chief Information Officers.',
+          metaKeywords: [
+            'angel investing',
+            'cio network',
+            'seed funding',
+            'enterprise tech',
+          ],
           canonicalUrl: `${website.domain}/home`,
           noIndex: false,
           noFollow: false,
@@ -108,7 +125,8 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
       {
         title: 'About Us',
         slug: 'about-us',
-        shortDescription: 'Learn about our history, our team of CIOs, and our mission.',
+        shortDescription:
+          'Learn about our history, our team of CIOs, and our mission.',
         pageType: PageType.STATIC_PAGE,
         isHomepage: false,
         sections: [
@@ -117,7 +135,8 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
             order: 0,
             data: {
               title: 'Our Journey and Vision',
-              content: 'CIO Angel Network was founded with a singular focus: to bridge the gap between brilliant enterprise SaaS founders and industry-leading corporate technology leaders. Our network comprises over 150 active CIOs, CTOs, and global tech executives committed to investing in and mentoring early-stage companies.',
+              content:
+                'CIO Angel Network was founded with a singular focus: to bridge the gap between brilliant enterprise SaaS founders and industry-leading corporate technology leaders. Our network comprises over 150 active CIOs, CTOs, and global tech executives committed to investing in and mentoring early-stage companies.',
             },
           },
           {
@@ -128,11 +147,13 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
               items: [
                 {
                   question: 'What types of startups do you invest in?',
-                  answer: 'We focus exclusively on early-stage enterprise software (SaaS), cyber security, AI, cloud infrastructure, and deep tech companies.',
+                  answer:
+                    'We focus exclusively on early-stage enterprise software (SaaS), cyber security, AI, cloud infrastructure, and deep tech companies.',
                 },
                 {
                   question: 'How active are the CIOs in the startups?',
-                  answer: 'Extremely active. Aside from investing capital, our members provide product feedback, pilot opportunities, and strategic customer introductions.',
+                  answer:
+                    'Extremely active. Aside from investing capital, our members provide product feedback, pilot opportunities, and strategic customer introductions.',
                 },
               ],
             },
@@ -140,7 +161,8 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
         ],
         seo: {
           metaTitle: 'About Our Network | CIO Angel Network',
-          metaDescription: 'Discover our mission to bridge enterprise technology founders and active global Chief Information Officers.',
+          metaDescription:
+            'Discover our mission to bridge enterprise technology founders and active global Chief Information Officers.',
           metaKeywords: ['about us', 'tech network', 'saas investment'],
           canonicalUrl: `${website.domain}/about-us`,
           noIndex: false,
@@ -150,7 +172,8 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
       {
         title: 'Services',
         slug: 'services',
-        shortDescription: 'Strategic programs and incubator opportunities offered by CIO Angel Network.',
+        shortDescription:
+          'Strategic programs and incubator opportunities offered by CIO Angel Network.',
         pageType: PageType.STATIC_PAGE,
         isHomepage: false,
         sections: [
@@ -178,8 +201,13 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
         ],
         seo: {
           metaTitle: 'Accelerator Programs & Services | CIO Angel Network',
-          metaDescription: 'Leverage our PoC Sandboxes, enterprise sales workshops, and VC syndicate pools.',
-          metaKeywords: ['poc sandbox', 'sales enablement', 'funding syndicate'],
+          metaDescription:
+            'Leverage our PoC Sandboxes, enterprise sales workshops, and VC syndicate pools.',
+          metaKeywords: [
+            'poc sandbox',
+            'sales enablement',
+            'funding syndicate',
+          ],
           canonicalUrl: `${website.domain}/services`,
           noIndex: false,
           noFollow: false,
@@ -188,7 +216,8 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
       {
         title: 'Contact Us',
         slug: 'contact-us',
-        shortDescription: 'Get in touch with our team to apply for funding or join as an angel investor.',
+        shortDescription:
+          'Get in touch with our team to apply for funding or join as an angel investor.',
         pageType: PageType.STATIC_PAGE,
         isHomepage: false,
         sections: [
@@ -197,13 +226,15 @@ export class WebsiteCmsSeeder implements OnApplicationBootstrap {
             order: 0,
             data: {
               title: 'Get In Touch',
-              content: 'Are you an enterprise SaaS founder seeking funding? Or a CIO interested in joining our active investment syndicate? We would love to hear from you. Drop us a line at info@cioangel.com.',
+              content:
+                'Are you an enterprise SaaS founder seeking funding? Or a CIO interested in joining our active investment syndicate? We would love to hear from you. Drop us a line at info@cioangel.com.',
             },
           },
         ],
         seo: {
           metaTitle: 'Contact Our Team | CIO Angel Network',
-          metaDescription: 'Reach out to CIO Angel Network to schedule pitches, request information, or apply to join our angel syndicate.',
+          metaDescription:
+            'Reach out to CIO Angel Network to schedule pitches, request information, or apply to join our angel syndicate.',
           metaKeywords: ['contact', 'email', 'pitch submit'],
           canonicalUrl: `${website.domain}/contact-us`,
           noIndex: false,

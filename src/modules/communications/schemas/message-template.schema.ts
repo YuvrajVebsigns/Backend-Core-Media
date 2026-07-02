@@ -16,14 +16,19 @@ export class ProviderSyncInfo {
   @Prop({ type: Date })
   syncedAt?: Date;
 
-  @Prop({ type: String, enum: ['synced', 'pending', 'failed'], default: 'pending' })
+  @Prop({
+    type: String,
+    enum: ['synced', 'pending', 'failed'],
+    default: 'pending',
+  })
   syncStatus: 'synced' | 'pending' | 'failed';
 
   @Prop({ type: String })
   error?: string | null;
 }
 
-export const ProviderSyncInfoSchema = SchemaFactory.createForClass(ProviderSyncInfo);
+export const ProviderSyncInfoSchema =
+  SchemaFactory.createForClass(ProviderSyncInfo);
 
 @Schema({
   collection: 'message_templates',
@@ -81,7 +86,8 @@ export class MessageTemplate extends BaseSchema {
   isActive: boolean;
 }
 
-export const MessageTemplateSchema = SchemaFactory.createForClass(MessageTemplate);
+export const MessageTemplateSchema =
+  SchemaFactory.createForClass(MessageTemplate);
 
 applySoftDeleteMiddleware(MessageTemplateSchema);
 

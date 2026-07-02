@@ -70,12 +70,15 @@ export class NominationsService {
     if (existingNomineeCount + createDto.nominees.length > 10) {
       throw new BadRequestException(
         `You can nominate up to 10 CIOs only. You have already nominated ${existingNomineeCount}. ` +
-        `You can add ${10 - existingNomineeCount} more.`,
+          `You can add ${10 - existingNomineeCount} more.`,
       );
     }
 
     // Step 3: Find or create registree for each nominee
-    const nomineeEntries: { nomineeId: Types.ObjectId; categoryId: Types.ObjectId }[] = [];
+    const nomineeEntries: {
+      nomineeId: Types.ObjectId;
+      categoryId: Types.ObjectId;
+    }[] = [];
 
     for (const nominee of createDto.nominees) {
       const nomineeRegistree = await this.findOrCreateRegistree(
@@ -90,7 +93,7 @@ export class NominationsService {
       );
 
       nomineeEntries.push({
-        nomineeId: nomineeRegistree._id as Types.ObjectId,
+        nomineeId: nomineeRegistree._id,
         categoryId: new Types.ObjectId(nominee.categoryId),
       });
     }
@@ -111,7 +114,9 @@ export class NominationsService {
       new NominationSubmittedEvent(
         result._id.toString(),
         createDto.nominees?.[0]?.categoryId || '',
-        createDto.nominees ? createDto.nominees.map(n => n.contactName).join(', ') : '',
+        createDto.nominees
+          ? createDto.nominees.map((n) => n.contactName).join(', ')
+          : '',
         createDto.nominatorEmail,
         websiteId,
       ),
@@ -401,7 +406,7 @@ export class NominationsService {
       this.nominationModel.countDocuments(matchQuery).exec(),
     ]);
 
-    const mappedData = data.map(doc => {
+    const mappedData = data.map((doc) => {
       const obj: any = doc.toObject ? doc.toObject() : { ...doc };
       obj.submittedAt = doc.createdAt;
       return obj;
@@ -540,7 +545,9 @@ export class NominationsService {
         organization: data.organization || '',
         city: data.city || '',
         tags: [tag],
-        websiteId: websiteId ? new Types.ObjectId(websiteId) as any : undefined,
+        websiteId: websiteId
+          ? (new Types.ObjectId(websiteId) as any)
+          : undefined,
       });
     } else {
       // Update details

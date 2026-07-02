@@ -25,10 +25,14 @@ import { Throttle } from '@nestjs/throttler';
 @ApiTags('Website | Blogs')
 @ApiBearerAuth('website-token')
 @UseGuards(WebsiteAuthGuard)
-@Throttle({ short: { ttl: 1000, limit: 30 }, medium: { ttl: 60000, limit: 300 }, long: { ttl: 3600000, limit: 10000 } })
+@Throttle({
+  short: { ttl: 1000, limit: 30 },
+  medium: { ttl: 60000, limit: 300 },
+  long: { ttl: 3600000, limit: 10000 },
+})
 @Controller('website/blogs')
 export class WebsiteBlogsController {
-  constructor(private readonly blogsService: BlogsService) { }
+  constructor(private readonly blogsService: BlogsService) {}
 
   @Get()
   @ApiOperation({

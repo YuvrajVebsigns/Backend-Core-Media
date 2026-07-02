@@ -24,7 +24,10 @@ import {
 } from '@nestjs/swagger';
 import { EventsService } from './event-management.service';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
-import { CreateEventMeetingDto, UpdateEventMeetingDto } from './dto/event-meeting.dto';
+import {
+  CreateEventMeetingDto,
+  UpdateEventMeetingDto,
+} from './dto/event-meeting.dto';
 import { EventStatus } from './schemas/event.schema';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
@@ -38,7 +41,7 @@ import { SystemUserRole } from '@common/enums/role.enum';
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
 @Controller('admin/events')
 export class AdminEventsController {
-  constructor(private readonly eventService: EventsService) { }
+  constructor(private readonly eventService: EventsService) {}
 
   @Post()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
@@ -52,7 +55,8 @@ export class AdminEventsController {
   @ApiOperation({ summary: 'Create a new event' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Create event with optional banner image upload and form details. Note: nested fields (location, websites, sponsors, agenda, seo, invitedEmails) should be passed as JSON strings when using multipart/form-data.',
+    description:
+      'Create event with optional banner image upload and form details. Note: nested fields (location, websites, sponsors, agenda, seo, invitedEmails) should be passed as JSON strings when using multipart/form-data.',
     schema: {
       type: 'object',
       properties: {
@@ -63,22 +67,69 @@ export class AdminEventsController {
         },
         title: { type: 'string', example: 'Digital Transformation Webinar' },
         slug: { type: 'string', example: 'digital-transformation-webinar' },
-        description: { type: 'string', description: 'EditorJS description content (JSON string or object)' },
+        description: {
+          type: 'string',
+          description: 'EditorJS description content (JSON string or object)',
+        },
         excerpt: { type: 'string', example: 'A brief summary of the webinar' },
         type: { type: 'string', enum: ['ONLINE', 'OFFLINE'] },
-        status: { type: 'string', enum: ['DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED', 'ON_GOING', 'SCHEDULED', 'IN_REVIEW'] },
-        startDate: { type: 'string', format: 'date-time', example: '2026-06-03T12:30:00.000Z' },
-        endDate: { type: 'string', format: 'date-time', example: '2026-06-03T20:30:00.000Z' },
-        location: { type: 'string', description: 'JSON string of event location' },
+        status: {
+          type: 'string',
+          enum: [
+            'DRAFT',
+            'PUBLISHED',
+            'COMPLETED',
+            'CANCELLED',
+            'ON_GOING',
+            'SCHEDULED',
+            'IN_REVIEW',
+          ],
+        },
+        startDate: {
+          type: 'string',
+          format: 'date-time',
+          example: '2026-06-03T12:30:00.000Z',
+        },
+        endDate: {
+          type: 'string',
+          format: 'date-time',
+          example: '2026-06-03T20:30:00.000Z',
+        },
+        location: {
+          type: 'string',
+          description: 'JSON string of event location',
+        },
         meetingLink: { type: 'string', example: 'https://zoom.us/j/123456789' },
-        websites: { type: 'string', description: 'JSON string array of website IDs' },
-        sponsors: { type: 'string', description: 'JSON string array of sponsor IDs' },
-        agenda: { type: 'string', description: 'JSON string array of agenda items' },
-        seo: { type: 'string', description: 'JSON string of SEO metadata object' },
+        websites: {
+          type: 'string',
+          description: 'JSON string array of website IDs',
+        },
+        sponsors: {
+          type: 'string',
+          description: 'JSON string array of sponsor IDs',
+        },
+        agenda: {
+          type: 'string',
+          description: 'JSON string array of agenda items',
+        },
+        seo: {
+          type: 'string',
+          description: 'JSON string of SEO metadata object',
+        },
         isActive: { type: 'boolean' },
-        invitedEmails: { type: 'string', description: 'JSON string array of invited emails' },
+        invitedEmails: {
+          type: 'string',
+          description: 'JSON string array of invited emails',
+        },
       },
-      required: ['title', 'slug', 'description', 'type', 'startDate', 'endDate'],
+      required: [
+        'title',
+        'slug',
+        'description',
+        'type',
+        'startDate',
+        'endDate',
+      ],
     },
   })
   create(
@@ -122,7 +173,8 @@ export class AdminEventsController {
   @ApiOperation({ summary: 'Update an event' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
-    description: 'Update event with optional new banner image file upload and form details. Note: nested fields (location, websites, sponsors, agenda, seo, invitedEmails) should be passed as JSON strings when using multipart/form-data.',
+    description:
+      'Update event with optional new banner image file upload and form details. Note: nested fields (location, websites, sponsors, agenda, seo, invitedEmails) should be passed as JSON strings when using multipart/form-data.',
     schema: {
       type: 'object',
       properties: {
@@ -133,20 +185,60 @@ export class AdminEventsController {
         },
         title: { type: 'string', example: 'Digital Transformation Webinar' },
         slug: { type: 'string', example: 'digital-transformation-webinar' },
-        description: { type: 'string', description: 'EditorJS description content (JSON string or object)' },
+        description: {
+          type: 'string',
+          description: 'EditorJS description content (JSON string or object)',
+        },
         excerpt: { type: 'string', example: 'A brief summary of the webinar' },
         type: { type: 'string', enum: ['ONLINE', 'OFFLINE'] },
-        status: { type: 'string', enum: ['DRAFT', 'PUBLISHED', 'COMPLETED', 'CANCELLED', 'ON_GOING', 'SCHEDULED', 'IN_REVIEW'] },
-        startDate: { type: 'string', format: 'date-time', example: '2026-06-03T12:30:00.000Z' },
-        endDate: { type: 'string', format: 'date-time', example: '2026-06-03T20:30:00.000Z' },
-        location: { type: 'string', description: 'JSON string of event location' },
+        status: {
+          type: 'string',
+          enum: [
+            'DRAFT',
+            'PUBLISHED',
+            'COMPLETED',
+            'CANCELLED',
+            'ON_GOING',
+            'SCHEDULED',
+            'IN_REVIEW',
+          ],
+        },
+        startDate: {
+          type: 'string',
+          format: 'date-time',
+          example: '2026-06-03T12:30:00.000Z',
+        },
+        endDate: {
+          type: 'string',
+          format: 'date-time',
+          example: '2026-06-03T20:30:00.000Z',
+        },
+        location: {
+          type: 'string',
+          description: 'JSON string of event location',
+        },
         meetingLink: { type: 'string', example: 'https://zoom.us/j/123456789' },
-        websites: { type: 'string', description: 'JSON string array of website IDs' },
-        sponsors: { type: 'string', description: 'JSON string array of sponsor IDs' },
-        agenda: { type: 'string', description: 'JSON string array of agenda items' },
-        seo: { type: 'string', description: 'JSON string of SEO metadata object' },
+        websites: {
+          type: 'string',
+          description: 'JSON string array of website IDs',
+        },
+        sponsors: {
+          type: 'string',
+          description: 'JSON string array of sponsor IDs',
+        },
+        agenda: {
+          type: 'string',
+          description: 'JSON string array of agenda items',
+        },
+        seo: {
+          type: 'string',
+          description: 'JSON string of SEO metadata object',
+        },
         isActive: { type: 'boolean' },
-        invitedEmails: { type: 'string', description: 'JSON string array of invited emails' },
+        invitedEmails: {
+          type: 'string',
+          description: 'JSON string array of invited emails',
+        },
       },
     },
   })
@@ -170,7 +262,9 @@ export class AdminEventsController {
   @Post(':eventId/meetings')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('events.update')
-  @ApiOperation({ summary: 'Create a meeting reservation mapping for an event' })
+  @ApiOperation({
+    summary: 'Create a meeting reservation mapping for an event',
+  })
   createMeeting(
     @Param('eventId') eventId: string,
     @Body() createMeetingDto: CreateEventMeetingDto,
@@ -181,7 +275,9 @@ export class AdminEventsController {
   @Get(':eventId/meetings')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('events.view')
-  @ApiOperation({ summary: 'Get all meeting mapping reservations for an event' })
+  @ApiOperation({
+    summary: 'Get all meeting mapping reservations for an event',
+  })
   findMeetings(@Param('eventId') eventId: string) {
     return this.eventService.findMeetingsByEvent(eventId);
   }

@@ -28,7 +28,11 @@ export class WebsiteCacheService {
 
   async setPage(siteId: string, slug: string, pageData: any): Promise<void> {
     try {
-      await this.cacheManager.set(this.getPageKey(siteId, slug), pageData, 300 * 1000); // 5 mins
+      await this.cacheManager.set(
+        this.getPageKey(siteId, slug),
+        pageData,
+        300 * 1000,
+      ); // 5 mins
     } catch (e) {}
   }
 
@@ -47,9 +51,17 @@ export class WebsiteCacheService {
     }
   }
 
-  async setNavbar(siteId: string, position: string, navbarData: any): Promise<void> {
+  async setNavbar(
+    siteId: string,
+    position: string,
+    navbarData: any,
+  ): Promise<void> {
     try {
-      await this.cacheManager.set(this.getNavbarKey(siteId, position), navbarData, 300 * 1000);
+      await this.cacheManager.set(
+        this.getNavbarKey(siteId, position),
+        navbarData,
+        300 * 1000,
+      );
     } catch (e) {}
   }
 

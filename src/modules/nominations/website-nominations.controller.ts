@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -41,8 +35,14 @@ export class WebsiteNominationsController {
       'Creates/updates registree records for both the nominator and each nominee. ' +
       'Enforces a max of 10 nominees per nominator email across all submissions.',
   })
-  @ApiResponse({ status: 201, description: 'Nomination submitted successfully' })
-  @ApiResponse({ status: 400, description: 'Validation error or max nominees exceeded' })
+  @ApiResponse({
+    status: 201,
+    description: 'Nomination submitted successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or max nominees exceeded',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized website token' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   create(
@@ -55,9 +55,13 @@ export class WebsiteNominationsController {
   @Get('categories')
   @ApiOperation({
     summary: 'Get all active nomination categories for dropdown',
-    description: 'Returns only active categories sorted by sort order, for populating the CIO category dropdown.',
+    description:
+      'Returns only active categories sorted by sort order, for populating the CIO category dropdown.',
   })
-  @ApiResponse({ status: 200, description: 'List of active nomination categories' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active nomination categories',
+  })
   getCategories() {
     return this.categoriesService.findAllActive();
   }

@@ -10,7 +10,11 @@ export class MenuItem {
   @Prop({ required: true, trim: true })
   slug: string;
 
-  @Prop({ type: String, enum: Object.values(MenuType), default: MenuType.INTERNAL_PAGE })
+  @Prop({
+    type: String,
+    enum: Object.values(MenuType),
+    default: MenuType.INTERNAL_PAGE,
+  })
   menuType: MenuType;
 
   @Prop({ trim: true })

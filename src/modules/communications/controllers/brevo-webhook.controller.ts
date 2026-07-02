@@ -1,4 +1,11 @@
-import { Controller, Post, Body, Logger, HttpCode, ValidationPipe } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Logger,
+  HttpCode,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { BrevoWebhookEventDto } from '../dto/brevo-webhook.dto';
@@ -25,7 +32,8 @@ export class BrevoWebhookController {
   @Post()
   @HttpCode(200)
   @ApiOperation({
-    summary: 'Receive Brevo transactional email event webhooks (delivered, opened, bounced, etc.)',
+    summary:
+      'Receive Brevo transactional email event webhooks (delivered, opened, bounced, etc.)',
   })
   @ApiResponse({ status: 200, description: 'Event acknowledged' })
   @ApiResponse({ status: 400, description: 'Invalid payload' })

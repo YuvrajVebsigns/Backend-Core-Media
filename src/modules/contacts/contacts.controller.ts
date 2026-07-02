@@ -10,7 +10,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -28,7 +33,9 @@ export class ContactsController {
 
   @Get()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @ApiOperation({ summary: 'Get all contact submissions with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all contact submissions with pagination and filters',
+  })
   @ApiResponse({ status: 200, description: 'List of contact submissions' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Query() queryDto: QueryContactDto) {
@@ -48,7 +55,10 @@ export class ContactsController {
   @HttpCode(HttpStatus.OK)
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @ApiOperation({ summary: 'Submit a response/reply to a contact message' })
-  @ApiResponse({ status: 200, description: 'Contact submission updated with reply' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contact submission updated with reply',
+  })
   @ApiResponse({ status: 404, description: 'Not Found' })
   reply(
     @Param('id') id: string,

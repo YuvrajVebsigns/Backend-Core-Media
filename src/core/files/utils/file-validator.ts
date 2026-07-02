@@ -15,7 +15,13 @@ const ALLOWED_MIME_TYPES: Record<string, string[]> = {
     'image/bmp',
     'image/tiff',
   ],
-  video: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/youtube'],
+  video: [
+    'video/mp4',
+    'video/webm',
+    'video/ogg',
+    'video/quicktime',
+    'video/youtube',
+  ],
   document: [
     'application/pdf',
     'application/msword',

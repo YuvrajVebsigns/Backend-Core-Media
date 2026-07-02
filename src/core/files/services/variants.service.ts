@@ -88,7 +88,7 @@ export class VariantsService {
             width: transformed.width,
             height: transformed.height,
             size: transformed.size,
-          } as VariantInfo,
+          },
         };
       }),
     );

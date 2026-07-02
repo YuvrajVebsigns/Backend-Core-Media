@@ -36,10 +36,17 @@ export class WebsiteAttendeesController {
   })
   @ApiOperation({
     summary: 'Register for an event',
-    description: 'Registers a new attendee for the specified event and schedules a welcome/pass email notification.',
+    description:
+      'Registers a new attendee for the specified event and schedules a welcome/pass email notification.',
   })
-  @ApiResponse({ status: 201, description: 'Successfully registered for the event.' })
-  @ApiResponse({ status: 409, description: 'Already registered for this event with this email.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Successfully registered for the event.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Already registered for this event with this email.',
+  })
   @ApiResponse({ status: 404, description: 'Specified event not found.' })
   @ApiHeader({
     name: 'x-website-id',
@@ -58,10 +65,17 @@ export class WebsiteAttendeesController {
   @Get('pass/:passCode')
   @ApiOperation({
     summary: 'Get attendee details by pass code',
-    description: 'Retrieves public attendee registration info populated with event and sponsor details.',
+    description:
+      'Retrieves public attendee registration info populated with event and sponsor details.',
   })
-  @ApiParam({ name: 'passCode', description: 'Unique passcode of the attendee.' })
-  @ApiResponse({ status: 200, description: 'Successfully retrieved attendee pass details.' })
+  @ApiParam({
+    name: 'passCode',
+    description: 'Unique passcode of the attendee.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved attendee pass details.',
+  })
   @ApiResponse({ status: 404, description: 'Passcode is invalid.' })
   findByPassCode(@Param('passCode') passCode: string) {
     return this.attendeesService.findByPassCode(passCode);

@@ -46,7 +46,7 @@ export class RolesSeeder implements OnApplicationBootstrap {
         }
       } catch (error) {
         // Handle race conditions during parallel tests
-        if ((error as any).code !== 11000) {
+        if (error.code !== 11000) {
           throw error;
         }
       }

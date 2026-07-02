@@ -37,7 +37,13 @@ export class MenuItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @ValidateIf((o) => o.pageId !== undefined && o.pageId !== null && o.pageId !== '' && o.pageId !== 'null')
+  @ValidateIf(
+    (o) =>
+      o.pageId !== undefined &&
+      o.pageId !== null &&
+      o.pageId !== '' &&
+      o.pageId !== 'null',
+  )
   @IsMongoId()
   pageId?: string;
 
@@ -84,7 +90,13 @@ export class CreateNavbarItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @ValidateIf((o) => o.pageId !== undefined && o.pageId !== null && o.pageId !== '' && o.pageId !== 'null')
+  @ValidateIf(
+    (o) =>
+      o.pageId !== undefined &&
+      o.pageId !== null &&
+      o.pageId !== '' &&
+      o.pageId !== 'null',
+  )
   @IsMongoId()
   pageId?: string;
 
@@ -105,7 +117,13 @@ export class CreateNavbarItemDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @ValidateIf((o) => o.parentId !== undefined && o.parentId !== null && o.parentId !== '' && o.parentId !== 'null')
+  @ValidateIf(
+    (o) =>
+      o.parentId !== undefined &&
+      o.parentId !== null &&
+      o.parentId !== '' &&
+      o.parentId !== 'null',
+  )
   @IsMongoId()
   parentId?: string;
 

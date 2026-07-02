@@ -22,10 +22,16 @@ export class NominationCategoriesService {
   /**
    * Create a new nomination category
    */
-  async create(createDto: CreateNominationCategoryDto): Promise<NominationCategory> {
-    const existing = await this.categoryModel.findOne({ slug: createDto.slug }).exec();
+  async create(
+    createDto: CreateNominationCategoryDto,
+  ): Promise<NominationCategory> {
+    const existing = await this.categoryModel
+      .findOne({ slug: createDto.slug })
+      .exec();
     if (existing) {
-      throw new ConflictException(`Category with slug "${createDto.slug}" already exists`);
+      throw new ConflictException(
+        `Category with slug "${createDto.slug}" already exists`,
+      );
     }
 
     const category = new this.categoryModel(createDto);
@@ -48,10 +54,7 @@ export class NominationCategoriesService {
 
     if (queryDto.search) {
       const searchRegex = { $regex: queryDto.search, $options: 'i' };
-      matchQuery.$or = [
-        { name: searchRegex },
-        { slug: searchRegex },
-      ];
+      matchQuery.$or = [{ name: searchRegex }, { slug: searchRegex }];
     }
 
     const [data, total] = await Promise.all([
@@ -91,7 +94,9 @@ export class NominationCategoriesService {
   async findOne(id: string): Promise<NominationCategory> {
     const category = await this.categoryModel.findById(id).exec();
     if (!category) {
-      throw new NotFoundException(`Nomination category with ID ${id} not found`);
+      throw new NotFoundException(
+        `Nomination category with ID ${id} not found`,
+      );
     }
     return category;
   }
@@ -105,7 +110,9 @@ export class NominationCategoriesService {
   ): Promise<NominationCategory> {
     const category = await this.categoryModel.findById(id).exec();
     if (!category) {
-      throw new NotFoundException(`Nomination category with ID ${id} not found`);
+      throw new NotFoundException(
+        `Nomination category with ID ${id} not found`,
+      );
     }
 
     if (updateDto.slug !== undefined && updateDto.slug !== category.slug) {
@@ -113,14 +120,18 @@ export class NominationCategoriesService {
         .findOne({ slug: updateDto.slug, _id: { $ne: id } })
         .exec();
       if (existing) {
-        throw new ConflictException(`Category with slug "${updateDto.slug}" already exists`);
+        throw new ConflictException(
+          `Category with slug "${updateDto.slug}" already exists`,
+        );
       }
     }
 
     if (updateDto.name !== undefined) category.name = updateDto.name;
     if (updateDto.slug !== undefined) category.slug = updateDto.slug;
-    if (updateDto.isActive !== undefined) category.isActive = updateDto.isActive;
-    if (updateDto.sortOrder !== undefined) category.sortOrder = updateDto.sortOrder;
+    if (updateDto.isActive !== undefined)
+      category.isActive = updateDto.isActive;
+    if (updateDto.sortOrder !== undefined)
+      category.sortOrder = updateDto.sortOrder;
 
     return category.save();
   }
@@ -134,7 +145,9 @@ export class NominationCategoriesService {
       .exec();
 
     if (!result) {
-      throw new NotFoundException(`Nomination category with ID ${id} not found`);
+      throw new NotFoundException(
+        `Nomination category with ID ${id} not found`,
+      );
     }
   }
 }

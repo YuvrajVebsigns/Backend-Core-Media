@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema } from 'mongoose';
-import { BaseSchema, applySoftDeleteMiddleware } from '@common/schemas/base.schema';
+import {
+  BaseSchema,
+  applySoftDeleteMiddleware,
+} from '@common/schemas/base.schema';
 import { PageStatus } from '../enums/page-status.enum';
 import { PageType } from '../enums/page-type.enum';
 import { SeoMeta, SeoMetaSchema } from './seo-meta.schema';
@@ -8,7 +11,12 @@ import { IPageSection } from '../interfaces/page-section.interface';
 
 @Schema({ collection: 'website_pages', timestamps: true })
 export class WebsitePage extends BaseSchema {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Website', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Website',
+    required: true,
+    index: true,
+  })
   siteId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, trim: true })
@@ -23,10 +31,19 @@ export class WebsitePage extends BaseSchema {
   @Prop({ type: MongooseSchema.Types.Mixed, default: {} })
   content: any; // Raw JSON from EditorJS
 
-  @Prop({ type: String, enum: Object.values(PageType), default: PageType.STATIC_PAGE })
+  @Prop({
+    type: String,
+    enum: Object.values(PageType),
+    default: PageType.STATIC_PAGE,
+  })
   pageType: PageType;
 
-  @Prop({ type: String, enum: Object.values(PageStatus), default: PageStatus.DRAFT, index: true })
+  @Prop({
+    type: String,
+    enum: Object.values(PageStatus),
+    default: PageStatus.DRAFT,
+    index: true,
+  })
   status: PageStatus;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'File' })
@@ -47,7 +64,11 @@ export class WebsitePage extends BaseSchema {
   @Prop({ type: SeoMetaSchema, default: {} })
   seo: SeoMeta;
 
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'SystemUser', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'SystemUser',
+    required: true,
+  })
   createdBy: MongooseSchema.Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'SystemUser' })

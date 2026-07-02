@@ -25,12 +25,16 @@ export class TemplateService {
     @InjectModel(MessageTemplate.name)
     private readonly templateModel: Model<MessageTemplate>,
     private readonly providerRegistry: ProviderRegistryService,
-  ) { }
+  ) {}
 
   async create(dto: CreateMessageTemplateDto): Promise<MessageTemplate> {
-    const existing = await this.templateModel.findOne({ slug: dto.slug, isDeleted: null }).exec();
+    const existing = await this.templateModel
+      .findOne({ slug: dto.slug, isDeleted: null })
+      .exec();
     if (existing) {
-      throw new ConflictException(`Template with slug "${dto.slug}" already exists.`);
+      throw new ConflictException(
+        `Template with slug "${dto.slug}" already exists.`,
+      );
     }
 
     const template = new this.templateModel(dto);
@@ -44,7 +48,9 @@ export class TemplateService {
     return saved;
   }
 
-  async findAll(queryDto: QueryMessageTemplateDto): Promise<PaginatedResponseDto<MessageTemplate>> {
+  async findAll(
+    queryDto: QueryMessageTemplateDto,
+  ): Promise<PaginatedResponseDto<MessageTemplate>> {
     const { page = 1, limit = 10, search, channel, isActive } = queryDto;
     const skip = (page - 1) * limit;
 
@@ -92,7 +98,9 @@ export class TemplateService {
   }
 
   async findOne(id: string): Promise<MessageTemplate> {
-    const template = await this.templateModel.findOne({ _id: id, isDeleted: null }).exec();
+    const template = await this.templateModel
+      .findOne({ _id: id, isDeleted: null })
+      .exec();
     if (!template) {
       throw new NotFoundException(`Message template with ID ${id} not found.`);
     }
@@ -100,20 +108,31 @@ export class TemplateService {
   }
 
   async findBySlug(slug: string): Promise<MessageTemplate> {
-    const template = await this.templateModel.findOne({ slug, isDeleted: null }).exec();
+    const template = await this.templateModel
+      .findOne({ slug, isDeleted: null })
+      .exec();
     if (!template) {
-      throw new NotFoundException(`Message template with slug "${slug}" not found.`);
+      throw new NotFoundException(
+        `Message template with slug "${slug}" not found.`,
+      );
     }
     return template;
   }
 
-  async update(id: string, dto: UpdateMessageTemplateDto): Promise<MessageTemplate> {
+  async update(
+    id: string,
+    dto: UpdateMessageTemplateDto,
+  ): Promise<MessageTemplate> {
     const template = await this.findOne(id);
 
     if (dto.slug && dto.slug !== template.slug) {
-      const existing = await this.templateModel.findOne({ slug: dto.slug, isDeleted: null }).exec();
+      const existing = await this.templateModel
+        .findOne({ slug: dto.slug, isDeleted: null })
+        .exec();
       if (existing) {
-        throw new ConflictException(`Template with slug "${dto.slug}" already exists.`);
+        throw new ConflictException(
+          `Template with slug "${dto.slug}" already exists.`,
+        );
       }
     }
 
@@ -134,9 +153,14 @@ export class TemplateService {
     await template.save();
 
     // Soft-delete or deactivate on Brevo if it exists
-    if (template.channel === CommunicationChannel.EMAIL && template.providerSync?.brevo?.templateId) {
+    if (
+      template.channel === CommunicationChannel.EMAIL &&
+      template.providerSync?.brevo?.templateId
+    ) {
       try {
-        const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+        const brevoProvider = this.providerRegistry.getProvider(
+          'brevo',
+        ) as BrevoEmailProvider;
         const brevoClient = brevoProvider.getClient();
         if (brevoClient) {
           await brevoClient.transactionalEmails.deleteSmtpTemplate({
@@ -144,7 +168,9 @@ export class TemplateService {
           });
         }
       } catch (error) {
-        this.logger.error(`Failed to delete template from Brevo: ${error.message}`);
+        this.logger.error(
+          `Failed to delete template from Brevo: ${error.message}`,
+        );
       }
     }
   }
@@ -154,10 +180,14 @@ export class TemplateService {
    */
   async syncToBrevo(template: MessageTemplate): Promise<void> {
     try {
-      const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+      const brevoProvider = this.providerRegistry.getProvider(
+        'brevo',
+      ) as BrevoEmailProvider;
       const brevoClient = brevoProvider.getClient();
       if (!brevoClient) {
-        this.logger.warn('Brevo client is not initialized. Skipping template sync.');
+        this.logger.warn(
+          'Brevo client is not initialized. Skipping template sync.',
+        );
         return;
       }
 
@@ -165,7 +195,7 @@ export class TemplateService {
       const defaultEmail =
         template.senderEmail ||
         brevoProvider.getSenderEmail() ||
-        process.env.BREVO_SENDER_EMAIL
+        process.env.BREVO_SENDER_EMAIL;
       const defaultName =
         template.senderName ||
         (template.senderEmail
@@ -176,7 +206,9 @@ export class TemplateService {
 
       if (templateId) {
         // Update existing Brevo template
-        this.logger.debug(`Updating template ${template.slug} on Brevo (Template ID: ${templateId})`);
+        this.logger.debug(
+          `Updating template ${template.slug} on Brevo (Template ID: ${templateId})`,
+        );
         await brevoClient.transactionalEmails.updateSmtpTemplate({
           templateId,
           templateName: template.name,
@@ -224,9 +256,13 @@ export class TemplateService {
         { _id: template._id },
         { providerSync: template.providerSync },
       );
-      this.logger.log(`Synced template "${template.slug}" to Brevo successfully.`);
+      this.logger.log(
+        `Synced template "${template.slug}" to Brevo successfully.`,
+      );
     } catch (error) {
-      this.logger.error(`Error syncing template "${template.slug}" to Brevo: ${error.message}`);
+      this.logger.error(
+        `Error syncing template "${template.slug}" to Brevo: ${error.message}`,
+      );
       template.providerSync = {
         ...template.providerSync,
         brevo: {
@@ -248,26 +284,33 @@ export class TemplateService {
    */
   async syncFromBrevo(brevoTemplateId: number): Promise<MessageTemplate> {
     try {
-      const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+      const brevoProvider = this.providerRegistry.getProvider(
+        'brevo',
+      ) as BrevoEmailProvider;
       const brevoClient = brevoProvider.getClient();
       if (!brevoClient) {
         throw new Error('Brevo client is not initialized.');
       }
 
       this.logger.debug(`Fetching template ${brevoTemplateId} from Brevo API`);
-      const brevoTemplate = await brevoClient.transactionalEmails.getSmtpTemplate({
-        templateId: brevoTemplateId,
-      });
+      const brevoTemplate =
+        await brevoClient.transactionalEmails.getSmtpTemplate({
+          templateId: brevoTemplateId,
+        });
 
       if (!brevoTemplate) {
-        throw new NotFoundException(`Template with ID ${brevoTemplateId} not found on Brevo.`);
+        throw new NotFoundException(
+          `Template with ID ${brevoTemplateId} not found on Brevo.`,
+        );
       }
 
       // Try to find matching local template by brevo.templateId
-      let template = await this.templateModel.findOne({
-        'providerSync.brevo.templateId': brevoTemplateId,
-        isDeleted: null,
-      }).exec();
+      let template = await this.templateModel
+        .findOne({
+          'providerSync.brevo.templateId': brevoTemplateId,
+          isDeleted: null,
+        })
+        .exec();
 
       const templateData = {
         name: brevoTemplate.name,
@@ -288,7 +331,9 @@ export class TemplateService {
       if (template) {
         Object.assign(template, templateData);
         await template.save();
-        this.logger.log(`Updated template "${template.slug}" from Brevo Template ID ${brevoTemplateId}`);
+        this.logger.log(
+          `Updated template "${template.slug}" from Brevo Template ID ${brevoTemplateId}`,
+        );
       } else {
         // Create new template locally
         const slug = `brevo-sync-${brevoTemplateId}`;
@@ -297,12 +342,16 @@ export class TemplateService {
           slug,
         });
         await template.save();
-        this.logger.log(`Created new template "${slug}" from Brevo Template ID ${brevoTemplateId}`);
+        this.logger.log(
+          `Created new template "${slug}" from Brevo Template ID ${brevoTemplateId}`,
+        );
       }
 
       return template;
     } catch (error) {
-      this.logger.error(`Error syncing template ${brevoTemplateId} from Brevo: ${error.message}`);
+      this.logger.error(
+        `Error syncing template ${brevoTemplateId} from Brevo: ${error.message}`,
+      );
       throw error;
     }
   }
@@ -310,25 +359,34 @@ export class TemplateService {
   /**
    * Performs bidirectional sync between local DB and Brevo transactional templates
    */
-  async syncAllWithBrevo(): Promise<{ imported: number; updated: number; pushed: number; failed: number }> {
+  async syncAllWithBrevo(): Promise<{
+    imported: number;
+    updated: number;
+    pushed: number;
+    failed: number;
+  }> {
     let imported = 0;
     let updated = 0;
     let pushed = 0;
     let failed = 0;
 
     try {
-      const brevoProvider = this.providerRegistry.getProvider('brevo') as BrevoEmailProvider;
+      const brevoProvider = this.providerRegistry.getProvider(
+        'brevo',
+      ) as BrevoEmailProvider;
       const brevoClient = brevoProvider.getClient();
       if (!brevoClient) {
         throw new Error('Brevo client is not initialized.');
       }
 
       // 1. Fetch all templates from Brevo
-      const brevoRes = await brevoClient.transactionalEmails.getSmtpTemplates({ limit: 100 });
+      const brevoRes = await brevoClient.transactionalEmails.getSmtpTemplates({
+        limit: 100,
+      });
       const brevoTemplates = brevoRes.templates || [];
 
       // Create a map of brevo templates by ID
-      const brevoTemplateMap = new Map<number, typeof brevoTemplates[0]>();
+      const brevoTemplateMap = new Map<number, (typeof brevoTemplates)[0]>();
       for (const bt of brevoTemplates) {
         if (bt.id) {
           brevoTemplateMap.set(bt.id, bt);
@@ -338,10 +396,12 @@ export class TemplateService {
       // 2. Sync Brevo templates to local database
       for (const [brevoId, bt] of brevoTemplateMap.entries()) {
         try {
-          let localTemplate = await this.templateModel.findOne({
-            'providerSync.brevo.templateId': brevoId,
-            isDeleted: null,
-          }).exec();
+          let localTemplate = await this.templateModel
+            .findOne({
+              'providerSync.brevo.templateId': brevoId,
+              isDeleted: null,
+            })
+            .exec();
 
           const templateData = {
             name: bt.name,
@@ -362,7 +422,9 @@ export class TemplateService {
           if (localTemplate) {
             // Only update local template if Brevo's modifiedAt is newer than local's updatedAt/createdAt
             const brevoModDate = new Date(bt.modifiedAt || bt.createdAt);
-            const localUpdateDate = new Date(localTemplate.updatedAt || localTemplate.createdAt);
+            const localUpdateDate = new Date(
+              localTemplate.updatedAt || localTemplate.createdAt,
+            );
             if (brevoModDate > localUpdateDate) {
               Object.assign(localTemplate, templateData);
               await localTemplate.save();
@@ -378,16 +440,20 @@ export class TemplateService {
             imported++;
           }
         } catch (err) {
-          this.logger.error(`Failed to sync Brevo template ID ${brevoId} to local DB: ${err.message}`);
+          this.logger.error(
+            `Failed to sync Brevo template ID ${brevoId} to local DB: ${err.message}`,
+          );
           failed++;
         }
       }
 
       // 3. Find all local EMAIL templates that do NOT have a Brevo templateId or exist in Brevo, and push them
-      const localTemplates = await this.templateModel.find({
-        channel: CommunicationChannel.EMAIL,
-        isDeleted: null,
-      }).exec();
+      const localTemplates = await this.templateModel
+        .find({
+          channel: CommunicationChannel.EMAIL,
+          isDeleted: null,
+        })
+        .exec();
 
       for (const lt of localTemplates) {
         const hasId = lt.providerSync?.brevo?.templateId;
@@ -402,13 +468,17 @@ export class TemplateService {
             await this.syncToBrevo(lt);
             pushed++;
           } catch (err) {
-            this.logger.error(`Failed to sync local template "${lt.slug}" to Brevo: ${err.message}`);
+            this.logger.error(
+              `Failed to sync local template "${lt.slug}" to Brevo: ${err.message}`,
+            );
             failed++;
           }
         }
       }
     } catch (err) {
-      this.logger.error(`Failed to perform complete templates sync: ${err.message}`);
+      this.logger.error(
+        `Failed to perform complete templates sync: ${err.message}`,
+      );
       throw err;
     }
 

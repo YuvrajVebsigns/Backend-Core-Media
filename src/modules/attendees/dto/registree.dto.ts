@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEmail, IsMongoId, IsArray } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEmail,
+  IsMongoId,
+  IsArray,
+} from 'class-validator';
 
 export class UpdateRegistreeDto {
   @ApiProperty({ example: 'John Doe', required: false })
@@ -73,7 +79,10 @@ export class QueryRegistreeDto {
   @IsOptional()
   websiteId?: string;
 
-  @ApiProperty({ required: false, description: 'Filter by tag: registree, nominator, nominee' })
+  @ApiProperty({
+    required: false,
+    description: 'Filter by tag: registree, nominator, nominee',
+  })
   @IsString()
   @IsOptional()
   tag?: string;

@@ -15,7 +15,7 @@ export class AppController {
     private readonly mongoose: MongooseHealthIndicator,
     private readonly redis: RedisHealthIndicator,
     private readonly storage: StorageHealthIndicator,
-  ) { }
+  ) {}
 
   @Get()
   getHello(): string {

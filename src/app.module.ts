@@ -33,6 +33,7 @@ import { ReportsModule } from '@modules/reports/reports.module';
 import { ClsModule } from 'nestjs-cls';
 import { WebhookModule } from './webhook/webhook.module';
 import { CommunicationsModule } from '@modules/communications/communications.module';
+import { DeploymentsModule } from '@modules/deployments/deployments.module';
 import { randomUUID } from 'crypto';
 import { RoleCacheInterceptor } from '@common/interceptors/role-cache.interceptor';
 import { ResponseInterceptor } from '@common/interceptors/response.interceptor';
@@ -128,7 +129,8 @@ const redisQueueImports =
       // Enable rate-limit response headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)
       setHeaders: true,
       // Custom 429 error message
-      errorMessage: 'Rate limit exceeded. Please slow down and try again later.',
+      errorMessage:
+        'Rate limit exceeded. Please slow down and try again later.',
       // Use Redis storage in production/when Redis is enabled for distributed rate limiting
       ...(useRedis
         ? {
@@ -193,6 +195,7 @@ const redisQueueImports =
     ReportsModule,
     WebhookModule,
     CommunicationsModule,
+    DeploymentsModule,
     ...redisQueueImports,
   ],
   controllers: [AppController],

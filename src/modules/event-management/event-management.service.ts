@@ -8,7 +8,10 @@ import { Model, Types } from 'mongoose';
 import { Event, EventStatus, EventType } from './schemas/event.schema';
 import { CreateEventDto, UpdateEventDto } from './dto/event.dto';
 import { EventMeeting } from './schemas/event-meeting.schema';
-import { CreateEventMeetingDto, UpdateEventMeetingDto } from './dto/event-meeting.dto';
+import {
+  CreateEventMeetingDto,
+  UpdateEventMeetingDto,
+} from './dto/event-meeting.dto';
 import { UrlService } from '@core/files/services/url.service';
 import { FilesService } from '@core/files/services/files.service';
 import { FileModule } from '@core/files/enums/file-module.enum';
@@ -35,7 +38,7 @@ export class EventsService {
     private readonly urlService: UrlService,
     private readonly filesService: FilesService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   /**
    * Transform populated File references into lean image objects
@@ -47,7 +50,11 @@ export class EventsService {
     const obj = event.toJSON ? event.toJSON() : { ...event };
 
     // Transform bannerImageId — only if it was actually populated (has 'key')
-    if (obj.bannerImageId && typeof obj.bannerImageId === 'object' && obj.bannerImageId.key) {
+    if (
+      obj.bannerImageId &&
+      typeof obj.bannerImageId === 'object' &&
+      obj.bannerImageId.key
+    ) {
       const file = obj.bannerImageId;
       const url = this.urlService.getPublicUrl(file.key);
       const urlVariants = file.variants
@@ -69,7 +76,11 @@ export class EventsService {
     }
 
     // Transform seo.ogImageId — only if it was actually populated (has 'key')
-    if (obj.seo?.ogImageId && typeof obj.seo.ogImageId === 'object' && obj.seo.ogImageId.key) {
+    if (
+      obj.seo?.ogImageId &&
+      typeof obj.seo.ogImageId === 'object' &&
+      obj.seo.ogImageId.key
+    ) {
       const file = obj.seo.ogImageId;
       const url = this.urlService.getPublicUrl(file.key);
       const urlVariants = file.variants
@@ -148,7 +159,11 @@ export class EventsService {
 
     // Upload banner image if file is provided
     if (bannerFile && uploadedBy) {
-      await this.uploadAndSetBanner(savedEvent._id.toString(), bannerFile, uploadedBy);
+      await this.uploadAndSetBanner(
+        savedEvent._id.toString(),
+        bannerFile,
+        uploadedBy,
+      );
     }
 
     const saved = await this.findOne(savedEvent._id.toString());
@@ -312,10 +327,7 @@ export class EventsService {
 
     if (filters.search) {
       const searchRegex = { $regex: filters.search, $options: 'i' };
-      query.$or = [
-        { title: searchRegex },
-        { slug: searchRegex },
-      ];
+      query.$or = [{ title: searchRegex }, { slug: searchRegex }];
     }
 
     // Default to active events
@@ -404,7 +416,7 @@ export class EventsService {
 
     const eventJson = this.transformImageFields(event);
     eventJson.totalRegistrations = totalRegistrations;
-    return eventJson as any;
+    return eventJson;
   }
 
   async findBySlug(slug: string): Promise<Event> {
@@ -431,7 +443,7 @@ export class EventsService {
 
     const eventJson = this.transformImageFields(event);
     eventJson.totalRegistrations = totalRegistrations;
-    return eventJson as any;
+    return eventJson;
   }
 
   async update(
@@ -482,7 +494,7 @@ export class EventsService {
       ),
     );
 
-    return eventJson as any;
+    return eventJson;
   }
 
   /**
@@ -493,16 +505,22 @@ export class EventsService {
     file: Express.Multer.File,
     uploadedBy: string,
   ): Promise<void> {
-    const uploadedFile = await this.filesService.upload(file, {
-      module: FileModule.EVENTS,
-      entityType: 'banner',
-      entityId: eventId,
-    } as any, uploadedBy);
+    const uploadedFile = await this.filesService.upload(
+      file,
+      {
+        module: FileModule.EVENTS,
+        entityType: 'banner',
+        entityId: eventId,
+      },
+      uploadedBy,
+    );
 
     const fileId = uploadedFile.id || (uploadedFile as any)._id;
-    await this.eventModel.findByIdAndUpdate(eventId, {
-      bannerImageId: fileId,
-    }).exec();
+    await this.eventModel
+      .findByIdAndUpdate(eventId, {
+        bannerImageId: fileId,
+      })
+      .exec();
   }
 
   /**
@@ -510,7 +528,15 @@ export class EventsService {
    * This method parses them back into proper objects.
    */
   private parseFormDataFields(dto: any): void {
-    const jsonFields = ['description', 'location', 'agenda', 'seo', 'websites', 'sponsors', 'invitedEmails'];
+    const jsonFields = [
+      'description',
+      'location',
+      'agenda',
+      'seo',
+      'websites',
+      'sponsors',
+      'invitedEmails',
+    ];
     for (const field of jsonFields) {
       if (dto[field] && typeof dto[field] === 'string') {
         try {
@@ -532,14 +558,14 @@ export class EventsService {
 
     this.eventEmitter.emit(
       AppEvents.EVENT_DELETED,
-      new EventDeletedEvent(
-        result._id.toString(),
-        result.title,
-      ),
+      new EventDeletedEvent(result._id.toString(), result.title),
     );
   }
 
-  async createMeeting(eventId: string, createDto: CreateEventMeetingDto): Promise<EventMeeting> {
+  async createMeeting(
+    eventId: string,
+    createDto: CreateEventMeetingDto,
+  ): Promise<EventMeeting> {
     const event = await this.eventModel.findById(eventId).exec();
     if (!event) {
       throw new NotFoundException(`Event with ID ${eventId} not found`);
@@ -553,7 +579,13 @@ export class EventsService {
 
     const eventTitle = event.title || '';
     const time = result.agendaTime || '';
-    const date = event.startDate ? new Date(event.startDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    const date = event.startDate
+      ? new Date(event.startDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : '';
     const eventDetails = event.excerpt || '';
 
     this.eventEmitter.emit(
@@ -593,7 +625,10 @@ export class EventsService {
     return meeting;
   }
 
-  async updateMeeting(meetingId: string, updateDto: UpdateEventMeetingDto): Promise<EventMeeting> {
+  async updateMeeting(
+    meetingId: string,
+    updateDto: UpdateEventMeetingDto,
+  ): Promise<EventMeeting> {
     const updated = await this.eventMeetingModel
       .findByIdAndUpdate(meetingId, updateDto, { new: true })
       .populate('attendeeIds')

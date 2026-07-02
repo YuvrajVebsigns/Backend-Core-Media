@@ -149,8 +149,7 @@ export class Event extends BaseSchema {
   isActive: boolean;
 }
 
-export const EventSchema =
-  SchemaFactory.createForClass(Event);
+export const EventSchema = SchemaFactory.createForClass(Event);
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(EventSchema);

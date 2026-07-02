@@ -9,7 +9,9 @@ export class SeoService {
 
     const validation = validateSeo(seo);
     if (!validation.isValid) {
-      throw new BadRequestException(`SEO validation failed: ${validation.errors.join(', ')}`);
+      throw new BadRequestException(
+        `SEO validation failed: ${validation.errors.join(', ')}`,
+      );
     }
 
     return {

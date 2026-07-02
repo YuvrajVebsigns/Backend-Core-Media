@@ -20,7 +20,11 @@ import { Throttle } from '@nestjs/throttler';
 @ApiTags('Website | Sponsors')
 @ApiBearerAuth('website-token')
 @UseGuards(WebsiteAuthGuard)
-@Throttle({ short: { ttl: 1000, limit: 30 }, medium: { ttl: 60000, limit: 300 }, long: { ttl: 3600000, limit: 10000 } })
+@Throttle({
+  short: { ttl: 1000, limit: 30 },
+  medium: { ttl: 60000, limit: 300 },
+  long: { ttl: 3600000, limit: 10000 },
+})
 @Controller('website/sponsors')
 export class WebsiteSponsorsController {
   constructor(private readonly sponsorsService: SponsorsService) {}
@@ -47,7 +51,8 @@ export class WebsiteSponsorsController {
     name: 'tier',
     required: false,
     type: String,
-    description: 'Filter by sponsor tier (Platinum, Gold, Silver, Bronze, Partner)',
+    description:
+      'Filter by sponsor tier (Platinum, Gold, Silver, Bronze, Partner)',
   })
   @ApiQuery({
     name: 'type',
@@ -74,10 +79,7 @@ export class WebsiteSponsorsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific sponsor by ID' })
-  async findOne(
-    @CurrentWebsite() website: any,
-    @Param('id') id: string,
-  ) {
+  async findOne(@CurrentWebsite() website: any, @Param('id') id: string) {
     const sponsor = await this.sponsorsService.findOne(id);
 
     // Verify the sponsor belongs to this website

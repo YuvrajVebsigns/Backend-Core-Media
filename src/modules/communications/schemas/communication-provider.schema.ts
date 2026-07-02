@@ -38,7 +38,9 @@ export class CommunicationProvider extends BaseSchema {
   isActive: boolean;
 }
 
-export const CommunicationProviderSchema = SchemaFactory.createForClass(CommunicationProvider);
+export const CommunicationProviderSchema = SchemaFactory.createForClass(
+  CommunicationProvider,
+);
 
 applySoftDeleteMiddleware(CommunicationProviderSchema);
 

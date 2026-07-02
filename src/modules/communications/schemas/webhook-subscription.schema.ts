@@ -22,7 +22,8 @@ export class WebhookSubscription extends BaseSchema {
   isActive: boolean;
 }
 
-export const WebhookSubscriptionSchema = SchemaFactory.createForClass(WebhookSubscription);
+export const WebhookSubscriptionSchema =
+  SchemaFactory.createForClass(WebhookSubscription);
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(WebhookSubscriptionSchema);

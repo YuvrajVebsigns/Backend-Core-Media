@@ -71,7 +71,7 @@ export const DEPLOY_REGISTRY: Record<
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Verifies the GitHub HMAC-SHA256 signature to ensure authenticity.
@@ -136,7 +136,7 @@ export class WebhookService {
     if (!targetDir || !command) {
       this.logger.error(
         `Deployment config for "${target}" is incomplete. ` +
-        `Check env vars: ${entry.dirKey}, ${entry.cmdKey}`,
+          `Check env vars: ${entry.dirKey}, ${entry.cmdKey}`,
       );
       return;
     }
@@ -159,10 +159,10 @@ export class WebhookService {
     fs.appendFileSync(
       logFilePath,
       `\n\n==================================================\n` +
-      `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
-      `📁 Directory: ${targetDir}\n` +
-      `💻 Command: ${command}\n` +
-      `==================================================\n`,
+        `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
+        `📁 Directory: ${targetDir}\n` +
+        `💻 Command: ${command}\n` +
+        `==================================================\n`,
     );
 
     // Spawn shell command asynchronously (non-blocking)
@@ -191,7 +191,7 @@ export class WebhookService {
         );
         this.logger.error(
           `Deployment for "${target}" failed with code ${code}. ` +
-          `Check logs/deploy-${target}.log for details.`,
+            `Check logs/deploy-${target}.log for details.`,
         );
       }
     });

@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsString, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsString,
+  IsNumber,
+  IsOptional,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class NavbarOrderDto {
@@ -30,4 +36,3 @@ export class ReorderNavbarDto {
   @Type(() => NavbarOrderDto)
   orders: NavbarOrderDto[];
 }
-

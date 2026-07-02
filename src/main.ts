@@ -166,53 +166,81 @@ async function bootstrap() {
       },
       'website-token',
     )
-    .addTag('Admin | Auth', 'Authentication endpoints (login, signup, OTP, password reset)')
+    .addTag(
+      'Admin | Auth',
+      'Authentication endpoints (login, signup, OTP, password reset)',
+    )
     .addTag('Admin | System Users', 'System user management')
     .addTag('Admin | Roles', 'Role and permission management')
     .addTag('Admin | SidebarMenus', 'Sidebar menu management')
     .addTag('Admin | Websites', 'Website configuration management')
     .addTag('Admin | Website Pages', 'Website page CMS management (admin)')
-    .addTag('Admin | Website Navbar', 'Website navbar configuration management (admin)')
+    .addTag(
+      'Admin | Website Navbar',
+      'Website navbar configuration management (admin)',
+    )
     .addTag('Admin | Blog', 'Blog management (admin)')
     .addTag('Admin | Events', 'Event CMS management (admin)')
     .addTag('Admin | Sponsors', 'Sponsor management (admin)')
-    .addTag('Admin | Attendees', 'Event attendee management and check-in (admin)')
-    .addTag('Admin | Registrees', 'Global unique CRM lead/contact tracking and history management (admin)')
-    .addTag('Admin | Contacts', 'Contact form submission and response management')
+    .addTag(
+      'Admin | Attendees',
+      'Event attendee management and check-in (admin)',
+    )
+    .addTag(
+      'Admin | Registrees',
+      'Global unique CRM lead/contact tracking and history management (admin)',
+    )
+    .addTag(
+      'Admin | Contacts',
+      'Contact form submission and response management',
+    )
     .addTag('Admin | Nominations', 'CIO nomination management (admin)')
-    .addTag('Admin | Nomination Categories', 'Dynamic nomination category management (admin)')
+    .addTag(
+      'Admin | Nomination Categories',
+      'Dynamic nomination category management (admin)',
+    )
     .addTag('Website | Websites', 'Public website endpoints')
     .addTag('Website | Pages', 'Public website page endpoints')
     .addTag('Website | Navbar', 'Public website navbar endpoints')
     .addTag('Website | SEO', 'Public website SEO endpoints')
     .addTag('Website | Blogs', 'Public website blog endpoints')
     .addTag('Website | Events', 'Public website events endpoints')
-    .addTag('Website | Contacts', 'Public website contact form submission endpoints')
+    .addTag(
+      'Website | Contacts',
+      'Public website contact form submission endpoints',
+    )
     .addTag('Website | Nominations', 'Public CIO nomination form submission')
-    .addTag('Website | Attendees', 'Public event attendee registration and pass verification')
+    .addTag(
+      'Website | Attendees',
+      'Public event attendee registration and pass verification',
+    )
     .addTag('Website | Sponsors', 'Public website sponsor endpoints')
     .addTag('Admin | Files', 'File upload and management')
     .addTag('Admin | System', 'System health and webhooks')
     .addTag('Admin | Background Jobs', 'Background job management')
     .addTag('Admin | Feature Flags', 'Feature flag management')
-    .addTag('Admin | Communications', 'Communication channels and webhook management')
-    .addTag('Webhooks | Brevo', 'Brevo transactional email delivery webhook receiver')
+    .addTag(
+      'Admin | Communications',
+      'Communication channels and webhook management',
+    )
+    .addTag('Admin | Deployments', 'Server deployments and process controls')
+    .addTag(
+      'Webhooks | Brevo',
+      'Brevo transactional email delivery webhook receiver',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
 
   // Clean up empty/problematic schemas for better Apidog compatibility
   if (document.components?.schemas) {
-    const schemas = document.components.schemas as Record<string, any>;
+    const schemas = document.components.schemas;
 
     // Replace all $ref to 'Object' schema with inline { type: 'object' }
     const replaceObjectRefs = (obj: any): void => {
       if (!obj || typeof obj !== 'object') return;
       for (const key of Object.keys(obj)) {
-        if (
-          key === '$ref' &&
-          obj[key] === '#/components/schemas/Object'
-        ) {
+        if (key === '$ref' && obj[key] === '#/components/schemas/Object') {
           delete obj['$ref'];
           obj['type'] = 'object';
           return;
@@ -223,10 +251,11 @@ async function bootstrap() {
     replaceObjectRefs(document);
 
     // Remove the empty 'Object' schema itself
+    const objectSchema = schemas['Object'] as any;
     if (
-      schemas['Object'] &&
-      schemas['Object'].type === 'object' &&
-      Object.keys(schemas['Object'].properties || {}).length === 0
+      objectSchema &&
+      objectSchema.type === 'object' &&
+      Object.keys(objectSchema.properties || {}).length === 0
     ) {
       delete schemas['Object'];
     }

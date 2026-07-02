@@ -10,11 +10,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import {
-  ApiProperty,
-  ApiPropertyOptional,
-  PartialType,
-} from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { ImageLinksDto } from '@common/dto/image-links.dto';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';

@@ -12,7 +12,13 @@ export class NominationCategory extends BaseSchema {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ required: true, trim: true, lowercase: true, unique: true, index: true })
+  @Prop({
+    required: true,
+    trim: true,
+    lowercase: true,
+    unique: true,
+    index: true,
+  })
   slug: string;
 
   @Prop({ default: true })
@@ -22,7 +28,8 @@ export class NominationCategory extends BaseSchema {
   sortOrder: number;
 }
 
-export const NominationCategorySchema = SchemaFactory.createForClass(NominationCategory);
+export const NominationCategorySchema =
+  SchemaFactory.createForClass(NominationCategory);
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(NominationCategorySchema);

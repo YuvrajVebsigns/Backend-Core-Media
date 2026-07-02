@@ -36,7 +36,8 @@ export class AdminRegistreesController {
   @Permission('registrations.view')
   @ApiOperation({
     summary: 'Get all global registrees (contacts) across all events',
-    description: 'Fetches paginated search results for CRM contacts with full historical events and submissions lists.',
+    description:
+      'Fetches paginated search results for CRM contacts with full historical events and submissions lists.',
   })
   findAll(@Query() query: QueryRegistreeDto) {
     return this.attendeesService.findAllRegistrees(query);

@@ -36,7 +36,10 @@ export interface ICommunicationProvider {
   readonly name: string;
   readonly channel: CommunicationChannel;
 
-  initialize(credentials: Record<string, any>, config: Record<string, any>): void;
+  initialize(
+    credentials: Record<string, any>,
+    config: Record<string, any>,
+  ): void;
   send(payload: SendMessagePayload): Promise<ProviderSendResult>;
   sendWithTemplate(payload: SendTemplatePayload): Promise<ProviderSendResult>;
   healthCheck(): Promise<HealthCheckResult>;

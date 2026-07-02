@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Report, ReportSchema } from './schemas/report.schema';
-import { Registree, RegistreeSchema } from '@modules/attendees/schemas/registree.schema';
+import {
+  Registree,
+  RegistreeSchema,
+} from '@modules/attendees/schemas/registree.schema';
 import { FilesModule } from '@core/files/files.module';
 import { AuthModule } from '@core/auth/auth.module';
 import { ReportsService } from './reports.service';

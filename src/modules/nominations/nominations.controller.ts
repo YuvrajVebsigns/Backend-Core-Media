@@ -42,7 +42,8 @@ export class AdminNominationsController {
   @Permission('nominations.create')
   @ApiOperation({
     summary: 'Create a nomination (Admin)',
-    description: 'Manually create a nomination entry. Creates/updates registrees for both the nominator and all nominees.',
+    description:
+      'Manually create a nomination entry. Creates/updates registrees for both the nominator and all nominees.',
   })
   @ApiResponse({ status: 201, description: 'Nomination created successfully' })
   @ApiResponse({ status: 400, description: 'Max 10 nominees exceeded' })
@@ -56,7 +57,8 @@ export class AdminNominationsController {
   @Permission('nominations.view')
   @ApiOperation({
     summary: 'Get all nominations with pagination and filters',
-    description: 'Retrieve nominations with populated nominator and nominee registree details.',
+    description:
+      'Retrieve nominations with populated nominator and nominee registree details.',
   })
   @ApiResponse({ status: 200, description: 'Paginated list of nominations' })
   findAll(@Query() query: QueryNominationDto) {
@@ -69,7 +71,10 @@ export class AdminNominationsController {
   @ApiOperation({
     summary: 'Get all unique nominators with aggregated nominations',
   })
-  @ApiResponse({ status: 200, description: 'Paginated list of grouped nominators' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of grouped nominators',
+  })
   findAllGroupedByNominator(@Query() query: QueryNominationDto) {
     return this.nominationsService.findAllGroupedByNominator(query);
   }
@@ -80,7 +85,10 @@ export class AdminNominationsController {
   @ApiOperation({
     summary: 'Get all unique nominees with aggregated nominations',
   })
-  @ApiResponse({ status: 200, description: 'Paginated list of grouped nominees' })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of grouped nominees',
+  })
   findAllGroupedByNominee(@Query() query: QueryNominationDto) {
     return this.nominationsService.findAllGroupedByNominee(query);
   }
@@ -90,7 +98,10 @@ export class AdminNominationsController {
   @Permission('nominations.view')
   @ApiOperation({ summary: 'Get a nomination by ID' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
-  @ApiResponse({ status: 200, description: 'Nomination details with populated registrees' })
+  @ApiResponse({
+    status: 200,
+    description: 'Nomination details with populated registrees',
+  })
   @ApiResponse({ status: 404, description: 'Nomination not found' })
   findOne(@Param('id') id: string) {
     return this.nominationsService.findOne(id);
@@ -103,10 +114,7 @@ export class AdminNominationsController {
   @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
   @ApiResponse({ status: 200, description: 'Nomination updated successfully' })
   @ApiResponse({ status: 404, description: 'Nomination not found' })
-  update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateNominationDto,
-  ) {
+  update(@Param('id') id: string, @Body() updateDto: UpdateNominationDto) {
     return this.nominationsService.update(id, updateDto);
   }
 
