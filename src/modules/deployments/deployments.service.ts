@@ -148,13 +148,42 @@ export class DeploymentsService {
 
     // Website mapping
     if (target.startsWith('website-')) {
-      const matchIdx = parseInt(target.replace('website-', ''), 10) - 1;
+      const dir = this.configService.get<string>(entry.dirKey) || '';
       const websites = prefetchedWebsites || (await this.websitesService.findAll({
         page: 1,
         limit: 7,
       })).data || [];
-      const ws = websites[matchIdx];
-      if (ws) return ws.slug;
+
+      let mappedWebsite: any = null;
+      if (dir) {
+        const folderName = path.basename(dir).toLowerCase();
+        const normalizedFolderName = folderName.replace(/[-_]/g, '');
+
+        // 1. Try matching by slug
+        mappedWebsite = websites.find((w) => {
+          if (!w.slug) return false;
+          const normalizedSlug = w.slug.toLowerCase().replace(/[-_]/g, '');
+          return normalizedFolderName.includes(normalizedSlug) || normalizedSlug.includes(normalizedFolderName);
+        });
+
+        // 2. Try matching by name
+        if (!mappedWebsite) {
+          mappedWebsite = websites.find((w) => {
+            if (!w.name) return false;
+            const normalizedName = w.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            return normalizedFolderName.includes(normalizedName) || normalizedName.includes(normalizedFolderName) ||
+                   (normalizedName.includes('coremedia') && normalizedFolderName.includes('coremedia'));
+          });
+        }
+      }
+
+      // Fallback to database index
+      if (!mappedWebsite) {
+        const matchIdx = parseInt(target.replace('website-', ''), 10) - 1;
+        mappedWebsite = websites[matchIdx];
+      }
+
+      if (mappedWebsite) return mappedWebsite.slug;
     }
 
     return target;
@@ -197,14 +226,41 @@ export class DeploymentsService {
       } else if (key === 'frontend') {
         name = 'Admin Panel Frontend';
       } else {
-        const matchIdx = parseInt(key.replace('website-', ''), 10) - 1;
-        const mappedWebsite = websitesList[matchIdx];
+        let mappedWebsite: any = null;
+        if (dir) {
+          const folderName = path.basename(dir).toLowerCase();
+          const normalizedFolderName = folderName.replace(/[-_]/g, '');
+
+          // 1. Try matching by slug
+          mappedWebsite = websitesList.find((w) => {
+            if (!w.slug) return false;
+            const normalizedSlug = w.slug.toLowerCase().replace(/[-_]/g, '');
+            return normalizedFolderName.includes(normalizedSlug) || normalizedSlug.includes(normalizedFolderName);
+          });
+
+          // 2. Try matching by name
+          if (!mappedWebsite) {
+            mappedWebsite = websitesList.find((w) => {
+              if (!w.name) return false;
+              const normalizedName = w.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+              return normalizedFolderName.includes(normalizedName) || normalizedName.includes(normalizedFolderName) ||
+                     (normalizedName.includes('coremedia') && normalizedFolderName.includes('coremedia'));
+            });
+          }
+        }
+
+        // Fallback to database index
+        if (!mappedWebsite) {
+          const matchIdx = parseInt(key.replace('website-', ''), 10) - 1;
+          mappedWebsite = websitesList[matchIdx];
+        }
+
         if (mappedWebsite) {
           name = mappedWebsite.name;
           isActive = mappedWebsite.isActive;
           websiteId = mappedWebsite.id || mappedWebsite._id?.toString();
         } else {
-          name = `Website ${matchIdx + 1} (Unassigned)`;
+          name = `Website ${parseInt(key.replace('website-', ''), 10)} (Unassigned)`;
           isActive = false;
         }
       }
@@ -215,15 +271,18 @@ export class DeploymentsService {
       let { status, lastDeployed } = this.parseDeployLog(key);
 
       // Fallback: If status is 'failed' or 'deploying' because of missing logs,
-      // but no failure line is in the log and the PM2 process is running online,
-      // we can safely resolve it as 'success'.
+      // but no failure line is in the log (or at least, the last attempt didn't fail)
+      // and the PM2 process is running online, we can safely resolve it as 'success'.
       if (status === 'failed' || status === 'deploying') {
         const logFilePath = path.join(process.cwd(), 'logs', `deploy-${key}.log`);
         if (fs.existsSync(logFilePath)) {
           try {
             const logContent = fs.readFileSync(logFilePath, 'utf8');
-            const hasFail = logContent.includes('❌ DEPLOYMENT FAILED');
-            if (!hasFail) {
+            const lastInitIdx = logContent.lastIndexOf('🚀 DEPLOYMENT INITIATED');
+            const lastFailIdx = logContent.lastIndexOf('❌ DEPLOYMENT FAILED');
+            const lastAttemptFailed = lastFailIdx !== -1 && lastFailIdx > lastInitIdx;
+
+            if (!lastAttemptFailed) {
               const proc = pm2Processes.find(
                 (p) => p.name === pm2ProcessName || p.name === key,
               );
