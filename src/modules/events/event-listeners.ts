@@ -39,6 +39,14 @@ import {
 } from './event-definitions';
 import { CommunicationsService } from '../communications/communications.service';
 import { SystemUsersService } from '@core/system-users/system-users.service';
+import { AttendeesService } from '../attendees/attendees.service';
+import { EventsService } from '../event-management/event-management.service';
+import { BlogsService } from '../blogs/blogs.service';
+import { ContactsService } from '../contacts/contacts.service';
+import { NominationsService } from '../nominations/nominations.service';
+import { WebsitesService } from '../websites/websites.service';
+import { ReportsService } from '../reports/reports.service';
+import { SponsorsService } from '../sponsors/sponsors.service';
 
 @Injectable()
 export class EventListeners {
@@ -47,7 +55,15 @@ export class EventListeners {
   constructor(
     private readonly communicationsService: CommunicationsService,
     private readonly systemUsersService: SystemUsersService,
-  ) {}
+    private readonly attendeesService: AttendeesService,
+    private readonly eventsService: EventsService,
+    private readonly blogsService: BlogsService,
+    private readonly contactsService: ContactsService,
+    private readonly nominationsService: NominationsService,
+    private readonly websitesService: WebsitesService,
+    private readonly reportsService: ReportsService,
+    private readonly sponsorsService: SponsorsService,
+  ) { }
 
   private async triggerMappedEvent(eventName: string, payload: any) {
     try {
@@ -89,7 +105,7 @@ export class EventListeners {
           if (user) {
             recipient = user.email;
           }
-        } catch {}
+        } catch { }
       }
 
       if (!recipient) {
@@ -140,6 +156,354 @@ export class EventListeners {
         date: rawPayloadObj.date || dateStr,
         time: rawPayloadObj.time || timeStr,
       };
+
+      // Enrich with Registree details if registreeId is present (or via attendeeId fallback)
+      let resolvedRegistreeId = payload.registreeId;
+      let resolvedAttendee: any = null;
+
+      if (!resolvedRegistreeId && payload.attendeeId) {
+        try {
+          resolvedAttendee = await this.attendeesService.findOne(payload.attendeeId);
+          if (resolvedAttendee && resolvedAttendee.registreeId) {
+            resolvedRegistreeId = resolvedAttendee.registreeId.toString();
+          }
+        } catch {}
+      }
+
+      if (resolvedRegistreeId) {
+        try {
+          const registree = await this.attendeesService.findOneRegistree(
+            resolvedRegistreeId,
+          );
+          if (registree) {
+            enrichedParams.registreeName = registree.name;
+            enrichedParams.registreeEmail = registree.email;
+            enrichedParams.registreePhone = registree.phoneNumber || '';
+            enrichedParams.registreeOrg = registree.organization || '';
+            enrichedParams.registreeCity = registree.city || '';
+          }
+        } catch (e) {
+          this.logger.error(
+            `Error resolving registree details for templates: ${e.message}`,
+          );
+        }
+      }
+
+      // Fallback for registree details using attendee direct fields if not already populated
+      if (payload.attendeeId) {
+        try {
+          if (!resolvedAttendee) {
+            resolvedAttendee = await this.attendeesService.findOne(payload.attendeeId);
+          }
+          if (resolvedAttendee) {
+            if (!enrichedParams.registreeName) enrichedParams.registreeName = resolvedAttendee.name;
+            if (!enrichedParams.registreeEmail) enrichedParams.registreeEmail = resolvedAttendee.email;
+            if (!enrichedParams.registreePhone) enrichedParams.registreePhone = resolvedAttendee.phoneNumber || '';
+            if (!enrichedParams.registreeOrg) enrichedParams.registreeOrg = resolvedAttendee.organization || '';
+            if (!enrichedParams.registreeCity) enrichedParams.registreeCity = '';
+          }
+        } catch {}
+      }
+
+      // Enrich with Event details if eventId is present
+      if (payload.eventId) {
+        try {
+          const event = await this.eventsService.findOne(payload.eventId);
+          if (event) {
+            const loc = event.location;
+            const formattedLocation = loc
+              ? [loc.address, loc.city].filter(Boolean).join(', ')
+              : '';
+
+            const optionsDate: Intl.DateTimeFormatOptions = {
+              timeZone: 'Asia/Kolkata',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            };
+
+            const optionsTime: Intl.DateTimeFormatOptions = {
+              timeZone: 'Asia/Kolkata',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            };
+
+            const formatterDate = new Intl.DateTimeFormat('en-US', optionsDate);
+            const formatterTime = new Intl.DateTimeFormat('en-US', optionsTime);
+
+            enrichedParams.eventTitle = event.title;
+            enrichedParams.eventSlug = event.slug;
+            enrichedParams.eventDescription = event.description;
+            enrichedParams.eventStartDate = formatterDate.format(
+              new Date(event.startDate),
+            );
+            enrichedParams.eventStartTime = formatterTime.format(
+              new Date(event.startDate),
+            );
+            enrichedParams.eventEndDate = formatterDate.format(
+              new Date(event.endDate),
+            );
+            enrichedParams.eventEndTime = formatterTime.format(
+              new Date(event.endDate),
+            );
+            enrichedParams.eventLocation = formattedLocation;
+            enrichedParams.eventMeetingLink = event.meetingLink || '';
+            enrichedParams.eventBannerImage = event.bannerImage || '';
+
+            if (event.sponsors && event.sponsors.length > 0) {
+              enrichedParams.eventSponsorsDetails = event.sponsors
+                .map((s: any) => {
+                  const sponsorName = s.name || s.companyName || '';
+                  const tier = s.tier ? ` (Tier: ${s.tier})` : '';
+                  return `${sponsorName}${tier}`;
+                })
+                .filter(Boolean)
+                .join(', ');
+            } else {
+              enrichedParams.eventSponsorsDetails = '';
+            }
+
+            if (event.agenda && event.agenda.length > 0) {
+              enrichedParams.eventAgendaDetails = event.agenda
+                .map((item: any) => {
+                  const speakerInfo = item.speaker ? ` by ${item.speaker}` : '';
+                  const desc = item.description ? `: ${item.description}` : '';
+                  return `[${item.time}] ${item.title}${speakerInfo}${desc}`;
+                })
+                .join('\n');
+            } else {
+              enrichedParams.eventAgendaDetails = '';
+            }
+
+            if (event.websites && event.websites.length > 0) {
+              try {
+                const siteId = event.websites[0];
+                const site = await this.websitesService.findOne(siteId.toString());
+                if (site) {
+                  enrichedParams.websiteName = site.name;
+                  enrichedParams.websiteDomain = site.domain;
+                  enrichedParams.websiteLogo = site.logo || '';
+                  enrichedParams.websiteOgImage = site.seo?.ogImage || '';
+                }
+              } catch {}
+            }
+          }
+        } catch (e) {
+          this.logger.error(
+            `Error resolving event details for templates: ${e.message}`,
+          );
+        }
+      }
+
+      // Enrich with Blog details if blogId is present
+      if (payload.blogId) {
+        try {
+          const blog = await this.blogsService.findOne(payload.blogId);
+          if (blog) {
+            enrichedParams.blogTitle = blog.title;
+            enrichedParams.blogSlug = blog.slug;
+            enrichedParams.blogExcerpt = blog.excerpt || '';
+            enrichedParams.blogFeatureImage = blog.featureImage || '';
+            enrichedParams.blogPublishedAt = blog.publishedAt
+              ? new Date(blog.publishedAt).toLocaleDateString()
+              : '';
+            
+            if (blog.author) {
+              try {
+                const author = await this.systemUsersService.findOne(blog.author.toString());
+                if (author) {
+                  enrichedParams.blogAuthorName = author.fullName;
+                  enrichedParams.blogAuthorEmail = author.email;
+                }
+              } catch {}
+            }
+
+            if (blog.websites && blog.websites.length > 0) {
+              try {
+                const siteId = blog.websites[0];
+                const site = await this.websitesService.findOne(siteId.toString());
+                if (site) {
+                  enrichedParams.websiteName = site.name;
+                  enrichedParams.websiteDomain = site.domain;
+                  enrichedParams.websiteLogo = site.logo || '';
+                  enrichedParams.websiteOgImage = site.seo?.ogImage || '';
+                }
+              } catch {}
+            }
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving blog details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Blog Comment details if commentId is present
+      if (payload.commentId) {
+        try {
+          const comment = await this.blogsService.findCommentById(payload.commentId);
+          if (comment) {
+            enrichedParams.commentContent = comment.content;
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving comment details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Contact details if contactId is present
+      if (payload.contactId) {
+        try {
+          const contact = await this.contactsService.findOne(payload.contactId);
+          if (contact) {
+            enrichedParams.contactName = contact.fullName;
+            enrichedParams.contactEmail = contact.email;
+            enrichedParams.contactPhone = contact.phone;
+            enrichedParams.contactService = contact.service;
+            enrichedParams.contactMessage = contact.message;
+            enrichedParams.contactReplyMessage = contact.replyMessage || '';
+            enrichedParams.contactRepliedAt = contact.repliedAt
+              ? new Date(contact.repliedAt).toLocaleDateString()
+              : '';
+
+            if (contact.repliedBy) {
+              try {
+                const replier = await this.systemUsersService.findOne(contact.repliedBy.toString());
+                if (replier) {
+                  enrichedParams.contactRepliedByName = replier.fullName;
+                  enrichedParams.contactRepliedByEmail = replier.email;
+                }
+              } catch {}
+            }
+
+            if (contact.websiteId) {
+              try {
+                const site = await this.websitesService.findOne(contact.websiteId.toString());
+                if (site) {
+                  enrichedParams.websiteName = site.name;
+                  enrichedParams.websiteDomain = site.domain;
+                  enrichedParams.websiteLogo = site.logo || '';
+                  enrichedParams.websiteOgImage = site.seo?.ogImage || '';
+                }
+              } catch {}
+            }
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving contact details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Nomination details if nominationId is present
+      if (payload.nominationId) {
+        try {
+          const nomination = await this.nominationsService.findOne(payload.nominationId);
+          if (nomination) {
+            if (nomination.nominatorId) {
+              const nominator = nomination.nominatorId as any;
+              enrichedParams.nominatorName = nominator.name;
+              enrichedParams.nominatorEmail = nominator.email;
+              enrichedParams.nominatorPhone = nominator.phoneNumber || '';
+              enrichedParams.nominatorOrg = nominator.organization || '';
+              enrichedParams.nominatorCity = nominator.city || '';
+            }
+
+            if (nomination.nominees && nomination.nominees.length > 0) {
+              enrichedParams.nomineeDetails = nomination.nominees
+                .map((n: any) => {
+                  const name = n.nomineeId?.name || '';
+                  const category = n.categoryId?.name || '';
+                  return name && category ? `${name} (Category: ${category})` : name || category;
+                })
+                .filter(Boolean)
+                .join(', ');
+            } else {
+              enrichedParams.nomineeDetails = '';
+            }
+
+            enrichedParams.nominationStatus = nomination.status;
+
+            if (nomination.websiteId) {
+              const site = nomination.websiteId as any;
+              enrichedParams.websiteName = site.name || '';
+              enrichedParams.websiteDomain = site.domain || '';
+              enrichedParams.websiteLogo = site.logo || '';
+              if (site.seo?.ogImage) {
+                enrichedParams.websiteOgImage = site.seo.ogImage;
+              } else {
+                try {
+                  const fullSite = await this.websitesService.findOne(site._id.toString());
+                  enrichedParams.websiteOgImage = fullSite?.seo?.ogImage || '';
+                } catch {
+                  enrichedParams.websiteOgImage = '';
+                }
+              }
+            }
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving nomination details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Sponsor details if sponsorId is present
+      if (payload.sponsorId) {
+        try {
+          const sponsor = await this.sponsorsService.findOne(payload.sponsorId);
+          if (sponsor) {
+            enrichedParams.sponsorName = sponsor.name;
+            enrichedParams.sponsorCompany = sponsor.companyName || '';
+            enrichedParams.sponsorEmail = sponsor.email || '';
+            enrichedParams.sponsorPhone = sponsor.phone || '';
+            enrichedParams.sponsorWebsite = sponsor.website || '';
+            enrichedParams.sponsorType = sponsor.type || '';
+            enrichedParams.sponsorTier = sponsor.tier || '';
+            enrichedParams.sponsorDescription = sponsor.description || '';
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving sponsor details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Website details if websiteId is present
+      if (payload.websiteId) {
+        try {
+          const website = await this.websitesService.findOne(payload.websiteId);
+          if (website) {
+            enrichedParams.websiteName = website.name;
+            enrichedParams.websiteSlug = website.slug;
+            enrichedParams.websiteDomain = website.domain;
+            enrichedParams.websiteDescription = website.description || '';
+            enrichedParams.websiteLogo = website.logo || '';
+            enrichedParams.websiteOgImage = website.seo?.ogImage || '';
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving website details: ${e.message}`);
+        }
+      }
+
+      // Enrich with Report details if reportId is present
+      if (payload.reportId) {
+        try {
+          const report = await this.reportsService.findOne(payload.reportId);
+          if (report) {
+            enrichedParams.reportTitle = report.title;
+            enrichedParams.reportSlug = report.slug;
+            enrichedParams.reportDescription = report.description || '';
+            enrichedParams.reportDownloadCount = report.downloadCount || 0;
+
+            if (report.websiteId) {
+              try {
+                const site = await this.websitesService.findOne(report.websiteId.toString());
+                if (site) {
+                  enrichedParams.websiteName = site.name;
+                  enrichedParams.websiteDomain = site.domain;
+                  enrichedParams.websiteLogo = site.logo || '';
+                  enrichedParams.websiteOgImage = site.seo?.ogImage || '';
+                }
+              } catch {}
+            }
+          }
+        } catch (e) {
+          this.logger.error(`Error resolving report details: ${e.message}`);
+        }
+      }
 
       this.logger.log(
         `Dispatching template "${template.slug}" for event: ${eventName} to: ${recipient}`,

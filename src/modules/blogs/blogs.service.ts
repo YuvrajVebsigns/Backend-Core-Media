@@ -558,4 +558,8 @@ export class BlogsService {
 
     return comment;
   }
+
+  async findCommentById(commentId: string): Promise<BlogComment | null> {
+    return this.commentModel.findById(commentId).exec();
+  }
 }
