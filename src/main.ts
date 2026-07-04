@@ -277,18 +277,29 @@ async function bootstrap() {
     JSON.stringify(document, null, 2),
   );
 
+  // Always log request logs in 'dev' format to stdout/stderr so that they show up clearly in PM2 logs
+  app.use(morgan('dev'));
+
   const nodeEnv = configService.get<string>('NODE_ENV');
   if (nodeEnv === 'development' || nodeEnv === 'test') {
-    app.use(morgan('dev'));
     // Redirect root to swagger in development/test only
     app.getHttpAdapter().get('/', (req: any, res: any) => {
       res.redirect(301, '/api/docs#');
     });
   } else {
+    // In production/other environments, write detailed request logs to Winston combined file only
     app.use(
       morgan('combined', {
         stream: {
-          write: (message) => instance.info(message.trim()),
+          write: (message) => {
+            instance.transports
+              .filter((t) => !(t instanceof winston.transports.Console))
+              .forEach((t) => {
+                if (t.log && typeof t.log === 'function') {
+                  t.log({ level: 'info', message: message.trim() }, () => {});
+                }
+              });
+          },
         },
       }),
     );
