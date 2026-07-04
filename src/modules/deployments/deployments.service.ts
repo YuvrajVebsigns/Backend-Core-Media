@@ -173,6 +173,14 @@ export class DeploymentsService {
     });
     const websitesList = dbWebsites.data || [];
 
+    // Fetch PM2 processes to check actual running status
+    let pm2Processes: Pm2ProcessResponseDto[] = [];
+    try {
+      pm2Processes = await this.getPm2Status();
+    } catch (err) {
+      this.logger.warn(`Could not fetch PM2 status in getTargets: ${err.message}`);
+    }
+
     for (const key of Object.keys(DEPLOY_REGISTRY)) {
       const entry = DEPLOY_REGISTRY[key];
       const dir = this.configService.get<string>(entry.dirKey) || '';
@@ -204,7 +212,28 @@ export class DeploymentsService {
       // Retrieve process name mapped to env var or fallback
       const pm2ProcessName = await this.getPm2ProcessNameForTarget(key, websitesList);
 
-      const { status, lastDeployed } = this.parseDeployLog(key);
+      let { status, lastDeployed } = this.parseDeployLog(key);
+
+      // Fallback: If status is 'failed' or 'deploying' because of missing logs,
+      // but no failure line is in the log and the PM2 process is running online,
+      // we can safely resolve it as 'success'.
+      if (status === 'failed' || status === 'deploying') {
+        const logFilePath = path.join(process.cwd(), 'logs', `deploy-${key}.log`);
+        if (fs.existsSync(logFilePath)) {
+          try {
+            const logContent = fs.readFileSync(logFilePath, 'utf8');
+            const hasFail = logContent.includes('❌ DEPLOYMENT FAILED');
+            if (!hasFail) {
+              const proc = pm2Processes.find(
+                (p) => p.name === pm2ProcessName || p.name === key,
+              );
+              if (proc && proc.status === 'online') {
+                status = 'success';
+              }
+            }
+          } catch {}
+        }
+      }
 
       targets.push({
         id: key,
