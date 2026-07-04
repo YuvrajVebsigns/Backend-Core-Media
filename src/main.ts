@@ -223,6 +223,8 @@ async function bootstrap() {
       'Admin | Communications',
       'Communication channels and webhook management',
     )
+    .addTag('Admin | Analytics', 'Visitor tracking and consent analytics (admin)')
+    .addTag('Website | Analytics', 'Public visitor activity tracking')
     .addTag('Admin | Deployments', 'Server deployments and process controls')
     .addTag(
       'Webhooks | Brevo',
