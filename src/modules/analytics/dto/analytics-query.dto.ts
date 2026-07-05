@@ -11,4 +11,15 @@ export class AnalyticsQueryDto {
   @IsOptional()
   @IsString()
   endDate?: string;
+
+  @ApiPropertyOptional({ description: 'Show metadata in response' })
+  @IsOptional()
+  @IsString()
+  showMetadata?: string;
+
+  @ApiPropertyOptional({ description: 'Show metadata in response (alternative casing)' })
+  @IsOptional()
+  @IsString()
+  showMetaData?: string;
 }
+
