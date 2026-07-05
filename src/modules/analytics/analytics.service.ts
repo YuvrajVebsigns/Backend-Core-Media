@@ -22,7 +22,9 @@ export class AnalyticsService {
 
   async getSummary(websiteId: string, query: AnalyticsQueryDto): Promise<any> {
     const matchStage: any = {
-      websiteId: new Types.ObjectId(websiteId),
+      websiteId: Types.ObjectId.isValid(websiteId)
+        ? { $in: [websiteId, new Types.ObjectId(websiteId)] }
+        : websiteId,
       isDeleted: { $ne: true },
     };
 

@@ -5,6 +5,7 @@ import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
 import { AnalyticsService } from './analytics.service';
 import { TrackEventDto } from './dto/track-event.dto';
+import { TrackEventResponseDto } from './dto/track-event-response.dto';
 
 @ApiTags('Website | Analytics')
 @ApiBearerAuth('website-token')
@@ -20,7 +21,7 @@ export class WebsiteAnalyticsController {
 
   @Post('track')
   @ApiOperation({ summary: 'Track a visitor pageview, consent, or interaction event' })
-  @ApiResponse({ status: 201, description: 'Event tracked successfully' })
+  @ApiResponse({ status: 201, description: 'Event tracked successfully', type: TrackEventResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized website token' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   async track(@CurrentWebsite() website: any, @Body() trackEventDto: TrackEventDto) {
