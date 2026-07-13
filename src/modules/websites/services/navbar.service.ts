@@ -32,8 +32,9 @@ export class NavbarService {
     siteId: string,
     position?: string,
     nested = true,
+    onlyVisible = false,
   ): Promise<any[]> {
-    if (position && nested) {
+    if (position && nested && onlyVisible) {
       const cached = await this.cacheService.getNavbar(siteId, position);
       if (cached) return cached;
     }
@@ -41,6 +42,9 @@ export class NavbarService {
     const query: any = { siteId, isDeleted: null };
     if (position) {
       query.position = position;
+    }
+    if (onlyVisible) {
+      query.isVisible = true;
     }
 
     const items = await this.navbarModel.find(query).sort({ order: 1 }).exec();
@@ -50,7 +54,23 @@ export class NavbarService {
       result = buildNestedMenu(items);
     }
 
-    if (position && nested) {
+    if (onlyVisible) {
+      const filterVisible = (item: any) => {
+        const raw = item.toJSON ? item.toJSON() : item;
+        if (raw.items && Array.isArray(raw.items)) {
+          raw.items = raw.items.filter((subItem: any) => subItem.isVisible !== false);
+        }
+        if (raw.children && Array.isArray(raw.children)) {
+          raw.children = raw.children
+            .filter((child: any) => child.isVisible !== false)
+            .map(filterVisible);
+        }
+        return raw;
+      };
+      result = result.map(filterVisible);
+    }
+
+    if (position && nested && onlyVisible) {
       await this.cacheService.setNavbar(siteId, position, result);
     }
 
