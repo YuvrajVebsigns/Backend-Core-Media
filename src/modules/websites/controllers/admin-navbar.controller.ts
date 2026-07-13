@@ -11,7 +11,7 @@ import {
   Request,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { PermissionGuard } from '@common/guards/permission.guard';
@@ -22,6 +22,7 @@ import { NavbarService } from '../services/navbar.service';
 import { CreateNavbarItemDto } from '../dto/create-navbar-item.dto';
 import { UpdateNavbarItemDto } from '../dto/update-navbar-item.dto';
 import { ReorderNavbarDto } from '../dto/reorder-navbar.dto';
+import { NavbarPosition } from '../enums/navbar-position.enum';
 
 @ApiTags('Admin | Website Navbar')
 @ApiBearerAuth()
@@ -42,9 +43,28 @@ export class AdminNavbarController {
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('website.manage_navbar')
   @ApiOperation({ summary: 'List all navbar items for a site' })
+  @ApiQuery({
+    name: 'siteId',
+    required: true,
+    type: String,
+    description: 'Website/Site ID',
+  })
+  @ApiQuery({
+    name: 'position',
+    enum: NavbarPosition,
+    required: false,
+    description: 'Navbar position filter',
+  })
+  @ApiQuery({
+    name: 'nested',
+    required: false,
+    type: String,
+    description: 'Whether to return nested items structure ("true" or "false")',
+    default: 'false',
+  })
   async findAll(
     @Query('siteId') siteId: string,
-    @Query('position') position?: string,
+    @Query('position') position?: NavbarPosition,
     @Query('nested') nested?: string,
   ) {
     if (!siteId) {
