@@ -24,7 +24,7 @@ import { UpdatePageDto } from '../dto/update-page.dto';
 @ApiTags('Admin | Website Pages')
 @Controller('admin/website/pages')
 export class AdminWebsitePageController {
-  constructor(private readonly pageService: WebsitePageService) {}
+  constructor(private readonly pageService: WebsitePageService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)

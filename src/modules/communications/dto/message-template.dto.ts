@@ -94,6 +94,23 @@ export class CreateMessageTemplateDto {
   @IsOptional()
   linkedEvent?: string;
 
+  @ApiPropertyOptional({
+    example: 'Nomination',
+    description: 'Associated Mongoose schema for dynamic fields discovery',
+  })
+  @IsString()
+  @IsOptional()
+  baseSchema?: string;
+
+  @ApiPropertyOptional({
+    example: ['nominatorId', 'websiteId'],
+    description: 'Populated schema relation paths',
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  relations?: string[];
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()
@@ -142,6 +159,22 @@ export class SendTemplateMessageDto {
   @IsOptional()
   @IsString()
   recipientName?: string;
+
+  @ApiPropertyOptional({
+    example: 'cc1@example.com, cc2@example.com',
+    description: 'CC email recipient(s)',
+  })
+  @IsOptional()
+  @IsString()
+  cc?: string;
+
+  @ApiPropertyOptional({
+    example: 'bcc@example.com',
+    description: 'BCC email recipient(s)',
+  })
+  @IsOptional()
+  @IsString()
+  bcc?: string;
 
   @ApiProperty({
     example: {

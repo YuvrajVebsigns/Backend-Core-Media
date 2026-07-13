@@ -24,7 +24,7 @@ export class CommunicationsProcessor {
 
   @Process('send-email')
   async handleSendEmail(job: Job) {
-    const { logId, recipient, title, content } = job.data;
+    const { logId, recipient, title, content, cc, bcc } = job.data;
     this.logger.debug(`[Email Job Started] Log ID: ${logId} to ${recipient}`);
 
     const logDoc = await this.logModel.findById(logId);
@@ -47,6 +47,8 @@ export class CommunicationsProcessor {
           metadata: logDoc.metadata,
           senderEmail: logDoc.metadata?.senderEmail as string | undefined,
           senderName: logDoc.metadata?.senderName as string | undefined,
+          cc,
+          bcc,
         });
 
         if (!result.success) {
@@ -63,6 +65,8 @@ export class CommunicationsProcessor {
         this.logger.log(`
           --- MOCK EMAIL ---
           To: ${recipient}
+          CC: ${cc || ''}
+          BCC: ${bcc || ''}
           Subject: ${title}
           Body: ${content}
           ------------------
@@ -103,6 +107,8 @@ export class CommunicationsProcessor {
       params,
       senderEmail,
       senderName,
+      cc,
+      bcc,
     } = job.data;
     this.logger.debug(
       `[Template Email Job Started] Log ID: ${logId} to ${recipient} (Template Slug: ${templateSlug})`,
@@ -136,6 +142,8 @@ export class CommunicationsProcessor {
           metadata: logDoc.metadata,
           senderEmail,
           senderName,
+          cc,
+          bcc,
         });
 
         if (!result.success) {

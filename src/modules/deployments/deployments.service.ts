@@ -149,10 +149,15 @@ export class DeploymentsService {
     // Website mapping
     if (target.startsWith('website-')) {
       const dir = this.configService.get<string>(entry.dirKey) || '';
-      const websites = prefetchedWebsites || (await this.websitesService.findAll({
-        page: 1,
-        limit: 7,
-      })).data || [];
+      const websites =
+        prefetchedWebsites ||
+        (
+          await this.websitesService.findAll({
+            page: 1,
+            limit: 7,
+          })
+        ).data ||
+        [];
 
       let mappedWebsite: any = null;
       if (dir) {
@@ -163,16 +168,25 @@ export class DeploymentsService {
         mappedWebsite = websites.find((w) => {
           if (!w.slug) return false;
           const normalizedSlug = w.slug.toLowerCase().replace(/[-_]/g, '');
-          return normalizedFolderName.includes(normalizedSlug) || normalizedSlug.includes(normalizedFolderName);
+          return (
+            normalizedFolderName.includes(normalizedSlug) ||
+            normalizedSlug.includes(normalizedFolderName)
+          );
         });
 
         // 2. Try matching by name
         if (!mappedWebsite) {
           mappedWebsite = websites.find((w) => {
             if (!w.name) return false;
-            const normalizedName = w.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-            return normalizedFolderName.includes(normalizedName) || normalizedName.includes(normalizedFolderName) ||
-                   (normalizedName.includes('coremedia') && normalizedFolderName.includes('coremedia'));
+            const normalizedName = w.name
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '');
+            return (
+              normalizedFolderName.includes(normalizedName) ||
+              normalizedName.includes(normalizedFolderName) ||
+              (normalizedName.includes('coremedia') &&
+                normalizedFolderName.includes('coremedia'))
+            );
           });
         }
       }
@@ -207,7 +221,9 @@ export class DeploymentsService {
     try {
       pm2Processes = await this.getPm2Status();
     } catch (err) {
-      this.logger.warn(`Could not fetch PM2 status in getTargets: ${err.message}`);
+      this.logger.warn(
+        `Could not fetch PM2 status in getTargets: ${err.message}`,
+      );
     }
 
     for (const key of Object.keys(DEPLOY_REGISTRY)) {
@@ -235,16 +251,25 @@ export class DeploymentsService {
           mappedWebsite = websitesList.find((w) => {
             if (!w.slug) return false;
             const normalizedSlug = w.slug.toLowerCase().replace(/[-_]/g, '');
-            return normalizedFolderName.includes(normalizedSlug) || normalizedSlug.includes(normalizedFolderName);
+            return (
+              normalizedFolderName.includes(normalizedSlug) ||
+              normalizedSlug.includes(normalizedFolderName)
+            );
           });
 
           // 2. Try matching by name
           if (!mappedWebsite) {
             mappedWebsite = websitesList.find((w) => {
               if (!w.name) return false;
-              const normalizedName = w.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-              return normalizedFolderName.includes(normalizedName) || normalizedName.includes(normalizedFolderName) ||
-                     (normalizedName.includes('coremedia') && normalizedFolderName.includes('coremedia'));
+              const normalizedName = w.name
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '');
+              return (
+                normalizedFolderName.includes(normalizedName) ||
+                normalizedName.includes(normalizedFolderName) ||
+                (normalizedName.includes('coremedia') &&
+                  normalizedFolderName.includes('coremedia'))
+              );
             });
           }
         }
@@ -266,7 +291,10 @@ export class DeploymentsService {
       }
 
       // Retrieve process name mapped to env var or fallback
-      const pm2ProcessName = await this.getPm2ProcessNameForTarget(key, websitesList);
+      const pm2ProcessName = await this.getPm2ProcessNameForTarget(
+        key,
+        websitesList,
+      );
 
       let { status, lastDeployed } = this.parseDeployLog(key);
 
@@ -274,13 +302,20 @@ export class DeploymentsService {
       // but no failure line is in the log (or at least, the last attempt didn't fail)
       // and the PM2 process is running online, we can safely resolve it as 'success'.
       if (status === 'failed' || status === 'deploying') {
-        const logFilePath = path.join(process.cwd(), 'logs', `deploy-${key}.log`);
+        const logFilePath = path.join(
+          process.cwd(),
+          'logs',
+          `deploy-${key}.log`,
+        );
         if (fs.existsSync(logFilePath)) {
           try {
             const logContent = fs.readFileSync(logFilePath, 'utf8');
-            const lastInitIdx = logContent.lastIndexOf('🚀 DEPLOYMENT INITIATED');
+            const lastInitIdx = logContent.lastIndexOf(
+              '🚀 DEPLOYMENT INITIATED',
+            );
             const lastFailIdx = logContent.lastIndexOf('❌ DEPLOYMENT FAILED');
-            const lastAttemptFailed = lastFailIdx !== -1 && lastFailIdx > lastInitIdx;
+            const lastAttemptFailed =
+              lastFailIdx !== -1 && lastFailIdx > lastInitIdx;
 
             if (!lastAttemptFailed) {
               const proc = pm2Processes.find(
@@ -385,7 +420,10 @@ export class DeploymentsService {
       let mockId = 0;
 
       for (const key of Object.keys(DEPLOY_REGISTRY)) {
-        const processName = await this.getPm2ProcessNameForTarget(key, websitesList);
+        const processName = await this.getPm2ProcessNameForTarget(
+          key,
+          websitesList,
+        );
         let status = 'stopped';
         let cpu = 0;
         let memory = 0;

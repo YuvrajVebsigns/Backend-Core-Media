@@ -82,6 +82,12 @@ export class MessageTemplate extends BaseSchema {
   @Prop({ trim: true, required: false, index: true })
   linkedEvent?: string; // e.g. 'contact.submitted' — links template to a system event for variable discovery
 
+  @Prop({ trim: true, required: false })
+  baseSchema?: string; // e.g. 'Nomination' — dynamically populated variables
+
+  @Prop({ type: [String], default: [] })
+  relations: string[]; // List of populated paths, e.g. ['nominatorId']
+
   @Prop({ default: true, index: true })
   isActive: boolean;
 }

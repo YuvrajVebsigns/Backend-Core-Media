@@ -14,6 +14,7 @@ import { BlogsSeeder } from '@database/seeds/blogs.seeder';
 import { EventsSeeder } from '@database/seeds/events.seeder';
 import { SponsorsSeeder } from '@database/seeds/sponsors.seeder';
 import { CommunicationsProviderSeeder } from '@database/seeds/communications-provider.seeder';
+import { CommunicationVariablesSeeder } from '@database/seeds/communication-variables.seeder';
 import { EventManagementModule } from '@modules/event-management/event-management.module';
 import {
   Sponsor,
@@ -23,6 +24,10 @@ import {
   CommunicationProvider,
   CommunicationProviderSchema,
 } from '@modules/communications/schemas/communication-provider.schema';
+import {
+  CommunicationVariable,
+  CommunicationVariableSchema,
+} from '@modules/communications/schemas/communication-variable.schema';
 
 @Module({
   imports: [
@@ -36,6 +41,7 @@ import {
     MongooseModule.forFeature([
       { name: Sponsor.name, schema: SponsorSchema },
       { name: CommunicationProvider.name, schema: CommunicationProviderSchema },
+      { name: CommunicationVariable.name, schema: CommunicationVariableSchema },
     ]),
   ],
   providers: [
@@ -47,6 +53,7 @@ import {
     EventsSeeder,
     SponsorsSeeder,
     CommunicationsProviderSeeder,
+    CommunicationVariablesSeeder,
   ],
 })
 export class SeedModule {}
