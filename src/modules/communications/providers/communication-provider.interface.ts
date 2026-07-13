@@ -7,6 +7,8 @@ export interface SendMessagePayload {
   metadata?: Record<string, any>;
   senderEmail?: string;
   senderName?: string;
+  cc?: string;
+  bcc?: string;
 }
 
 export interface SendTemplatePayload {
@@ -18,6 +20,8 @@ export interface SendTemplatePayload {
   metadata?: Record<string, any>;
   senderEmail?: string;
   senderName?: string;
+  cc?: string;
+  bcc?: string;
 }
 
 export interface ProviderSendResult {

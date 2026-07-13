@@ -12,7 +12,10 @@ export class AnalyticsService {
     private readonly analyticsEventModel: Model<AnalyticsEvent>,
   ) {}
 
-  async trackEvent(websiteId: string, dto: TrackEventDto): Promise<AnalyticsEvent> {
+  async trackEvent(
+    websiteId: string,
+    dto: TrackEventDto,
+  ): Promise<AnalyticsEvent> {
     const event = new this.analyticsEventModel({
       ...dto,
       websiteId: new Types.ObjectId(websiteId),
@@ -28,7 +31,9 @@ export class AnalyticsService {
       isDeleted: { $ne: true },
     };
 
-    const startDate = query.startDate ? new Date(query.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default 30 days
+    const startDate = query.startDate
+      ? new Date(query.startDate)
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default 30 days
     const endDate = query.endDate ? new Date(query.endDate) : new Date();
 
     matchStage.createdAt = {
@@ -49,10 +54,14 @@ export class AnalyticsService {
                   $sum: { $cond: [{ $eq: ['$eventType', 'pageview'] }, 1, 0] },
                 },
                 totalConsentAccepts: {
-                  $sum: { $cond: [{ $eq: ['$eventType', 'consent_accepted'] }, 1, 0] },
+                  $sum: {
+                    $cond: [{ $eq: ['$eventType', 'consent_accepted'] }, 1, 0],
+                  },
                 },
                 totalConsentDeclines: {
-                  $sum: { $cond: [{ $eq: ['$eventType', 'consent_declined'] }, 1, 0] },
+                  $sum: {
+                    $cond: [{ $eq: ['$eventType', 'consent_declined'] }, 1, 0],
+                  },
                 },
                 visitors: { $addToSet: '$visitorId' },
                 sessions: { $addToSet: '$sessionId' },
@@ -148,8 +157,12 @@ export class AnalyticsService {
       sessions: 0,
     };
 
-    const consentTotal = (metrics.consentAccepts || 0) + (metrics.consentDeclines || 0);
-    const consentRate = consentTotal > 0 ? Math.round((metrics.consentAccepts / consentTotal) * 100) : 0;
+    const consentTotal =
+      (metrics.consentAccepts || 0) + (metrics.consentDeclines || 0);
+    const consentRate =
+      consentTotal > 0
+        ? Math.round((metrics.consentAccepts / consentTotal) * 100)
+        : 0;
 
     return {
       metrics: {

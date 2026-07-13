@@ -47,6 +47,7 @@ import { NominationsService } from '../nominations/nominations.service';
 import { WebsitesService } from '../websites/websites.service';
 import { ReportsService } from '../reports/reports.service';
 import { SponsorsService } from '../sponsors/sponsors.service';
+import { VariableResolverService } from '../communications/services/variable-resolver.service';
 
 @Injectable()
 export class EventListeners {
@@ -63,54 +64,16 @@ export class EventListeners {
     private readonly websitesService: WebsitesService,
     private readonly reportsService: ReportsService,
     private readonly sponsorsService: SponsorsService,
-  ) { }
+    private readonly variableResolverService: VariableResolverService,
+  ) {}
 
   private async triggerMappedEvent(eventName: string, payload: any) {
     try {
-      const mapping =
-        await this.communicationsService.findEventMappingByEvent(eventName);
-      if (!mapping || !mapping.isActive) {
+      const mappings =
+        await this.communicationsService.findEventMappingsByEvent(eventName);
+      if (!mappings || mappings.length === 0) {
         this.logger.debug(
-          `No active event mapping found for event: ${eventName}`,
-        );
-        return;
-      }
-
-      const template = mapping.templateId as any;
-      if (!template) {
-        this.logger.warn(`Template not found for event mapping: ${eventName}`);
-        return;
-      }
-
-      // Resolve recipient
-      let recipient = '';
-      if (payload.email) {
-        recipient = payload.email;
-      } else if (payload.recipient) {
-        recipient = payload.recipient;
-      } else if (payload.authorEmail) {
-        recipient = payload.authorEmail;
-      } else if (payload.downloadedBy && payload.downloadedBy.includes('@')) {
-        recipient = payload.downloadedBy;
-      } else if (payload.submittedBy && payload.submittedBy.includes('@')) {
-        recipient = payload.submittedBy;
-      } else if (payload.userId) {
-        const user = await this.systemUsersService.findOne(payload.userId);
-        if (user) {
-          recipient = user.email;
-        }
-      } else if (payload.createdBy) {
-        try {
-          const user = await this.systemUsersService.findOne(payload.createdBy);
-          if (user) {
-            recipient = user.email;
-          }
-        } catch { }
-      }
-
-      if (!recipient) {
-        this.logger.warn(
-          `Could not resolve a recipient email for event ${eventName}. Payload: ${JSON.stringify(payload)}`,
+          `No active event mappings found for event: ${eventName}`,
         );
         return;
       }
@@ -163,7 +126,9 @@ export class EventListeners {
 
       if (!resolvedRegistreeId && payload.attendeeId) {
         try {
-          resolvedAttendee = await this.attendeesService.findOne(payload.attendeeId);
+          resolvedAttendee = await this.attendeesService.findOne(
+            payload.attendeeId,
+          );
           if (resolvedAttendee && resolvedAttendee.registreeId) {
             resolvedRegistreeId = resolvedAttendee.registreeId.toString();
           }
@@ -172,10 +137,15 @@ export class EventListeners {
 
       if (resolvedRegistreeId) {
         try {
-          const registree = await this.attendeesService.findOneRegistree(
-            resolvedRegistreeId,
-          );
+          const registree =
+            await this.attendeesService.findOneRegistree(resolvedRegistreeId);
           if (registree) {
+            const registreeObj =
+              typeof registree.toObject === 'function'
+                ? registree.toObject()
+                : JSON.parse(JSON.stringify(registree));
+            Object.assign(enrichedParams, registreeObj);
+
             enrichedParams.registreeName = registree.name;
             enrichedParams.registreeEmail = registree.email;
             enrichedParams.registreePhone = registree.phoneNumber || '';
@@ -193,14 +163,22 @@ export class EventListeners {
       if (payload.attendeeId) {
         try {
           if (!resolvedAttendee) {
-            resolvedAttendee = await this.attendeesService.findOne(payload.attendeeId);
+            resolvedAttendee = await this.attendeesService.findOne(
+              payload.attendeeId,
+            );
           }
           if (resolvedAttendee) {
-            if (!enrichedParams.registreeName) enrichedParams.registreeName = resolvedAttendee.name;
-            if (!enrichedParams.registreeEmail) enrichedParams.registreeEmail = resolvedAttendee.email;
-            if (!enrichedParams.registreePhone) enrichedParams.registreePhone = resolvedAttendee.phoneNumber || '';
-            if (!enrichedParams.registreeOrg) enrichedParams.registreeOrg = resolvedAttendee.organization || '';
-            if (!enrichedParams.registreeCity) enrichedParams.registreeCity = '';
+            if (!enrichedParams.registreeName)
+              enrichedParams.registreeName = resolvedAttendee.name;
+            if (!enrichedParams.registreeEmail)
+              enrichedParams.registreeEmail = resolvedAttendee.email;
+            if (!enrichedParams.registreePhone)
+              enrichedParams.registreePhone =
+                resolvedAttendee.phoneNumber || '';
+            if (!enrichedParams.registreeOrg)
+              enrichedParams.registreeOrg = resolvedAttendee.organization || '';
+            if (!enrichedParams.registreeCity)
+              enrichedParams.registreeCity = '';
           }
         } catch {}
       }
@@ -210,6 +188,12 @@ export class EventListeners {
         try {
           const event = await this.eventsService.findOne(payload.eventId);
           if (event) {
+            const eventObj =
+              typeof event.toObject === 'function'
+                ? event.toObject()
+                : JSON.parse(JSON.stringify(event));
+            Object.assign(enrichedParams, eventObj);
+
             const loc = event.location;
             const formattedLocation = loc
               ? [loc.address, loc.city].filter(Boolean).join(', ')
@@ -279,7 +263,9 @@ export class EventListeners {
             if (event.websites && event.websites.length > 0) {
               try {
                 const siteId = event.websites[0];
-                const site = await this.websitesService.findOne(siteId.toString());
+                const site = await this.websitesService.findOne(
+                  siteId.toString(),
+                );
                 if (site) {
                   enrichedParams.websiteName = site.name;
                   enrichedParams.websiteDomain = site.domain;
@@ -301,6 +287,12 @@ export class EventListeners {
         try {
           const blog = await this.blogsService.findOne(payload.blogId);
           if (blog) {
+            const blogObj =
+              typeof blog.toObject === 'function'
+                ? blog.toObject()
+                : JSON.parse(JSON.stringify(blog));
+            Object.assign(enrichedParams, blogObj);
+
             enrichedParams.blogTitle = blog.title;
             enrichedParams.blogSlug = blog.slug;
             enrichedParams.blogExcerpt = blog.excerpt || '';
@@ -308,10 +300,12 @@ export class EventListeners {
             enrichedParams.blogPublishedAt = blog.publishedAt
               ? new Date(blog.publishedAt).toLocaleDateString()
               : '';
-            
+
             if (blog.author) {
               try {
-                const author = await this.systemUsersService.findOne(blog.author.toString());
+                const author = await this.systemUsersService.findOne(
+                  blog.author.toString(),
+                );
                 if (author) {
                   enrichedParams.blogAuthorName = author.fullName;
                   enrichedParams.blogAuthorEmail = author.email;
@@ -322,7 +316,9 @@ export class EventListeners {
             if (blog.websites && blog.websites.length > 0) {
               try {
                 const siteId = blog.websites[0];
-                const site = await this.websitesService.findOne(siteId.toString());
+                const site = await this.websitesService.findOne(
+                  siteId.toString(),
+                );
                 if (site) {
                   enrichedParams.websiteName = site.name;
                   enrichedParams.websiteDomain = site.domain;
@@ -340,8 +336,16 @@ export class EventListeners {
       // Enrich with Blog Comment details if commentId is present
       if (payload.commentId) {
         try {
-          const comment = await this.blogsService.findCommentById(payload.commentId);
+          const comment = await this.blogsService.findCommentById(
+            payload.commentId,
+          );
           if (comment) {
+            const commentObj =
+              typeof comment.toObject === 'function'
+                ? comment.toObject()
+                : JSON.parse(JSON.stringify(comment));
+            Object.assign(enrichedParams, commentObj);
+
             enrichedParams.commentContent = comment.content;
           }
         } catch (e) {
@@ -354,6 +358,12 @@ export class EventListeners {
         try {
           const contact = await this.contactsService.findOne(payload.contactId);
           if (contact) {
+            const contactObj =
+              typeof contact.toObject === 'function'
+                ? contact.toObject()
+                : JSON.parse(JSON.stringify(contact));
+            Object.assign(enrichedParams, contactObj);
+
             enrichedParams.contactName = contact.fullName;
             enrichedParams.contactEmail = contact.email;
             enrichedParams.contactPhone = contact.phone;
@@ -366,7 +376,9 @@ export class EventListeners {
 
             if (contact.repliedBy) {
               try {
-                const replier = await this.systemUsersService.findOne(contact.repliedBy.toString());
+                const replier = await this.systemUsersService.findOne(
+                  contact.repliedBy.toString(),
+                );
                 if (replier) {
                   enrichedParams.contactRepliedByName = replier.fullName;
                   enrichedParams.contactRepliedByEmail = replier.email;
@@ -376,7 +388,9 @@ export class EventListeners {
 
             if (contact.websiteId) {
               try {
-                const site = await this.websitesService.findOne(contact.websiteId.toString());
+                const site = await this.websitesService.findOne(
+                  contact.websiteId.toString(),
+                );
                 if (site) {
                   enrichedParams.websiteName = site.name;
                   enrichedParams.websiteDomain = site.domain;
@@ -392,10 +406,20 @@ export class EventListeners {
       }
 
       // Enrich with Nomination details if nominationId is present
+      let nominationDoc: any = null;
       if (payload.nominationId) {
         try {
-          const nomination = await this.nominationsService.findOne(payload.nominationId);
+          const nomination = await this.nominationsService.findOne(
+            payload.nominationId,
+          );
           if (nomination) {
+            const nominationObj =
+              typeof nomination.toObject === 'function'
+                ? nomination.toObject()
+                : JSON.parse(JSON.stringify(nomination));
+            nominationDoc = nominationObj;
+            Object.assign(enrichedParams, nominationObj);
+
             if (nomination.nominatorId) {
               const nominator = nomination.nominatorId as any;
               enrichedParams.nominatorName = nominator.name;
@@ -403,14 +427,27 @@ export class EventListeners {
               enrichedParams.nominatorPhone = nominator.phoneNumber || '';
               enrichedParams.nominatorOrg = nominator.organization || '';
               enrichedParams.nominatorCity = nominator.city || '';
+              if (!enrichedParams.email) {
+                enrichedParams.email = nominator.email;
+              }
             }
 
             if (nomination.nominees && nomination.nominees.length > 0) {
+              enrichedParams.nomineeEmails = nomination.nominees
+                .map((n: any) => n.nomineeId?.email)
+                .filter(Boolean);
+
+              enrichedParams.nomineeNames = nomination.nominees
+                .map((n: any) => n.nomineeId?.name)
+                .filter(Boolean);
+
               enrichedParams.nomineeDetails = nomination.nominees
                 .map((n: any) => {
                   const name = n.nomineeId?.name || '';
                   const category = n.categoryId?.name || '';
-                  return name && category ? `${name} (Category: ${category})` : name || category;
+                  return name && category
+                    ? `${name} (Category: ${category})`
+                    : name || category;
                 })
                 .filter(Boolean)
                 .join(', ');
@@ -429,7 +466,9 @@ export class EventListeners {
                 enrichedParams.websiteOgImage = site.seo.ogImage;
               } else {
                 try {
-                  const fullSite = await this.websitesService.findOne(site._id.toString());
+                  const fullSite = await this.websitesService.findOne(
+                    site._id.toString(),
+                  );
                   enrichedParams.websiteOgImage = fullSite?.seo?.ogImage || '';
                 } catch {
                   enrichedParams.websiteOgImage = '';
@@ -447,6 +486,12 @@ export class EventListeners {
         try {
           const sponsor = await this.sponsorsService.findOne(payload.sponsorId);
           if (sponsor) {
+            const sponsorObj =
+              typeof sponsor.toObject === 'function'
+                ? sponsor.toObject()
+                : JSON.parse(JSON.stringify(sponsor));
+            Object.assign(enrichedParams, sponsorObj);
+
             enrichedParams.sponsorName = sponsor.name;
             enrichedParams.sponsorCompany = sponsor.companyName || '';
             enrichedParams.sponsorEmail = sponsor.email || '';
@@ -466,6 +511,12 @@ export class EventListeners {
         try {
           const website = await this.websitesService.findOne(payload.websiteId);
           if (website) {
+            const websiteObj =
+              typeof website.toObject === 'function'
+                ? website.toObject()
+                : JSON.parse(JSON.stringify(website));
+            Object.assign(enrichedParams, websiteObj);
+
             enrichedParams.websiteName = website.name;
             enrichedParams.websiteSlug = website.slug;
             enrichedParams.websiteDomain = website.domain;
@@ -483,6 +534,12 @@ export class EventListeners {
         try {
           const report = await this.reportsService.findOne(payload.reportId);
           if (report) {
+            const reportObj =
+              typeof report.toObject === 'function'
+                ? report.toObject()
+                : JSON.parse(JSON.stringify(report));
+            Object.assign(enrichedParams, reportObj);
+
             enrichedParams.reportTitle = report.title;
             enrichedParams.reportSlug = report.slug;
             enrichedParams.reportDescription = report.description || '';
@@ -490,7 +547,9 @@ export class EventListeners {
 
             if (report.websiteId) {
               try {
-                const site = await this.websitesService.findOne(report.websiteId.toString());
+                const site = await this.websitesService.findOne(
+                  report.websiteId.toString(),
+                );
                 if (site) {
                   enrichedParams.websiteName = site.name;
                   enrichedParams.websiteDomain = site.domain;
@@ -505,16 +564,275 @@ export class EventListeners {
         }
       }
 
-      this.logger.log(
-        `Dispatching template "${template.slug}" for event: ${eventName} to: ${recipient}`,
-      );
-      await this.communicationsService.dispatchTemplateMessage({
-        slug: template.slug,
-        recipient,
-        params: enrichedParams,
-        senderEmail: mapping.senderEmail,
-        senderName: mapping.senderName,
-      });
+      // Helper function to set nested value inside an object (cloned context)
+      const setNestedValue = (obj: any, path: string, val: any) => {
+        if (!obj || !path) return;
+        const parts = path.split('.');
+        let current = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+          const part = parts[i];
+          if (!current[part] || typeof current[part] !== 'object') {
+            current[part] = {};
+          }
+          current = current[part];
+        }
+        current[parts[parts.length - 1]] = val;
+      };
+
+      // Resolve array fields of objects to their latest element (last item)
+      const resolveLatestArrayRecords = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return;
+        for (const [key, val] of Object.entries(obj)) {
+          if (Array.isArray(val)) {
+            if (
+              val.length > 0 &&
+              typeof val[0] === 'object' &&
+              val[0] !== null
+            ) {
+              // Resolve nested arrays first
+              for (const item of val) {
+                resolveLatestArrayRecords(item);
+              }
+              // Override with latest element
+              obj[key] = val[val.length - 1];
+            }
+          } else if (val && typeof val === 'object') {
+            resolveLatestArrayRecords(val);
+          }
+        }
+      };
+
+      const resolveRecipientList = (expression: string): string[] => {
+        if (!expression) return [];
+        const parts = expression.split(',');
+        const results: string[] = [];
+        for (const part of parts) {
+          const trimmed = part.trim();
+          if (!trimmed) continue;
+          const cleanPath = trimmed.replace(/[{}]/g, '').trim();
+          if (cleanPath.includes('@') || cleanPath === 'admin') {
+            results.push(cleanPath);
+          } else {
+            const resolved = this.variableResolverService.resolvePath(
+              enrichedParams,
+              cleanPath,
+            );
+            if (resolved) {
+              if (Array.isArray(resolved)) {
+                results.push(...resolved.map((r) => String(r).trim()));
+              } else {
+                results.push(String(resolved).trim());
+              }
+            }
+          }
+        }
+        return [...new Set(results)].filter(
+          (email) => email.includes('@') || email === 'admin',
+        );
+      };
+
+      // Collapse array fields of objects to their latest element (last item) for template parameters
+      resolveLatestArrayRecords(enrichedParams);
+
+      const getPersonalizedParams = (targetEmail: string): any => {
+        if (!nominationDoc || !nominationDoc.nominees || nominationDoc.nominees.length === 0) {
+          return enrichedParams;
+        }
+        const matchedNominee = nominationDoc.nominees.find(
+          (n: any) => n.nomineeId?.email?.toLowerCase() === targetEmail.toLowerCase(),
+        );
+        if (!matchedNominee) {
+          return enrichedParams;
+        }
+
+        const targetParams = JSON.parse(JSON.stringify(enrichedParams));
+        const nomineeName = matchedNominee.nomineeId?.name || '';
+        const nomineeEmail = matchedNominee.nomineeId?.email || '';
+        const categoryName = matchedNominee.categoryId?.name || '';
+
+        targetParams.nomineeName = nomineeName;
+        targetParams.nomineeEmail = nomineeEmail;
+        targetParams.nomineeNames = [nomineeName];
+        targetParams.nomineeEmails = [nomineeEmail];
+        targetParams.nomineeDetails = nomineeName && categoryName
+          ? `${nomineeName} (Category: ${categoryName})`
+          : nomineeName || categoryName;
+
+        if (targetParams.params) {
+          targetParams.params.nomineeName = nomineeName;
+          targetParams.params.nomineeEmail = nomineeEmail;
+          targetParams.params.nomineeNames = [nomineeName];
+          targetParams.params.nomineeEmails = [nomineeEmail];
+          targetParams.params.nomineeDetails = targetParams.nomineeDetails;
+        }
+
+        return targetParams;
+      };
+
+      // Loop through all mapped actions for this event
+      for (const mapping of mappings) {
+        // 1. Multi-Trigger Array Processing (New Flow)
+        if (mapping.triggers && mapping.triggers.length > 0) {
+          for (const trigger of mapping.triggers) {
+            if (trigger.isActive === false) {
+              continue;
+            }
+            const template = trigger.templateId as any;
+            if (!template) {
+              this.logger.warn(
+                `Template not found for trigger in event mapping: ${eventName}`,
+              );
+              continue;
+            }
+
+            const targets = resolveRecipientList(trigger.to);
+
+            if (targets.length === 0) {
+              this.logger.warn(
+                `Could not resolve any recipients for trigger channel ${trigger.channel} on event ${eventName}`,
+              );
+              continue;
+            }
+
+            const ccTargets = trigger.cc
+              ? resolveRecipientList(trigger.cc).join(', ')
+              : undefined;
+            const bccTargets = trigger.bcc
+              ? resolveRecipientList(trigger.bcc).join(', ')
+              : undefined;
+
+            for (const target of targets) {
+              const targetParams = getPersonalizedParams(target);
+              const interpolatedSubject = this.variableResolverService.interpolate(
+                template.subject || '',
+                targetParams,
+              );
+
+              const contentTemplate = template.htmlContent || template.textContent || '';
+              const interpolatedContent = this.variableResolverService.interpolate(
+                contentTemplate,
+                targetParams,
+              );
+
+              this.logger.log(
+                `Dispatching template "${template.slug}" [Channel: ${trigger.channel}] for event: ${eventName} to: ${target}`,
+              );
+
+              await this.communicationsService.dispatch(
+                template.channel,
+                target,
+                interpolatedSubject,
+                interpolatedContent,
+                {
+                  templateSlug: template.slug,
+                  senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
+                  senderName: trigger.senderName || mapping.senderName || template.senderName,
+                  eventTrigger: true,
+                  eventName,
+                },
+                ccTargets,
+                bccTargets,
+              );
+            }
+          }
+          continue;
+        }
+
+        // 2. Legacy Fallback Flow (Old Single-Trigger Mappings)
+        const template = mapping.templateId as any;
+        if (!template) {
+          this.logger.warn(
+            `Template not found for event mapping: ${eventName}`,
+          );
+          continue;
+        }
+
+        let targets: string[] = [];
+        if (mapping.to) {
+          targets = resolveRecipientList(mapping.to);
+        } else {
+          let recipient = '';
+          if (payload.email) {
+            recipient = payload.email;
+          } else if (payload.recipient) {
+            recipient = payload.recipient;
+          } else if (payload.authorEmail) {
+            recipient = payload.authorEmail;
+          } else if (
+            payload.downloadedBy &&
+            payload.downloadedBy.includes('@')
+          ) {
+            recipient = payload.downloadedBy;
+          } else if (payload.submittedBy && payload.submittedBy.includes('@')) {
+            recipient = payload.submittedBy;
+          } else if (payload.userId) {
+            const user = await this.systemUsersService.findOne(payload.userId);
+            if (user) {
+              recipient = user.email;
+            }
+          } else if (payload.createdBy) {
+            try {
+              const user = await this.systemUsersService.findOne(
+                payload.createdBy,
+              );
+              if (user) {
+                recipient = user.email;
+              }
+            } catch {}
+          }
+          if (recipient) {
+            targets = [recipient];
+          }
+        }
+
+        if (targets.length === 0) {
+          this.logger.warn(
+            `Could not resolve any recipient emails for event ${eventName} with mapping ${mapping.id || mapping._id}. Payload: ${JSON.stringify(payload)}`,
+          );
+          continue;
+        }
+
+        const ccTargets = mapping.cc
+          ? resolveRecipientList(mapping.cc).join(', ')
+          : undefined;
+        const bccTargets = mapping.bcc
+          ? resolveRecipientList(mapping.bcc).join(', ')
+          : undefined;
+
+        for (const target of targets) {
+          const targetParams = getPersonalizedParams(target);
+          const interpolatedSubject = this.variableResolverService.interpolate(
+            template.subject || '',
+            targetParams,
+          );
+
+          const contentTemplate = template.htmlContent || template.textContent || '';
+          const interpolatedContent = this.variableResolverService.interpolate(
+            contentTemplate,
+            targetParams,
+          );
+
+          this.logger.log(
+            `Dispatching legacy template "${template.slug}" [Channel: ${template.channel}] for event: ${eventName} to: ${target}`,
+          );
+
+          await this.communicationsService.dispatch(
+            template.channel,
+            target,
+            interpolatedSubject,
+            interpolatedContent,
+            {
+              templateSlug: template.slug,
+              senderEmail: mapping.senderEmail || template.senderEmail,
+              senderName: mapping.senderName || template.senderName,
+              legacyTrigger: true,
+              eventName,
+            },
+            ccTargets,
+            bccTargets,
+          );
+        }
+      }
     } catch (err) {
       this.logger.error(
         `Error processing event-template mapping for event ${eventName}: ${err.message}`,

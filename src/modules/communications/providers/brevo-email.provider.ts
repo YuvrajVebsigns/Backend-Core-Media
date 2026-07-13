@@ -62,11 +62,26 @@ export class BrevoEmailProvider implements ICommunicationProvider {
           }
         : { name: this.senderName, email: this.senderEmail };
 
+      const ccList = payload.cc
+        ? payload.cc
+            .split(',')
+            .map((email) => ({ email: email.trim() }))
+            .filter((e) => e.email.includes('@'))
+        : undefined;
+      const bccList = payload.bcc
+        ? payload.bcc
+            .split(',')
+            .map((email) => ({ email: email.trim() }))
+            .filter((e) => e.email.includes('@'))
+        : undefined;
+
       const response = await this.client.transactionalEmails.sendTransacEmail({
         sender,
         to: [{ email: payload.recipient }],
         subject: payload.title,
         htmlContent: payload.content,
+        ...(ccList && ccList.length > 0 ? { cc: ccList } : {}),
+        ...(bccList && bccList.length > 0 ? { bcc: bccList } : {}),
       });
 
       return {
@@ -105,11 +120,26 @@ export class BrevoEmailProvider implements ICommunicationProvider {
           }
         : { name: this.senderName, email: this.senderEmail };
 
+      const ccList = payload.cc
+        ? payload.cc
+            .split(',')
+            .map((email) => ({ email: email.trim() }))
+            .filter((e) => e.email.includes('@'))
+        : undefined;
+      const bccList = payload.bcc
+        ? payload.bcc
+            .split(',')
+            .map((email) => ({ email: email.trim() }))
+            .filter((e) => e.email.includes('@'))
+        : undefined;
+
       const response = await this.client.transactionalEmails.sendTransacEmail({
         sender,
         to: [{ email: payload.recipient, name: payload.recipientName }],
         templateId: payload.externalTemplateId,
         params: payload.params,
+        ...(ccList && ccList.length > 0 ? { cc: ccList } : {}),
+        ...(bccList && bccList.length > 0 ? { bcc: bccList } : {}),
       });
 
       return {

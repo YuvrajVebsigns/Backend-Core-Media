@@ -10,7 +10,12 @@ import {
   timestamps: true,
 })
 export class AnalyticsEvent extends BaseSchema {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Website', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Website',
+    required: true,
+    index: true,
+  })
   websiteId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, trim: true, index: true })
@@ -38,7 +43,8 @@ export class AnalyticsEvent extends BaseSchema {
   metadata: Record<string, any>;
 }
 
-export const AnalyticsEventSchema = SchemaFactory.createForClass(AnalyticsEvent);
+export const AnalyticsEventSchema =
+  SchemaFactory.createForClass(AnalyticsEvent);
 
 // Apply soft delete middleware
 applySoftDeleteMiddleware(AnalyticsEventSchema);

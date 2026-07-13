@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  OnApplicationBootstrap,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -42,9 +43,43 @@ import { BrevoWebhookEventDto } from './dto/brevo-webhook.dto';
 import { ProviderRegistryService } from './providers/provider-registry.service';
 import { PaginatedResponseDto } from '@common/dto/paginated-response.dto';
 import { BrevoEmailProvider } from './providers/brevo-email.provider';
+import { VariableResolverService } from './services/variable-resolver.service';
+
+function flattenObject(obj: any, prefix = ''): Record<string, any> {
+  const result: Record<string, any> = {};
+  if (!obj || typeof obj !== 'object') return result;
+
+  for (const [key, val] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    if (
+      val &&
+      typeof val === 'object' &&
+      !(val instanceof Date) &&
+      !(val as any)._bsontype &&
+      (val as any).constructor?.name !== 'ObjectID' &&
+      (val as any).constructor?.name !== 'ObjectId'
+    ) {
+      if (Array.isArray(val)) {
+        // Flatten index-based: e.g. nominees.0.nomineeId.name
+        val.forEach((item, idx) => {
+          Object.assign(result, flattenObject(item, `${fullKey}.${idx}`));
+        });
+        // Flatten index-less using each item (last item/latest will overwrite, but for 1-element arrays it's exact)
+        val.forEach((item) => {
+          Object.assign(result, flattenObject(item, fullKey));
+        });
+      } else {
+        Object.assign(result, flattenObject(val, fullKey));
+      }
+    } else {
+      result[fullKey] = val;
+    }
+  }
+  return result;
+}
 
 @Injectable()
-export class CommunicationsService {
+export class CommunicationsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(CommunicationsService.name);
 
   constructor(
@@ -62,7 +97,22 @@ export class CommunicationsService {
     private readonly communicationsQueue: Queue,
     @Inject(forwardRef(() => ProviderRegistryService))
     private readonly providerRegistry: ProviderRegistryService,
+    private readonly variableResolverService: VariableResolverService,
   ) {}
+
+  async onApplicationBootstrap() {
+    try {
+      const db = this.eventMappingModel.db;
+      await db.collection('event_template_mappings').dropIndex('event_1');
+      this.logger.log(
+        'Successfully dropped old event_1 unique index on event_template_mappings.',
+      );
+    } catch (error) {
+      this.logger.debug(
+        `Index event_1 drop result (safe if index does not exist): ${error.message}`,
+      );
+    }
+  }
 
   /**
    * Helper to dispatch any notification type through the background queue.
@@ -74,14 +124,22 @@ export class CommunicationsService {
     title: string,
     content: string,
     metadata?: Record<string, any>,
+    cc?: string,
+    bcc?: string,
   ): Promise<CommunicationLog> {
+    const logMetadata = {
+      ...(metadata || {}),
+      ...(cc ? { cc } : {}),
+      ...(bcc ? { bcc } : {}),
+    };
+
     const log = new this.logModel({
       channel,
       recipient,
       title,
       content,
       status: CommunicationStatus.PENDING,
-      metadata: metadata || {},
+      metadata: logMetadata,
     });
     const savedLog = await log.save();
 
@@ -93,7 +151,9 @@ export class CommunicationsService {
         recipient,
         title,
         content,
-        metadata: metadata || {},
+        metadata: logMetadata,
+        cc,
+        bcc,
       },
       {
         attempts: 3,
@@ -109,6 +169,84 @@ export class CommunicationsService {
     );
 
     return savedLog;
+  }
+
+  /**
+   * Executing templates for workflows lacking NestJS system event hooks.
+   */
+  async dispatchUnmappedTemplate(
+    templateSlug: string,
+    queryPayloadContext: any,
+    targetOverride?: string | string[],
+  ): Promise<CommunicationLog[]> {
+    const template = await this.templateModel
+      .findOne({ slug: templateSlug, isActive: true, isDeleted: null })
+      .exec();
+    if (!template) {
+      throw new NotFoundException(
+        `Active template with slug "${templateSlug}" not found.`,
+      );
+    }
+
+    let recipients: string[] = [];
+    if (targetOverride) {
+      recipients = Array.isArray(targetOverride) ? targetOverride : [targetOverride];
+    } else {
+      const targetPath =
+        (template as any).to ||
+        template.get('to') ||
+        (template as any).metadata?.to ||
+        template.get('metadata')?.to ||
+        (template as any).target ||
+        template.get('target');
+
+      if (targetPath) {
+        const resolved = this.variableResolverService.resolvePath(
+          queryPayloadContext,
+          targetPath,
+        );
+        if (resolved) {
+          recipients = Array.isArray(resolved) ? resolved : [resolved];
+        }
+      }
+    }
+
+    if (recipients.length === 0) {
+      this.logger.warn(
+        `No recipients resolved for unmapped template execution: ${templateSlug}`,
+      );
+      return [];
+    }
+
+    const logs: CommunicationLog[] = [];
+    for (const recipient of recipients) {
+      const interpolatedSubject = this.variableResolverService.interpolate(
+        template.subject || '',
+        queryPayloadContext,
+      );
+
+      const contentTemplate =
+        template.htmlContent || template.textContent || '';
+      const interpolatedContent = this.variableResolverService.interpolate(
+        contentTemplate,
+        queryPayloadContext,
+      );
+
+      const log = await this.dispatch(
+        template.channel,
+        recipient,
+        interpolatedSubject,
+        interpolatedContent,
+        {
+          templateSlug,
+          senderEmail: template.senderEmail,
+          senderName: template.senderName,
+          unmappedExecution: true,
+        },
+      );
+      logs.push(log);
+    }
+    return logs;
   }
 
   /**
@@ -136,16 +274,17 @@ export class CommunicationsService {
       );
     }
 
-    // Format subject with template params
+    // Format subject with template params (handling flattened nested paths)
+    const flatParams = flattenObject(dto.params);
+    const combinedParams = { ...dto.params, ...flatParams };
     let subject = template.subject || '';
-    for (const [key, val] of Object.entries(dto.params)) {
-      subject = subject.replace(
-        new RegExp(`{{\\s*${key}\\s*}}`, 'g'),
-        String(val),
-      );
+    for (const [key, val] of Object.entries(combinedParams)) {
+      if (typeof val === 'object' && val !== null) continue;
+      const strVal = String(val ?? '');
+      subject = subject.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), strVal);
       subject = subject.replace(
         new RegExp(`{{\\s*params.${key}\\s*}}`, 'g'),
-        String(val),
+        strVal,
       );
     }
 
@@ -165,6 +304,8 @@ export class CommunicationsService {
         params: dto.params,
         recipientName: dto.recipientName,
         providerName: provider.name,
+        cc: dto.cc,
+        bcc: dto.bcc,
         ...(finalSenderEmail
           ? { senderEmail: finalSenderEmail, senderName: finalSenderName }
           : {}),
@@ -188,6 +329,8 @@ export class CommunicationsService {
         params: dto.params,
         senderEmail: finalSenderEmail,
         senderName: finalSenderName,
+        cc: dto.cc,
+        bcc: dto.bcc,
       },
       {
         attempts: 3,
@@ -863,6 +1006,7 @@ export class CommunicationsService {
     return this.eventMappingModel
       .find({ isDeleted: null })
       .populate('templateId')
+      .populate('triggers.templateId')
       .exec();
   }
 
@@ -877,10 +1021,31 @@ export class CommunicationsService {
         `Event mapping for event "${dto.event}" already exists.`,
       );
     }
-    const template = await this.templateModel.findById(dto.templateId).exec();
-    if (!template) {
-      throw new NotFoundException(`Template ID "${dto.templateId}" not found.`);
+
+    // Validate legacy templateId if provided
+    if (dto.templateId) {
+      const template = await this.templateModel.findById(dto.templateId).exec();
+      if (!template) {
+        throw new NotFoundException(
+          `Template ID "${dto.templateId}" not found.`,
+        );
+      }
     }
+
+    // Validate new triggers templates if provided
+    if (dto.triggers && dto.triggers.length > 0) {
+      for (const trigger of dto.triggers) {
+        const template = await this.templateModel
+          .findById(trigger.templateId)
+          .exec();
+        if (!template) {
+          throw new NotFoundException(
+            `Template ID "${trigger.templateId}" in triggers not found.`,
+          );
+        }
+      }
+    }
+
     const mapping = new this.eventMappingModel(dto);
     return mapping.save();
   }
@@ -895,16 +1060,21 @@ export class CommunicationsService {
     if (!mapping) {
       throw new NotFoundException(`Event mapping with ID "${id}" not found.`);
     }
-    if (dto.event && dto.event !== mapping.event) {
+
+    const newEvent = dto.event || mapping.event;
+
+    if (newEvent !== mapping.event) {
       const existing = await this.eventMappingModel
-        .findOne({ event: dto.event, isDeleted: null })
+        .findOne({ event: newEvent, isDeleted: null })
         .exec();
       if (existing) {
         throw new BadRequestException(
-          `Event mapping for event "${dto.event}" already exists.`,
+          `Event mapping for event "${newEvent}" already exists.`,
         );
       }
     }
+
+    // Validate legacy templateId if updating it
     if (dto.templateId) {
       const template = await this.templateModel.findById(dto.templateId).exec();
       if (!template) {
@@ -913,7 +1083,27 @@ export class CommunicationsService {
         );
       }
     }
+
+    // Validate new triggers templates if updating them
+    if (dto.triggers && dto.triggers.length > 0) {
+      for (const trigger of dto.triggers) {
+        const template = await this.templateModel
+          .findById(trigger.templateId)
+          .exec();
+        if (!template) {
+          throw new NotFoundException(
+            `Template ID "${trigger.templateId}" in triggers not found.`,
+          );
+        }
+      }
+    }
+
     Object.assign(mapping, dto);
+    // Explicitly set triggers if provided in the DTO to ensure mongoose marks it as modified/saved
+    if (dto.triggers) {
+      mapping.triggers = dto.triggers as any;
+      mapping.markModified('triggers');
+    }
     return mapping.save();
   }
 
@@ -935,6 +1125,17 @@ export class CommunicationsService {
     return this.eventMappingModel
       .findOne({ event, isActive: true, isDeleted: null })
       .populate('templateId')
+      .populate('triggers.templateId')
+      .exec();
+  }
+
+  async findEventMappingsByEvent(
+    event: string,
+  ): Promise<EventTemplateMapping[]> {
+    return this.eventMappingModel
+      .find({ event, isActive: true, isDeleted: null })
+      .populate('templateId')
+      .populate('triggers.templateId')
       .exec();
   }
 

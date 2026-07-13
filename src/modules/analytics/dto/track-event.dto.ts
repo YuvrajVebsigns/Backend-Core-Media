@@ -12,7 +12,11 @@ export class TrackEventDto {
   @IsNotEmpty()
   sessionId: string;
 
-  @ApiProperty({ example: 'pageview', description: "Can be 'pageview', 'consent_accepted', 'consent_declined', or 'interaction'" })
+  @ApiProperty({
+    example: 'pageview',
+    description:
+      "Can be 'pageview', 'consent_accepted', 'consent_declined', or 'interaction'",
+  })
   @IsString()
   @IsNotEmpty()
   eventType: string;
@@ -37,7 +41,10 @@ export class TrackEventDto {
   @IsString()
   userAgent?: string;
 
-  @ApiPropertyOptional({ type: Object, example: { elementId: 'newsletter-signup-btn', duration: 12.5 } })
+  @ApiPropertyOptional({
+    type: Object,
+    example: { elementId: 'newsletter-signup-btn', duration: 12.5 },
+  })
   @IsOptional()
   @IsObject()
   metadata?: Record<string, any>;

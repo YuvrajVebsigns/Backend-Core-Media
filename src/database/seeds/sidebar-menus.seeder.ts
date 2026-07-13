@@ -195,7 +195,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
       const existing = await this.sidebarMenuService.getAllSidebarMenus(true, {
         page: 1,
         limit: 1,
-        search: 'Communications',
+        filters: { name: 'Communications' },
       });
 
       if (existing.data.length === 0) {
@@ -249,6 +249,15 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
           group: 'super admin controls',
           parentId,
         },
+        {
+          name: 'Variables',
+          path: '/variables',
+          permissionKey: 'communications.view',
+          icon: 'braces',
+          order: 4,
+          group: 'content management',
+          parentId,
+        },
       ];
 
       for (const child of children) {
@@ -258,7 +267,7 @@ export class SidebarMenusSeeder implements OnApplicationBootstrap {
             {
               page: 1,
               limit: 1,
-              search: child.name,
+              filters: { name: child.name },
             },
           );
 
