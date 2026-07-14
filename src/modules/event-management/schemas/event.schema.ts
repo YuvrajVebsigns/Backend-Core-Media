@@ -71,6 +71,40 @@ export class EventSeo {
   ogImageId: MongooseSchema.Types.ObjectId;
 }
 
+export enum ScheduleType {
+  BEFORE_EVENT = 'BEFORE_EVENT',
+  AFTER_EVENT = 'AFTER_EVENT',
+  EXACT_DATE = 'EXACT_DATE',
+}
+
+@Schema({ _id: true, timestamps: true })
+export class EventScheduledEmail {
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'MessageTemplate', required: true })
+  templateId: MongooseSchema.Types.ObjectId;
+
+  @Prop({ required: true, enum: Object.values(ScheduleType) })
+  scheduleType: ScheduleType;
+
+  @Prop({ type: Number })
+  daysOffset?: number;
+
+  @Prop({ type: Number })
+  hoursOffset?: number;
+
+  @Prop({ type: Number })
+  minutesOffset?: number;
+
+  @Prop({ type: Date })
+  exactDate?: Date;
+
+  @Prop({ default: true })
+  isActive: boolean;
+
+  @Prop({ default: false })
+  isProcessed: boolean;
+}
+
+
 @Schema({
   collection: 'events',
   timestamps: true,
@@ -147,6 +181,9 @@ export class Event extends BaseSchema {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ type: [EventScheduledEmail], default: [] })
+  scheduledEmails: EventScheduledEmail[];
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event);

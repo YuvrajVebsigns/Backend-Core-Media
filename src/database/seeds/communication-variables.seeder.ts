@@ -196,6 +196,77 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
       },
 
       // ==========================================
+      // 1.5 ATTENDEE VARIABLES (ATTENDEE)
+      // ==========================================
+      {
+        name: 'Attendee ID',
+        path: 'attendeeId',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        ref: 'Attendee',
+        description: 'Unique attendee record ID',
+      },
+      {
+        name: 'Attendee Name',
+        path: 'name',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        description: 'Name of the attendee',
+      },
+      {
+        name: 'Attendee Email',
+        path: 'email',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        isSenderVariable: true,
+        description: 'Email of the attendee',
+      },
+      {
+        name: 'Event ID',
+        path: 'eventId',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        ref: 'Event',
+        description: 'ID of the event they are attending',
+      },
+      {
+        name: 'Passcode',
+        path: 'passCode',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        description: 'Unique passcode for the attendee',
+      },
+      {
+        name: 'Registree ID',
+        path: 'registreeId',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        ref: 'Registree',
+        description: 'ID of the registree record linked to this attendee',
+      },
+      {
+        name: 'Attendee Status',
+        path: 'status',
+        type: 'String',
+        isArray: false,
+        modelName: 'Attendee',
+        categoryGroup: VariableCategoryGroup.ATTENDEE,
+        description: 'Current status of the attendee',
+      },
+
+      // ==========================================
       // 2. NOMINATION VARIABLES (NOMINATION)
       // ==========================================
       {
@@ -712,6 +783,64 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
         modelName: 'Sponsor',
         categoryGroup: VariableCategoryGroup.SPONSOR,
         description: 'Whether the sponsor is active',
+      },
+
+      // ==========================================
+      // 8. REPORT VARIABLES (REPORT)
+      // ==========================================
+      {
+        name: 'Report ID',
+        path: 'reportId',
+        type: 'String',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Unique report identifier',
+      },
+      {
+        name: 'Report Title',
+        path: 'reportTitle',
+        type: 'String',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Title of the report',
+      },
+      {
+        name: 'Report Slug',
+        path: 'reportSlug',
+        type: 'String',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Slug of the report',
+      },
+      {
+        name: 'Report Description',
+        path: 'reportDescription',
+        type: 'String',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Description of the report',
+      },
+      {
+        name: 'Report Download URL',
+        path: 'downloadUrl',
+        type: 'String',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Download link for the report',
+      },
+      {
+        name: 'Report Download Count',
+        path: 'reportDownloadCount',
+        type: 'Number',
+        isArray: false,
+        modelName: 'Report',
+        categoryGroup: VariableCategoryGroup.REPORT,
+        description: 'Total number of times the report has been downloaded',
       },
     ];
 

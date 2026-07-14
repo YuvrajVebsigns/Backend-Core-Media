@@ -11,6 +11,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from '@core/auth/auth.module';
 import { SystemUsersModule } from '@core/system-users/system-users.module';
 import { RolesModule } from '@core/roles/roles.module';
@@ -76,6 +77,7 @@ const redisQueueImports =
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       envFilePath,
       isGlobal: true,

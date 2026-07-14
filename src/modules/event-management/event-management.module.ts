@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EventsService } from './event-management.service';
+import { EventReminderSchedulerService } from './event-reminder-scheduler.service';
 import { AdminEventsController } from './admin-events.controller';
 import { WebsiteEventsController } from './website-events.controller';
 import { Event, EventSchema } from './schemas/event.schema';
@@ -25,7 +26,7 @@ import { FilesModule } from '@core/files/files.module';
     FilesModule,
   ],
   controllers: [AdminEventsController, WebsiteEventsController],
-  providers: [EventsService],
+  providers: [EventsService, EventReminderSchedulerService],
   exports: [EventsService],
 })
 export class EventManagementModule {}

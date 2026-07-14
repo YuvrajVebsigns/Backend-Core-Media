@@ -35,6 +35,7 @@ import {
   ReportDownloadedEvent,
   CommunicationDispatchedEvent,
   FileUploadedEvent,
+  EventReminderEvent,
   AppEvents,
 } from './event-definitions';
 import { CommunicationsService } from '../communications/communications.service';
@@ -133,6 +134,18 @@ export class EventListeners {
             resolvedRegistreeId = resolvedAttendee.registreeId.toString();
           }
         } catch {}
+      }
+
+      if (!resolvedRegistreeId) {
+        const potentialEmail = payload.downloadedBy || payload.email;
+        if (potentialEmail && typeof potentialEmail === 'string' && potentialEmail.includes('@')) {
+          try {
+            const registree = await this.attendeesService.findRegistreeByEmail(potentialEmail);
+            if (registree) {
+              resolvedRegistreeId = registree._id.toString();
+            }
+          } catch {}
+        }
       }
 
       if (resolvedRegistreeId) {
@@ -1140,5 +1153,17 @@ export class EventListeners {
       `📁 File uploaded: ${event.filename} (${(event.size / 1024).toFixed(1)} KB)`,
     );
     this.triggerMappedEvent(AppEvents.FILE_UPLOADED, event);
+  }
+
+  @OnEvent(AppEvents.EVENT_REMINDER)
+  handleEventReminder(event: EventReminderEvent) {
+    this.logger.log(`⏰ Event reminder scheduled for attendee: ${event.attendeeId} (Event: ${event.eventId})`);
+    
+    // Instead of resolving standard mappings for EVENT_REMINDER via the generic triggerMappedEvent,
+    // we want this event to trigger a specific template id explicitly passed.
+    // The scheduling requires triggerMappedEvent to be able to handle this.
+    // However, triggerMappedEvent relies on event mapping stored in db.
+    // So we will just pass it to triggerMappedEvent with the event object. The mapping will be resolved if exists.
+    this.triggerMappedEvent(AppEvents.EVENT_REMINDER, event);
   }
 }

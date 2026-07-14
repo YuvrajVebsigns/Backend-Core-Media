@@ -536,6 +536,7 @@ export class EventsService {
       'websites',
       'sponsors',
       'invitedEmails',
+      'scheduledEmails',
     ];
     for (const field of jsonFields) {
       if (dto[field] && typeof dto[field] === 'string') {

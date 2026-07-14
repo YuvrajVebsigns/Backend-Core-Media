@@ -16,6 +16,7 @@ import { ImageLinksDto } from '@common/dto/image-links.dto';
 import {
   EventType,
   EventStatus,
+  ScheduleType
 } from '@modules/event-management/schemas/event.schema';
 
 class EventLocationDto {
@@ -80,6 +81,54 @@ class EventSeoDto {
   @IsMongoId()
   @IsOptional()
   ogImageId?: string;
+}
+
+class EventScheduledEmailDto {
+  @IsMongoId()
+  templateId: string;
+
+  @IsEnum(ScheduleType)
+  scheduleType: ScheduleType;
+
+  @IsNumber()
+  @IsOptional()
+  daysOffset?: number;
+
+  @IsNumber()
+  @IsOptional()
+  hoursOffset?: number;
+
+  @IsNumber()
+  @IsOptional()
+  minutesOffset?: number;
+
+  @IsDateString()
+  @IsOptional()
+  exactDate?: Date;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isProcessed?: boolean;
+
+  @IsMongoId()
+  @IsOptional()
+  _id?: string;
+
+  @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsDateString()
+  @IsOptional()
+  createdAt?: string;
+
+  @IsDateString()
+  @IsOptional()
+  updatedAt?: string;
 }
 
 export class CreateEventDto {
@@ -177,6 +226,13 @@ export class CreateEventDto {
   @IsString({ each: true })
   @IsOptional()
   invitedEmails?: string[];
+
+  @ApiProperty({ type: [EventScheduledEmailDto], required: false })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => EventScheduledEmailDto)
+  @IsOptional()
+  scheduledEmails?: EventScheduledEmailDto[];
 }
 
 export class UpdateEventDto extends PartialType(CreateEventDto) {}

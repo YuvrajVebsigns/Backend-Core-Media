@@ -13,6 +13,8 @@ export enum VariableCategoryGroup {
   SPONSOR = 'SPONSOR',
   WEBSITE = 'WEBSITE',
   SYSTEM = 'SYSTEM',
+  REPORT = 'REPORT',
+  ATTENDEE = 'ATTENDEE',
   OTHER = 'OTHER',
 }
 
