@@ -125,6 +125,15 @@ export class AttendeeCreatedByAdminEvent {
 // Event Management Module Events
 // ──────────────────────────────────────────────
 
+export class EventReminderEvent {
+  constructor(
+    public readonly attendeeId: string,
+    public readonly eventId: string,
+    public readonly templateId: string,
+    public readonly sentAt: Date = new Date(),
+  ) {}
+}
+
 export class EventCreatedEvent {
   constructor(
     public readonly eventId: string,
@@ -337,6 +346,7 @@ export class ReportDownloadedEvent {
     public readonly reportId: string,
     public readonly downloadedBy: string | undefined,
     public readonly websiteId: string | undefined,
+    public readonly downloadUrl?: string,
     public readonly downloadedAt: Date = new Date(),
   ) {}
 }
@@ -398,6 +408,7 @@ export const AppEvents = {
   EVENT_UPDATED: 'event.updated',
   EVENT_DELETED: 'event.deleted',
   EVENT_MEETING_CREATED: 'event.meeting_created',
+  EVENT_REMINDER: 'event.reminder',
 
   // Blogs
   BLOG_CREATED: 'blog.created',
@@ -1174,6 +1185,12 @@ export const EventPayloadRegistry: Record<
       description: 'Website OG Image',
     },
   ],
+  [AppEvents.EVENT_REMINDER]: [
+    { field: 'attendeeId', type: 'string', description: 'Attendee ID' },
+    { field: 'eventId', type: 'string', description: 'Event ID' },
+    { field: 'templateId', type: 'string', description: 'Template ID' },
+    { field: 'sentAt', type: 'Date', description: 'Timestamp of reminder' },
+  ],
   [AppEvents.EVENT_MEETING_CREATED]: [
     { field: 'meetingId', type: 'string', description: 'Meeting ID' },
     { field: 'eventId', type: 'string', description: 'Parent event ID' },
@@ -1753,6 +1770,11 @@ export const EventPayloadRegistry: Record<
       field: 'websiteOgImage',
       type: 'string',
       description: 'Website OG Image',
+    },
+    {
+      field: 'downloadUrl',
+      type: 'string',
+      description: 'Download link for the report',
     },
   ],
 

@@ -718,6 +718,12 @@ export class AttendeesService {
     };
   }
 
+  async findRegistreeByEmail(email: string): Promise<any> {
+    return this.registreeModel
+      .findOne({ email: email.trim().toLowerCase(), isDeleted: null })
+      .exec();
+  }
+
   async findOneRegistree(id: string): Promise<any> {
     const registree = await this.registreeModel
       .findById(id)

@@ -71,6 +71,7 @@ export class SchemaDiscoveryService {
       'Contact',
       'Sponsor',
       'Event',
+      'Attendee',
     ];
 
     // System/private fields to exclude from variable auto-discovery
