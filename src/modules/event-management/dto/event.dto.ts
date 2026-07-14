@@ -235,7 +235,7 @@ export class CreateEventDto {
   scheduledEmails?: EventScheduledEmailDto[];
 }
 
-export class UpdateEventDto extends PartialType(CreateEventDto) {}
+export class UpdateEventDto extends PartialType(CreateEventDto) { }
 
 export class QueryEventDto {
   @ApiProperty({ required: false, default: 1 })
