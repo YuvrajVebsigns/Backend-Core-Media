@@ -166,12 +166,13 @@ export class EventsService {
       );
     }
 
-    const saved = await this.findOne(savedEvent._id.toString());
+    const saved: any = await this.findOne(savedEvent._id.toString());
+    const eventId = saved.id || saved._id?.toString() || savedEvent._id.toString();
 
     this.eventEmitter.emit(
       AppEvents.EVENT_CREATED,
       new EventCreatedEvent(
-        saved._id.toString(),
+        eventId,
         saved.title,
         saved.type,
         uploadedBy || '',
@@ -589,10 +590,12 @@ export class EventsService {
       : '';
     const eventDetails = event.excerpt || '';
 
+    const meetingId = (result as any).id || (result as any)._id?.toString() || savedMeeting._id.toString();
+
     this.eventEmitter.emit(
       AppEvents.EVENT_MEETING_CREATED,
       new EventMeetingCreatedEvent(
-        result._id.toString(),
+        meetingId,
         eventId,
         result.agendaTitle,
         eventTitle,
