@@ -74,13 +74,43 @@ export const DEPLOY_REGISTRY: Record<
     branchKey: 'DEPLOY_WEBSITE_7_BRANCH',
     pm2Key: 'DEPLOY_WEBSITE_7_PM2_NAME',
   },
+  'website-8': {
+    dirKey: 'DEPLOY_WEBSITE_8_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_8_CMD',
+    branchKey: 'DEPLOY_WEBSITE_8_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_8_PM2_NAME',
+  },
+  'website-9': {
+    dirKey: 'DEPLOY_WEBSITE_9_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_9_CMD',
+    branchKey: 'DEPLOY_WEBSITE_9_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_9_PM2_NAME',
+  },
+  'website-10': {
+    dirKey: 'DEPLOY_WEBSITE_10_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_10_CMD',
+    branchKey: 'DEPLOY_WEBSITE_10_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_10_PM2_NAME',
+  },
+  'website-11': {
+    dirKey: 'DEPLOY_WEBSITE_11_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_11_CMD',
+    branchKey: 'DEPLOY_WEBSITE_11_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_11_PM2_NAME',
+  },
+  'website-12': {
+    dirKey: 'DEPLOY_WEBSITE_12_DIR',
+    cmdKey: 'DEPLOY_WEBSITE_12_CMD',
+    branchKey: 'DEPLOY_WEBSITE_12_BRANCH',
+    pm2Key: 'DEPLOY_WEBSITE_12_PM2_NAME',
+  },
 };
 
 @Injectable()
 export class WebhookService {
   private readonly logger = new Logger(WebhookService.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   /**
    * Verifies the GitHub HMAC-SHA256 signature to ensure authenticity.
@@ -145,7 +175,7 @@ export class WebhookService {
     if (!targetDir || !command) {
       this.logger.error(
         `Deployment config for "${target}" is incomplete. ` +
-          `Check env vars: ${entry.dirKey}, ${entry.cmdKey}`,
+        `Check env vars: ${entry.dirKey}, ${entry.cmdKey}`,
       );
       return;
     }
@@ -168,10 +198,10 @@ export class WebhookService {
     fs.appendFileSync(
       logFilePath,
       `\n\n==================================================\n` +
-        `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
-        `📁 Directory: ${targetDir}\n` +
-        `💻 Command: ${command}\n` +
-        `==================================================\n`,
+      `🚀 DEPLOYMENT INITIATED: ${timestamp}\n` +
+      `📁 Directory: ${targetDir}\n` +
+      `💻 Command: ${command}\n` +
+      `==================================================\n`,
     );
 
     // Spawn shell command asynchronously (non-blocking)
@@ -200,7 +230,7 @@ export class WebhookService {
         );
         this.logger.error(
           `Deployment for "${target}" failed with code ${code}. ` +
-            `Check logs/deploy-${target}.log for details.`,
+          `Check logs/deploy-${target}.log for details.`,
         );
       }
     });
