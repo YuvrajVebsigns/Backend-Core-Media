@@ -39,6 +39,7 @@ import {
   AppEvents,
 } from './event-definitions';
 import { CommunicationsService } from '../communications/communications.service';
+import { TemplateService } from '../communications/services/template.service';
 import { SystemUsersService } from '@core/system-users/system-users.service';
 import { AttendeesService } from '../attendees/attendees.service';
 import { EventsService } from '../event-management/event-management.service';
@@ -56,6 +57,7 @@ export class EventListeners {
 
   constructor(
     private readonly communicationsService: CommunicationsService,
+    private readonly templateService: TemplateService,
     private readonly systemUsersService: SystemUsersService,
     private readonly attendeesService: AttendeesService,
     private readonly eventsService: EventsService,
@@ -70,8 +72,37 @@ export class EventListeners {
 
   private async triggerMappedEvent(eventName: string, payload: any) {
     try {
-      const mappings =
+      let mappings =
         await this.communicationsService.findEventMappingsByEvent(eventName);
+
+      if ((!mappings || mappings.length === 0) && payload.templateId) {
+        try {
+          const template = await this.templateService.findOne(payload.templateId);
+          if (template) {
+            mappings = [
+              {
+                event: eventName,
+                triggers: [
+                  {
+                    channel: template.channel,
+                    templateId: template,
+                    to: 'registreeEmail, email',
+                    senderEmail: template.senderEmail,
+                    senderName: template.senderName,
+                    isActive: true,
+                  },
+                ],
+                isActive: true,
+              } as any,
+            ];
+          }
+        } catch (err) {
+          this.logger.error(
+            `Error resolving explicit templateId ${payload.templateId}: ${err.message}`,
+          );
+        }
+      }
+
       if (!mappings || mappings.length === 0) {
         this.logger.debug(
           `No active event mappings found for event: ${eventName}`,
@@ -127,11 +158,18 @@ export class EventListeners {
 
       if (!resolvedRegistreeId && payload.attendeeId) {
         try {
-          resolvedAttendee = await this.attendeesService.findOne(
-            payload.attendeeId,
-          );
-          if (resolvedAttendee && resolvedAttendee.registreeId) {
-            resolvedRegistreeId = resolvedAttendee.registreeId.toString();
+          const registree = await this.attendeesService
+            .findOneRegistree(payload.attendeeId)
+            .catch(() => null);
+          if (registree) {
+            resolvedRegistreeId = registree._id.toString();
+          } else {
+            resolvedAttendee = await this.attendeesService.findOne(
+              payload.attendeeId,
+            );
+            if (resolvedAttendee && resolvedAttendee.registreeId) {
+              resolvedRegistreeId = resolvedAttendee.registreeId.toString();
+            }
           }
         } catch {}
       }
