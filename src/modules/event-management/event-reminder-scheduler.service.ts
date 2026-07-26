@@ -83,22 +83,49 @@ export class EventReminderSchedulerService {
           try {
             // Find all approved registrees for this event
             const registreeModel = this.eventModel.db.model('Registree');
-            const attendees = await registreeModel.find({
-              'registrations.eventId': event._id,
-              'registrations.status': 'APPROVED',
-            }).select('_id').exec();
+            const registrees = await registreeModel
+              .find({
+                'registrations.eventId': event._id,
+                'registrations.status': 'APPROVED',
+              })
+              .select('_id')
+              .exec();
 
-            this.logger.log(`Found ${attendees.length} approved attendees for event ${event._id}`);
+            const attendeeModel = this.eventModel.db.model('Attendee');
+            const attendees = await attendeeModel
+              .find({
+                eventId: event._id,
+                status: { $nin: ['BLOCKED', 'REJECTED'] },
+              })
+              .select('_id registreeId')
+              .exec();
 
-            for (const attendee of attendees) {
+            // Consolidate target IDs to prevent duplicate email dispatches
+            const targetIds = new Set<string>();
+            for (const r of registrees) {
+              targetIds.add(r._id.toString());
+            }
+            for (const a of attendees) {
+              if (a.registreeId) {
+                targetIds.add(a.registreeId.toString());
+              } else {
+                targetIds.add(a._id.toString());
+              }
+            }
+
+            this.logger.log(
+              `Found ${targetIds.size} approved recipient(s) for event ${event._id}`,
+            );
+
+            for (const targetId of targetIds) {
               // Dispatch event reminder
               this.eventEmitter.emit(
                 AppEvents.EVENT_REMINDER,
                 new EventReminderEvent(
-                  attendee._id.toString(),
+                  targetId,
                   event._id.toString(),
-                  schedule.templateId.toString()
-                )
+                  schedule.templateId.toString(),
+                ),
               );
             }
 
