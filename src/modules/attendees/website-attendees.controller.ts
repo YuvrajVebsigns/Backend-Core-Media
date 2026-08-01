@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import { RegisterAttendeeDto } from './dto/attendee.dto';
+import { CreateCxoNetworkMemberDto } from './dto/cxo-network.dto';
 import { Throttle } from '@nestjs/throttler';
 import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
@@ -79,5 +80,42 @@ export class WebsiteAttendeesController {
   @ApiResponse({ status: 404, description: 'Passcode is invalid.' })
   findByPassCode(@Param('passCode') passCode: string) {
     return this.attendeesService.findByPassCode(passCode);
+  }
+
+  @Post('cxo-network')
+  @Throttle({
+    short: { ttl: 1000, limit: 2 },
+    medium: { ttl: 60000, limit: 5 },
+    long: { ttl: 3600000, limit: 50 },
+  })
+  @ApiOperation({
+    summary: 'Submit Join the Network application for CXO Capital website',
+    description:
+      'Ingests a public CXO Capital Network application submission. Automatically creates or updates the central Registree contact record in the CRM database and links the professional profile application.',
+  })
+  @ApiHeader({
+    name: 'x-website-id',
+    description: 'Website ObjectId associated with the submission',
+    required: false,
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Application submitted successfully and linked to registree contact record.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation failed or required fields are missing.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - invalid website bearer token.',
+  })
+  submitCxoNetwork(
+    @Body() dto: CreateCxoNetworkMemberDto,
+    @CurrentWebsite() website: any,
+    @Headers('x-website-id') websiteIdHeader?: string,
+  ) {
+    const targetWebsiteId = website?.id || websiteIdHeader || dto.websiteId;
+    return this.attendeesService.createCxoNetworkMember(dto, targetWebsiteId);
   }
 }
