@@ -13,10 +13,12 @@ import {
   ApiOperation,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
   ApiResponse,
 } from '@nestjs/swagger';
 import { AttendeesService } from './attendees.service';
 import { UpdateRegistreeDto, QueryRegistreeDto } from './dto/registree.dto';
+import { QueryCxoNetworkDto } from './dto/cxo-network.dto';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { PermissionGuard } from '@common/guards/permission.guard';
@@ -92,5 +94,39 @@ export class AdminRegistreesController {
   @ApiParam({ name: 'eventId', description: 'MongoDB ID of the Event.' })
   block(@Param('id') id: string, @Param('eventId') eventId: string) {
     return this.attendeesService.blockRegistration(id, eventId);
+  }
+
+  @Get('cxo-network/list')
+  @Permission('registrations.view')
+  @ApiOperation({
+    summary: 'Get all CXO Capital Network members for website dashboard',
+    description:
+      'Retrieves a paginated list of CXO Capital Network application submissions with options to search by name, email, designation, or company, and filter by category or website ID.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term for name, email, company, or designation' })
+  @ApiQuery({ name: 'companyCategory', required: false, type: String, description: 'Filter by category (Enterprise, Startup, Government, Education, Other)' })
+  @ApiQuery({ name: 'websiteId', required: false, type: String, description: 'Filter by associated website ID' })
+  @ApiResponse({ status: 200, description: 'Successfully retrieved CXO network members.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized request.' })
+  @ApiResponse({ status: 403, description: 'Forbidden resource - requires registrations.view permission.' })
+  findAllCxoNetwork(@Query() query: QueryCxoNetworkDto) {
+    return this.attendeesService.findAllCxoNetworkMembers(query);
+  }
+
+  @Delete('cxo-network/:id')
+  @Permission('registrations.delete')
+  @ApiOperation({
+    summary: 'Delete a CXO Capital Network member',
+    description: 'Soft deletes a CXO Capital Network member entry by MongoDB ID.',
+  })
+  @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the member.' })
+  @ApiResponse({ status: 200, description: 'Member deleted successfully.' })
+  @ApiResponse({ status: 404, description: 'CXO Network Member not found.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized request.' })
+  @ApiResponse({ status: 403, description: 'Forbidden resource - requires registrations.delete permission.' })
+  removeCxoNetwork(@Param('id') id: string) {
+    return this.attendeesService.removeCxoNetworkMember(id);
   }
 }

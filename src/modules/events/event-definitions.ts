@@ -33,6 +33,16 @@ export class PasswordResetEvent {
   ) {}
 }
 
+export class UserScreenshotViolationEvent {
+  constructor(
+    public readonly userId: string,
+    public readonly email: string,
+    public readonly name: string,
+    public readonly role: string,
+    public readonly detectedAt: Date = new Date(),
+  ) {}
+}
+
 // ──────────────────────────────────────────────
 // System Users Module Events
 // ──────────────────────────────────────────────
@@ -390,6 +400,7 @@ export const AppEvents = {
   USER_SIGNED_UP: 'auth.signup',
   USER_LOGGED_IN: 'auth.login',
   PASSWORD_RESET: 'auth.password_reset',
+  SECURITY_VIOLATION_SCREENSHOT: 'security.violation_screenshot',
 
   // System Users
   SYSTEM_USER_CREATED: 'system_user.created',

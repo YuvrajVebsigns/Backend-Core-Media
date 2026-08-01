@@ -8,6 +8,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Attendee, AttendeeStatus } from './schemas/attendee.schema';
 import { Registree } from './schemas/registree.schema';
+import { CxoNetworkMember } from './schemas/cxo-network-member.schema';
 import {
   RegisterAttendeeDto,
   CreateAttendeeDto,
@@ -15,6 +16,10 @@ import {
   QueryAttendeeDto,
 } from './dto/attendee.dto';
 import { UpdateRegistreeDto, QueryRegistreeDto } from './dto/registree.dto';
+import {
+  CreateCxoNetworkMemberDto,
+  QueryCxoNetworkDto,
+} from './dto/cxo-network.dto';
 import { EventsService } from '@modules/event-management/event-management.service';
 import { JobsService } from '@core/jobs/jobs.service';
 import * as QRCode from 'qrcode';
@@ -36,6 +41,8 @@ export class AttendeesService {
   constructor(
     @InjectModel(Attendee.name) private attendeeModel: Model<Attendee>,
     @InjectModel(Registree.name) private registreeModel: Model<Registree>,
+    @InjectModel(CxoNetworkMember.name)
+    private cxoNetworkMemberModel: Model<CxoNetworkMember>,
     private readonly eventService: EventsService,
     private readonly jobsService: JobsService,
     private readonly eventEmitter: EventEmitter2,
@@ -1038,5 +1045,139 @@ export class AttendeesService {
 
   private generatePassCode(): string {
     return randomBytes(4).toString('hex').toUpperCase(); // e.g. "A1B2C3D4"
+  }
+
+  // ==========================================
+  // CXO CAPITAL NETWORK METHODS
+  // ==========================================
+
+  async createCxoNetworkMember(
+    dto: CreateCxoNetworkMemberDto,
+    websiteId?: string,
+  ): Promise<any> {
+    const targetWebsiteId = dto.websiteId || websiteId;
+    if (!targetWebsiteId) {
+      throw new BadRequestException('Website ID is required');
+    }
+
+    const email = dto.email.trim().toLowerCase();
+    const fullName = `${dto.firstName} ${dto.lastName}`.trim();
+    const phone = dto.cioMobilePhone || dto.telephoneNo || '';
+
+    // 1. Find or Create Registree
+    let registree = await this.registreeModel
+      .findOne({ email, isDeleted: null })
+      .exec();
+
+    if (!registree) {
+      registree = new this.registreeModel({
+        name: fullName,
+        email,
+        phoneNumber: phone,
+        organization: dto.companyName || '',
+        city: dto.city || '',
+        tags: ['registree', 'cxo-network'],
+        websiteId: new Types.ObjectId(targetWebsiteId) as any,
+      });
+    } else {
+      registree.name = fullName;
+      if (dto.companyName) registree.organization = dto.companyName;
+      if (phone) registree.phoneNumber = phone;
+      if (dto.city) registree.city = dto.city;
+      if (targetWebsiteId) {
+        registree.websiteId = new Types.ObjectId(targetWebsiteId) as any;
+      }
+      if (!registree.tags) registree.tags = ['registree'];
+      if (!registree.tags.includes('cxo-network')) {
+        registree.tags.push('cxo-network');
+      }
+    }
+    const savedRegistree = await registree.save();
+
+    // 2. Save CxoNetworkMember Entry
+    const member = new this.cxoNetworkMemberModel({
+      registreeId: savedRegistree._id,
+      websiteId: new Types.ObjectId(targetWebsiteId),
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      title: dto.title || '',
+      currentDesignation: dto.currentDesignation,
+      email,
+      telephoneNo: dto.telephoneNo || '',
+      cioMobilePhone: dto.cioMobilePhone || '',
+      linkedInLink: dto.linkedInLink || '',
+      companyName: dto.companyName,
+      companyAddress: dto.companyAddress || '',
+      city: dto.city || '',
+      state: dto.state || '',
+      postalCode: dto.postalCode || '',
+      country: dto.country || '',
+      companyCategory: dto.companyCategory || 'Other',
+      businessVertical: dto.businessVertical || '',
+    });
+
+    const savedMember = await member.save();
+    return savedMember;
+  }
+
+  async findAllCxoNetworkMembers(query: QueryCxoNetworkDto) {
+    const page = Number(query.page || 1);
+    const limit = Number(query.limit || 10);
+    const skip = (page - 1) * limit;
+
+    const matchQuery: any = { isDeleted: null };
+
+    if (query.websiteId) {
+      matchQuery.websiteId = new Types.ObjectId(query.websiteId);
+    }
+
+    if (query.companyCategory) {
+      matchQuery.companyCategory = query.companyCategory;
+    }
+
+    if (query.search) {
+      const searchRegex = { $regex: query.search, $options: 'i' };
+      matchQuery.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { companyName: searchRegex },
+        { currentDesignation: searchRegex },
+        { city: searchRegex },
+        { businessVertical: searchRegex },
+      ];
+    }
+
+    const [data, total] = await Promise.all([
+      this.cxoNetworkMemberModel
+        .find(matchQuery)
+        .populate('websiteId', 'name domain logo')
+        .populate('registreeId')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.cxoNetworkMemberModel.countDocuments(matchQuery).exec(),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async removeCxoNetworkMember(id: string): Promise<void> {
+    const result = await this.cxoNetworkMemberModel
+      .findByIdAndUpdate(id, { isDeleted: new Date() })
+      .exec();
+
+    if (!result) {
+      throw new NotFoundException(`CXO Network Member with ID ${id} not found`);
+    }
   }
 }

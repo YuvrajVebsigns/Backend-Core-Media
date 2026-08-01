@@ -6,12 +6,14 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { SystemUsersModule } from '@core/system-users/system-users.module';
 import { RolesModule } from '@core/roles/roles.module';
+import { CommunicationsModule } from '@modules/communications/communications.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
     SystemUsersModule,
     RolesModule,
+    CommunicationsModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

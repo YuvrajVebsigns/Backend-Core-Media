@@ -15,11 +15,13 @@ import type { Cache } from 'cache-manager';
 import { RolesService } from '@core/roles/roles.service';
 import { SystemUserRole } from '@common/enums/role.enum';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CommunicationsService } from '@modules/communications/communications.service';
 import {
   AppEvents,
   UserSignedUpEvent,
   UserLoggedInEvent,
   PasswordResetEvent,
+  UserScreenshotViolationEvent,
 } from '@modules/events/event-definitions';
 
 @Injectable()
@@ -31,6 +33,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly eventEmitter: EventEmitter2,
+    private readonly communicationsService: CommunicationsService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -38,7 +41,7 @@ export class AuthService {
     if (user && (await bcrypt.compare(pass, user.password))) {
       if (user.isActive === false) {
         throw new UnauthorizedException(
-          'Your account is inactive. You are not allowed to login.',
+          'Your account has been disabled. Please contact an Administrator to re-enable your account.',
         );
       }
       const { password, ...result } = user.toObject();
@@ -239,5 +242,89 @@ export class AuthService {
 
   async getMe(userId: string) {
     return this.systemUsersService.findOne(userId);
+  }
+
+  async reportScreenshotViolation(userId: string) {
+    const user = await this.systemUsersService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // 1. Disable user account & clear refresh token to force logout
+    await this.systemUsersService.update(userId, {
+      isActive: false,
+      refreshToken: null,
+    });
+
+    // 2. Dispatch alert email to system administrator
+    const adminEmail =
+      this.configService.get<string>('ADMIN_ALERT_EMAIL') || 'admin@vebsigns.com';
+    const userRoleName =
+      (user.role as any)?.name || (user.role as any)?.roleKey || 'Staff User';
+
+    const subject = `🚨 SECURITY ALERT: Screenshot Detected - Account Disabled (${user.fullName})`;
+    const content = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #dc2626;">🚨 Security Violation Alert</h2>
+        <p>A screenshot capture attempt was detected on the Admin Panel by an active user.</p>
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold;">User Name:</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${user.fullName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold;">Email:</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${user.email}</td>
+          </tr>
+          <tr style="background-color: #f9fafb;">
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold;">Role:</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${userRoleName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; border: 1px solid #e5e7eb; font-weight: bold;">Detection Time:</td>
+            <td style="padding: 10px; border: 1px solid #e5e7eb;">${new Date().toLocaleString()}</td>
+          </tr>
+          <tr style="background-color: #fee2e2;">
+            <td style="padding: 10px; border: 1px solid #fca5a5; font-weight: bold; color: #991b1b;">Account Action:</td>
+            <td style="padding: 10px; border: 1px solid #fca5a5; font-weight: bold; color: #991b1b;">ACCOUNT AUTOMATICALLY DISABLED (INACTIVE)</td>
+          </tr>
+        </table>
+        <p><strong>Action Required:</strong> The user's active session has been terminated and access blocked. Following your security inquiry, an administrator can re-enable this account via the Admin Panel under <strong>System Users</strong>.</p>
+      </div>
+    `;
+
+    try {
+      await this.communicationsService.sendEmail(
+        adminEmail,
+        subject,
+        content,
+        {
+          violation: 'SCREENSHOT_ATTEMPT',
+          userId: user.id || (user as any)._id.toString(),
+          userEmail: user.email,
+        },
+      );
+    } catch (err: any) {
+      // Log error safely without blocking response
+      console.error(
+        `Failed to send screenshot violation alert email for ${user.email}:`,
+        err?.message || err,
+      );
+    }
+
+    this.eventEmitter.emit(
+      AppEvents.SECURITY_VIOLATION_SCREENSHOT,
+      new UserScreenshotViolationEvent(
+        user.id || (user as any)._id.toString(),
+        user.email,
+        user.fullName,
+        userRoleName,
+      ),
+    );
+
+    return {
+      message:
+        'Account disabled due to screenshot security violation. Administrator notified.',
+    };
   }
 }
