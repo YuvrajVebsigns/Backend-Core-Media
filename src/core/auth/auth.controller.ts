@@ -175,4 +175,19 @@ export class AuthController {
   async getMe(@Request() req: any) {
     return this.authService.getMe(req.user.id);
   }
+
+  @Post('report-screenshot')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Report screenshot attempt, disable user account, and notify administrator',
+  })
+  @ApiStandardResponse({
+    status: 200,
+    description: 'Screenshot violation recorded, user disabled, admin alerted',
+    type: AuthMessageResponseDto,
+  })
+  async reportScreenshot(@Request() req: any) {
+    return this.authService.reportScreenshotViolation(req.user.id);
+  }
 }
