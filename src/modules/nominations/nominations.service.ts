@@ -95,6 +95,9 @@ export class NominationsService {
       nomineeEntries.push({
         nomineeId: nomineeRegistree._id,
         categoryId: new Types.ObjectId(nominee.categoryId),
+        ...(nominee.subCategoryId
+          ? { subCategoryId: new Types.ObjectId(nominee.subCategoryId) }
+          : {}),
       });
     }
 
@@ -398,6 +401,10 @@ export class NominationsService {
           path: 'nominees.categoryId',
           select: 'name slug',
         })
+        .populate({
+          path: 'nominees.subCategoryId',
+          select: 'name slug',
+        })
         .populate('websiteId', 'name domain logo')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -439,6 +446,10 @@ export class NominationsService {
       })
       .populate({
         path: 'nominees.categoryId',
+        select: 'name slug',
+      })
+      .populate({
+        path: 'nominees.subCategoryId',
         select: 'name slug',
       })
       .populate('websiteId', 'name domain logo')

@@ -22,22 +22,31 @@ export class NomineeDto {
     description: 'CIO nomination category ID',
   })
   @IsMongoId()
-  categoryId: string;
+  categoryId!: string;
+
+  @ApiProperty({
+    example: '60d5ecb8b392d7001f3e3a4c',
+    description: 'CIO nomination sub category ID',
+    required: false,
+  })
+  @IsMongoId()
+  @IsOptional()
+  subCategoryId?: string;
 
   @ApiProperty({ example: 'Jane Smith', description: 'CIO Contact Name' })
   @IsString()
-  contactName: string;
+  contactName!: string;
 
   @ApiProperty({ example: 'Infosys', description: 'CIO Company Name' })
   @IsString()
-  companyName: string;
+  companyName!: string;
 
   @ApiProperty({
     example: 'jane@infosys.com',
     description: 'CIO Contact Email',
   })
   @IsEmail()
-  contactEmail: string;
+  contactEmail!: string;
 
   @ApiProperty({
     example: '9876543210',
@@ -56,18 +65,18 @@ export class CreateNominationDto {
   // Nominator details
   @ApiProperty({ example: 'John Doe', description: 'Name of the Nominator' })
   @IsString()
-  nominatorName: string;
+  nominatorName!: string;
 
   @ApiProperty({
     example: 'Acme Corp',
     description: "Name of the Nominator's Company",
   })
   @IsString()
-  nominatorCompany: string;
+  nominatorCompany!: string;
 
   @ApiProperty({ example: 'Mumbai', description: 'Nominator City' })
   @IsString()
-  nominatorCity: string;
+  nominatorCity!: string;
 
   @ApiProperty({
     example: '9876543210',
@@ -80,7 +89,7 @@ export class CreateNominationDto {
 
   @ApiProperty({ example: 'john@acme.com', description: 'Nominator Email ID' })
   @IsEmail()
-  nominatorEmail: string;
+  nominatorEmail!: string;
 
   // Nominees (1 to 10)
   @ApiProperty({
@@ -94,7 +103,7 @@ export class CreateNominationDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(10)
   @Type(() => NomineeDto)
-  nominees: NomineeDto[];
+  nominees!: NomineeDto[];
 }
 
 /**

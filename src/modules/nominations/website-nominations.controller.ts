@@ -10,6 +10,7 @@ import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
 import { NominationsService } from './nominations.service';
 import { NominationCategoriesService } from './nomination-categories.service';
+import { NominationSubCategoriesService } from './nomination-sub-categories.service';
 import { CreateNominationDto } from './dto/nomination.dto';
 
 @ApiTags('Website | Nominations')
@@ -25,6 +26,7 @@ export class WebsiteNominationsController {
   constructor(
     private readonly nominationsService: NominationsService,
     private readonly categoriesService: NominationCategoriesService,
+    private readonly subCategoriesService: NominationSubCategoriesService,
   ) {}
 
   @Post()
@@ -64,5 +66,14 @@ export class WebsiteNominationsController {
   })
   getCategories() {
     return this.categoriesService.findAllActive();
+  }
+
+  @Get('sub-categories')
+  @ApiOperation({
+    summary: 'Get all active nomination sub categories for dropdown',
+  })
+  @ApiResponse({ status: 200, description: 'List of active nomination sub categories' })
+  getSubCategories() {
+    return this.subCategoriesService.findAllActive();
   }
 }

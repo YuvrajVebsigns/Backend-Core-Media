@@ -27,6 +27,13 @@ export class NomineeEntry {
     required: true,
   })
   categoryId: MongooseSchema.Types.ObjectId;
+
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'NominationSubCategory',
+    required: false,
+  })
+  subCategoryId?: MongooseSchema.Types.ObjectId;
 }
 
 export const NomineeEntrySchema = SchemaFactory.createForClass(NomineeEntry);
