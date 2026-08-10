@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import { IsString, IsOptional, IsBoolean, IsNumber, IsMongoId, IsNotEmpty } from 'class-validator';
 
 export class CreateNominationCategoryDto {
@@ -55,11 +56,15 @@ export class UpdateNominationCategoryDto {
 
 export class QueryNominationCategoryDto {
   @ApiProperty({ required: false, default: 1 })
+  @Type(() => Number)
   @IsOptional()
+  @IsNumber()
   page?: number;
 
   @ApiProperty({ required: false, default: 10 })
+  @Type(() => Number)
   @IsOptional()
+  @IsNumber()
   limit?: number;
 
   @ApiProperty({ required: false })
@@ -68,7 +73,9 @@ export class QueryNominationCategoryDto {
   search?: string;
 
   @ApiProperty({ required: false })
+  @Type(() => Boolean)
   @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 
   @ApiProperty({ required: false, description: 'Filter subcategories by parent category ID' })
