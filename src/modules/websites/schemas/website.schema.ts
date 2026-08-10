@@ -56,6 +56,9 @@ export class Website extends BaseSchema {
   @Prop({ default: true })
   isActive: boolean;
 
+  @Prop({ default: true })
+  nominationActive: boolean;
+
   @Prop({ type: Object, default: {} })
   settings: Record<string, any>;
 

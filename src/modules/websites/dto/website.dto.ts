@@ -80,6 +80,11 @@ export class CreateWebsiteDto {
   @IsBoolean()
   isActive?: boolean;
 
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  nominationActive?: boolean;
+
   @ApiPropertyOptional({ example: { primaryColor: '#ff0000' } })
   @IsOptional()
   @IsObject()
@@ -106,6 +111,12 @@ export class CreateWebsiteDto {
 }
 
 export class UpdateWebsiteDto extends PartialType(CreateWebsiteDto) {}
+
+export class UpdateWebsiteStatusDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isActive: boolean;
+}
 
 export class QueryWebsiteDto extends PaginationQueryDto {
   @IsOptional()

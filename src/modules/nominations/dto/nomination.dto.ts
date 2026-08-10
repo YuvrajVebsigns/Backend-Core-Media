@@ -9,6 +9,7 @@ import {
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { NominationStatus } from '../schemas/nomination.schema';
@@ -123,6 +124,12 @@ export class UpdateNominationStatusDto {
   @ApiProperty({ enum: NominationStatus })
   @IsEnum(NominationStatus)
   status: NominationStatus;
+}
+
+export class UpdateWebsiteNominationStatusDto {
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isActive: boolean;
 }
 
 /**

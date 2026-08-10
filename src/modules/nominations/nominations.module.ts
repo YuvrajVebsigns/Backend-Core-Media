@@ -13,6 +13,7 @@ import {
   Registree,
   RegistreeSchema,
 } from '@modules/attendees/schemas/registree.schema';
+import { WebsitesModule } from '@modules/websites/websites.module';
 import { NominationsService } from './nominations.service';
 import { NominationCategoriesService } from './nomination-categories.service';
 import { NominationSubCategoriesService } from './nomination-sub-categories.service';
@@ -31,6 +32,7 @@ import { AuthModule } from '@core/auth/auth.module';
       { name: Registree.name, schema: RegistreeSchema },
     ]),
     AuthModule,
+    WebsitesModule,
   ],
   controllers: [
     AdminNominationsController,

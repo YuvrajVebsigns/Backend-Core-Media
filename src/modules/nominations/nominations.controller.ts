@@ -27,6 +27,7 @@ import {
   CreateNominationDto,
   UpdateNominationDto,
   UpdateNominationStatusDto,
+  UpdateWebsiteNominationStatusDto,
   QueryNominationDto,
 } from './dto/nomination.dto';
 
@@ -118,18 +119,21 @@ export class AdminNominationsController {
     return this.nominationsService.update(id, updateDto);
   }
 
-  @Patch(':id/status')
+  @Patch('websites/:websiteId/nomination-status')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
   @Permission('nominations.update')
-  @ApiOperation({ summary: 'Update nomination status' })
-  @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
-  @ApiResponse({ status: 200, description: 'Status updated successfully' })
-  @ApiResponse({ status: 404, description: 'Nomination not found' })
-  updateStatus(
-    @Param('id') id: string,
-    @Body() updateStatusDto: UpdateNominationStatusDto,
+  @ApiOperation({ summary: 'Update website nomination form status' })
+  @ApiParam({ name: 'websiteId', description: 'MongoDB ID of the website' })
+  @ApiResponse({ status: 200, description: 'Website nomination form status updated' })
+  @ApiResponse({ status: 404, description: 'Website not found' })
+  updateWebsiteNominationStatus(
+    @Param('websiteId') websiteId: string,
+    @Body() updateWebsiteNominationStatusDto: UpdateWebsiteNominationStatusDto,
   ) {
-    return this.nominationsService.updateStatus(id, updateStatusDto);
+    return this.nominationsService.updateWebsiteNominationStatus(
+      websiteId,
+      updateWebsiteNominationStatusDto.isActive,
+    );
   }
 
   @Delete(':id')

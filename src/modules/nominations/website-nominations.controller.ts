@@ -11,6 +11,7 @@ import { CurrentWebsite } from '@common/decorators/current-website.decorator';
 import { NominationsService } from './nominations.service';
 import { NominationCategoriesService } from './nomination-categories.service';
 import { NominationSubCategoriesService } from './nomination-sub-categories.service';
+import { WebsitesService } from '@modules/websites/websites.service';
 import { CreateNominationDto } from './dto/nomination.dto';
 
 @ApiTags('Website | Nominations')
@@ -27,7 +28,26 @@ export class WebsiteNominationsController {
     private readonly nominationsService: NominationsService,
     private readonly categoriesService: NominationCategoriesService,
     private readonly subCategoriesService: NominationSubCategoriesService,
+    private readonly websitesService: WebsitesService,
   ) {}
+
+  @Get('status')
+  @ApiOperation({
+    summary: 'Get website nomination form status',
+    description:
+      'Returns whether the current website nomination form is active or closed.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Current website nomination form status',
+    schema: {
+      example: { isActive: false },
+    },
+  })
+  async getStatus(@CurrentWebsite() website: any) {
+    const site = await this.websitesService.findOne(website.id);
+    return { isActive: site.nominationActive };
+  }
 
   @Post()
   @ApiOperation({

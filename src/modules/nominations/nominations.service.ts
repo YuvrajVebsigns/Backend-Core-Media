@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Nomination, NominationStatus } from './schemas/nomination.schema';
 import { Registree } from '@modules/attendees/schemas/registree.schema';
+import { WebsitesService } from '@modules/websites/websites.service';
 import {
   CreateNominationDto,
   UpdateNominationDto,
@@ -27,6 +28,7 @@ export class NominationsService {
     private readonly nominationModel: Model<Nomination>,
     @InjectModel(Registree.name)
     private readonly registreeModel: Model<Registree>,
+    private readonly websitesService: WebsitesService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
@@ -41,6 +43,15 @@ export class NominationsService {
     createDto: CreateNominationDto,
     websiteId?: string,
   ): Promise<Nomination> {
+    if (websiteId) {
+      const website = await this.websitesService.findOne(websiteId);
+      if (website.nominationActive === false) {
+        throw new BadRequestException(
+          'Nomination form is closed for this website',
+        );
+      }
+    }
+
     // Step 1: Find or create nominator in registrees
     const nominatorRegistree = await this.findOrCreateRegistree(
       {
@@ -126,6 +137,16 @@ export class NominationsService {
     );
 
     return result;
+  }
+
+  async updateWebsiteNominationStatus(
+    websiteId: string,
+    isActive: boolean,
+  ) {
+    const website = await this.websitesService.update(websiteId, {
+      nominationActive: isActive,
+    });
+    return website;
   }
 
   /**
