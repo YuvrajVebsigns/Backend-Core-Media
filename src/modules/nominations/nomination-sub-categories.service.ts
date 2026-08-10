@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { NominationSubCategory } from './schemas/nomination-sub-category.schema';
 import {
   CreateNominationCategoryDto,
@@ -46,6 +46,10 @@ export class NominationSubCategoriesService {
       matchQuery.isActive = queryDto.isActive;
     }
 
+    if (queryDto.categoryId) {
+      matchQuery.categoryId = new Types.ObjectId(queryDto.categoryId);
+    }
+
     if (queryDto.search) {
       const searchRegex = { $regex: queryDto.search, $options: 'i' };
       matchQuery.$or = [{ name: searchRegex }, { slug: searchRegex }];
@@ -72,9 +76,14 @@ export class NominationSubCategoriesService {
     };
   }
 
-  async findAllActive(): Promise<NominationSubCategory[]> {
+  async findAllActive(categoryId?: string): Promise<NominationSubCategory[]> {
+    const matchQuery: any = { isActive: true };
+    if (categoryId) {
+      matchQuery.categoryId = new Types.ObjectId(categoryId);
+    }
+
     return this.subCategoryModel
-      .find({ isActive: true })
+      .find(matchQuery)
       .sort({ sortOrder: 1, name: 1 })
       .exec();
   }
@@ -113,6 +122,8 @@ export class NominationSubCategoriesService {
 
     if (updateDto.name !== undefined) category.name = updateDto.name;
     if (updateDto.slug !== undefined) category.slug = updateDto.slug;
+    if (updateDto.categoryId !== undefined)
+      category.categoryId = new Types.ObjectId(updateDto.categoryId) as any;
     if (updateDto.isActive !== undefined)
       category.isActive = updateDto.isActive;
     if (updateDto.sortOrder !== undefined)

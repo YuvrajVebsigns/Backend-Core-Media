@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsMongoId, IsNotEmpty } from 'class-validator';
 
 export class CreateNominationCategoryDto {
   @ApiProperty({ example: 'Digital Transformation' })
@@ -9,6 +9,11 @@ export class CreateNominationCategoryDto {
   @ApiProperty({ example: 'digital-transformation' })
   @IsString()
   slug: string;
+
+  @ApiProperty({ example: '648c3a4f2f4b9b1d2c9e4f51', description: 'Parent category ID' })
+  @IsMongoId()
+  @IsNotEmpty()
+  categoryId: string;
 
   @ApiProperty({ example: true, required: false, default: true })
   @IsBoolean()
@@ -31,6 +36,11 @@ export class UpdateNominationCategoryDto {
   @IsString()
   @IsOptional()
   slug?: string;
+
+  @ApiPropertyOptional({ example: '648c3a4f2f4b9b1d2c9e4f51', description: 'Parent category ID', required: false })
+  @IsMongoId()
+  @IsOptional()
+  categoryId?: string;
 
   @ApiProperty({ example: true, required: false })
   @IsBoolean()
@@ -60,4 +70,9 @@ export class QueryNominationCategoryDto {
   @ApiProperty({ required: false })
   @IsOptional()
   isActive?: boolean;
+
+  @ApiProperty({ required: false, description: 'Filter subcategories by parent category ID' })
+  @IsMongoId()
+  @IsOptional()
+  categoryId?: string;
 }

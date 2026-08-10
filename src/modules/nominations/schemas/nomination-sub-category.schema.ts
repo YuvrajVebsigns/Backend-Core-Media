@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
 import {
   BaseSchema,
   applySoftDeleteMiddleware,
@@ -9,6 +10,9 @@ import {
   timestamps: true,
 })
 export class NominationSubCategory extends BaseSchema {
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'NominationCategory', required: true, index: true })
+  categoryId: MongooseSchema.Types.ObjectId;
+
   @Prop({ required: true, trim: true })
   name: string = '';
 
