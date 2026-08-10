@@ -29,6 +29,7 @@ import { BlogsModule } from '@modules/blogs/blogs.module';
 import { FilesModule } from '@core/files/files.module';
 import { SponsorsModule } from '@modules/sponsors/sponsors.module';
 import { ContactsModule } from '@modules/contacts/contacts.module';
+import { SubscribesModule } from '@modules/subscribes/subscribes.module';
 import { NominationsModule } from '@modules/nominations/nominations.module';
 import { ReportsModule } from '@modules/reports/reports.module';
 import { ClsModule } from 'nestjs-cls';
@@ -193,6 +194,7 @@ const redisQueueImports =
     BlogsModule,
     FilesModule,
     SponsorsModule,
+    SubscribesModule,
     ContactsModule,
     NominationsModule,
     ReportsModule,
