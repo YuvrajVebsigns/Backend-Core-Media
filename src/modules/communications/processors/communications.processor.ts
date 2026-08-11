@@ -39,40 +39,30 @@ export class CommunicationsProcessor {
       const activeProvider = await this.providerRegistry.resolveActiveProvider(
         CommunicationChannel.EMAIL,
       );
-      if (activeProvider) {
-        const result = await activeProvider.send({
-          recipient,
-          title,
-          content,
-          metadata: logDoc.metadata,
-          senderEmail: logDoc.metadata?.senderEmail as string | undefined,
-          senderName: logDoc.metadata?.senderName as string | undefined,
-          cc,
-          bcc,
-        });
-
-        if (!result.success) {
-          throw new Error(result.error || 'Provider failed to send raw email.');
-        }
-
-        logDoc.metadata = {
-          ...logDoc.metadata,
-          providerName: activeProvider.name,
-          brevoMessageId: result.externalId,
-        };
-      } else {
-        // Fallback mock
-        this.logger.log(`
-          --- MOCK EMAIL ---
-          To: ${recipient}
-          CC: ${cc || ''}
-          BCC: ${bcc || ''}
-          Subject: ${title}
-          Body: ${content}
-          ------------------
-        `);
-        logDoc.metadata = { ...logDoc.metadata, mocked: true };
+      if (!activeProvider) {
+        throw new Error('No active email provider configured. Please enable and configure Brevo or another email provider.');
       }
+
+      const result = await activeProvider.send({
+        recipient,
+        title,
+        content,
+        metadata: logDoc.metadata,
+        senderEmail: logDoc.metadata?.senderEmail as string | undefined,
+        senderName: logDoc.metadata?.senderName as string | undefined,
+        cc,
+        bcc,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Provider failed to send raw email.');
+      }
+
+      logDoc.metadata = {
+        ...logDoc.metadata,
+        providerName: activeProvider.name,
+        brevoMessageId: result.externalId,
+      };
 
       logDoc.status = CommunicationStatus.SENT;
       logDoc.error = null;
