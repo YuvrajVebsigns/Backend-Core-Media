@@ -5,9 +5,14 @@ import { AdminSubscribesController } from './admin-subscribes.controller';
 import { WebsiteSubscribesController } from './website-subscribes.controller';
 import { Subscribe, SubscribeSchema } from './schemas/subscribe.schema';
 import { AuthModule } from '@core/auth/auth.module';
+import { CommunicationsModule } from '@modules/communications/communications.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Subscribe.name, schema: SubscribeSchema }]), AuthModule],
+  imports: [
+    MongooseModule.forFeature([{ name: Subscribe.name, schema: SubscribeSchema }]),
+    AuthModule,
+    CommunicationsModule,
+  ],
   controllers: [AdminSubscribesController, WebsiteSubscribesController],
   providers: [SubscribesService],
   exports: [SubscribesService],

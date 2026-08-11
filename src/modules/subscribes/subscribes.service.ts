@@ -2,12 +2,18 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Subscribe } from './schemas/subscribe.schema';
-import { CreateSubscribeDto, QuerySubscribeDto } from './dto/subscribe.dto';
+import {
+  CreateSubscribeDto,
+  QuerySubscribeDto,
+  SendSelectedSubscribersDto,
+} from './dto/subscribe.dto';
+import { CommunicationsService } from '@modules/communications/communications.service';
 
 @Injectable()
 export class SubscribesService {
   constructor(
     @InjectModel(Subscribe.name) private readonly subscribeModel: Model<Subscribe>,
+    private readonly communicationsService: CommunicationsService,
   ) {}
 
   async create(createDto: CreateSubscribeDto, websiteId: string): Promise<Subscribe> {
@@ -67,5 +73,43 @@ export class SubscribesService {
   async remove(id: string): Promise<void> {
     const result = await this.subscribeModel.findByIdAndUpdate(id, { isDeleted: new Date() }).exec();
     if (!result) throw new NotFoundException(`Subscribe entry with ID ${id} not found`);
+  }
+
+  async sendSelectedEmails(dto: SendSelectedSubscribersDto) {
+    const { subscriberIds, subject, content, websiteId } = dto;
+
+    const validSubscriberIds = subscriberIds.filter((id) => Types.ObjectId.isValid(id));
+    const query: any = {
+      _id: { $in: validSubscriberIds.map((id) => new Types.ObjectId(id)) },
+    };
+
+    if (websiteId && Types.ObjectId.isValid(websiteId)) {
+      query.websiteId = new Types.ObjectId(websiteId);
+    }
+
+    const subscribers = await this.subscribeModel.find(query).exec();
+
+    const emails = subscribers
+      .map((subscriber) => subscriber.email)
+      .filter((email): email is string => !!email && typeof email === 'string')
+      .map((email) => email.trim().toLowerCase())
+      .filter((email, index, array) => array.indexOf(email) === index);
+
+    const sentResults: string[] = [];
+
+    for (const email of emails) {
+      await this.communicationsService.sendEmail(email, subject, content, {
+        source: 'selected-subscribers',
+        subscriberIds: validSubscriberIds,
+      });
+      sentResults.push(email);
+    }
+
+    return {
+      totalRequested: validSubscriberIds.length,
+      totalSent: sentResults.length,
+      sentEmails: sentResults,
+      failedEmails: [],
+    };
   }
 }
