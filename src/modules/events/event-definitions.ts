@@ -255,6 +255,26 @@ export class ContactRepliedEvent {
   ) {}
 }
 
+export class SubscriberSubscribedEvent {
+  constructor(
+    public readonly subscriberId: string,
+    public readonly email: string,
+    public readonly websiteId: string,
+    public readonly source: string,
+    public readonly subscribedAt: Date = new Date(),
+  ) {}
+}
+
+export class SubscriberBulkEmailSentEvent {
+  constructor(
+    public readonly websiteId: string | undefined,
+    public readonly subject: string,
+    public readonly recipientCount: number,
+    public readonly sentTo: string[],
+    public readonly sentAt: Date = new Date(),
+  ) {}
+}
+
 // ──────────────────────────────────────────────
 // Sponsor Module Events
 // ──────────────────────────────────────────────
@@ -431,6 +451,10 @@ export const AppEvents = {
   // Contacts
   CONTACT_SUBMITTED: 'contact.submitted',
   CONTACT_REPLIED: 'contact.replied',
+
+  // Subscribers
+  SUBSCRIBER_SUBSCRIBED: 'subscriber.subscribed',
+  SUBSCRIBER_BULK_EMAIL_SENT: 'subscriber.bulk_email_sent',
 
   // Sponsors
   SPONSOR_CREATED: 'sponsor.created',
@@ -1526,6 +1550,20 @@ export const EventPayloadRegistry: Record<
       type: 'string',
       description: 'Website OG Image',
     },
+  ],
+  [AppEvents.SUBSCRIBER_SUBSCRIBED]: [
+    { field: 'subscriberId', type: 'string', description: 'Subscriber record ID' },
+    { field: 'email', type: 'string', description: 'Subscriber email address' },
+    { field: 'websiteId', type: 'string', description: 'Website ID' },
+    { field: 'source', type: 'string', description: 'Subscription source' },
+    { field: 'subscribedAt', type: 'Date', description: 'Subscription timestamp' },
+  ],
+  [AppEvents.SUBSCRIBER_BULK_EMAIL_SENT]: [
+    { field: 'websiteId', type: 'string', description: 'Website ID when scoped' },
+    { field: 'subject', type: 'string', description: 'Bulk email subject' },
+    { field: 'recipientCount', type: 'number', description: 'Recipient count' },
+    { field: 'sentTo', type: 'string[]', description: 'Recipient email list' },
+    { field: 'sentAt', type: 'Date', description: 'Bulk send timestamp' },
   ],
 
   // Sponsor Events

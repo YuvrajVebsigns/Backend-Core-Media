@@ -23,6 +23,8 @@ import {
   BlogLikedEvent,
   ContactSubmittedEvent,
   ContactRepliedEvent,
+  SubscriberSubscribedEvent,
+  SubscriberBulkEmailSentEvent,
   SponsorCreatedEvent,
   SponsorUpdatedEvent,
   SponsorDeletedEvent,
@@ -1077,6 +1079,22 @@ export class EventListeners {
       `📨 Contact replied to ${event.email} by ${event.repliedBy}`,
     );
     this.triggerMappedEvent(AppEvents.CONTACT_REPLIED, event);
+  }
+
+  @OnEvent(AppEvents.SUBSCRIBER_SUBSCRIBED)
+  handleSubscriberSubscribed(event: SubscriberSubscribedEvent) {
+    this.logger.log(
+      `📬 New subscriber subscribed: ${event.email} (website: ${event.websiteId})`,
+    );
+    this.triggerMappedEvent(AppEvents.SUBSCRIBER_SUBSCRIBED, event);
+  }
+
+  @OnEvent(AppEvents.SUBSCRIBER_BULK_EMAIL_SENT)
+  handleSubscriberBulkEmailSent(event: SubscriberBulkEmailSentEvent) {
+    this.logger.log(
+      `📤 Bulk email sent to ${event.recipientCount} subscribers with subject: ${event.subject}`,
+    );
+    this.triggerMappedEvent(AppEvents.SUBSCRIBER_BULK_EMAIL_SENT, event);
   }
 
   // ──────────────────────────────────────────────

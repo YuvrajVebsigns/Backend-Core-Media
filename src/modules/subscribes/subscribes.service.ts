@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model, Types } from 'mongoose';
 import { Subscribe } from './schemas/subscribe.schema';
 import {
@@ -8,12 +9,18 @@ import {
   SendSelectedSubscribersDto,
 } from './dto/subscribe.dto';
 import { CommunicationsService } from '@modules/communications/communications.service';
+import {
+  AppEvents,
+  SubscriberBulkEmailSentEvent,
+  SubscriberSubscribedEvent,
+} from '@modules/events/event-definitions';
 
 @Injectable()
 export class SubscribesService {
   constructor(
     @InjectModel(Subscribe.name) private readonly subscribeModel: Model<Subscribe>,
     private readonly communicationsService: CommunicationsService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(createDto: CreateSubscribeDto, websiteId: string): Promise<Subscribe> {
@@ -31,7 +38,20 @@ export class SubscribesService {
       subscribedAt: new Date(),
     });
 
-    return doc.save();
+    const saved = await doc.save();
+
+    this.eventEmitter.emit(
+      AppEvents.SUBSCRIBER_SUBSCRIBED,
+      new SubscriberSubscribedEvent(
+        saved._id.toString(),
+        saved.email,
+        websiteId,
+        saved.source || 'website',
+        saved.subscribedAt || new Date(),
+      ),
+    );
+
+    return saved;
   }
 
   async findAll(queryDto: QuerySubscribeDto) {
@@ -104,6 +124,16 @@ export class SubscribesService {
       });
       sentResults.push(email);
     }
+
+    this.eventEmitter.emit(
+      AppEvents.SUBSCRIBER_BULK_EMAIL_SENT,
+      new SubscriberBulkEmailSentEvent(
+        websiteId && Types.ObjectId.isValid(websiteId) ? websiteId : undefined,
+        subject,
+        sentResults.length,
+        sentResults,
+      ),
+    );
 
     return {
       totalRequested: validSubscriberIds.length,
