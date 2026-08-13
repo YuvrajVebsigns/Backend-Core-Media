@@ -642,7 +642,130 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
       },
 
       // ==========================================
-      // 6. WEBSITE VARIABLES (WEBSITE)
+      // 6. SUBSCRIBER VARIABLES (SUBSCRIBER)
+      // ==========================================
+      {
+        name: 'Subscriber ID',
+        path: 'subscriberId',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Unique identifier of the subscriber record',
+      },
+      {
+        name: 'Subscriber Email',
+        path: 'subscriberEmail',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        isSenderVariable: true,
+        description: 'Email address of the subscriber',
+      },
+      {
+        name: 'Subscriber Email (Alt)',
+        path: 'email',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        isSenderVariable: true,
+        description: 'Alternative email field for subscriber (from event payload)',
+      },
+      {
+        name: 'Subscription Source',
+        path: 'subscriptionSource',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Source of subscription (e.g. website, footer, modal)',
+      },
+      {
+        name: 'Subscription Source (Alt)',
+        path: 'source',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Alternative subscription source field',
+      },
+      {
+        name: 'Subscribed At Date',
+        path: 'subscribedAtDate',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Formatted date when subscriber subscribed (IST timezone)',
+      },
+      {
+        name: 'Subscribed At Time',
+        path: 'subscribedAtTime',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Formatted time when subscriber subscribed (IST timezone)',
+      },
+      {
+        name: 'Subscribed At Timestamp',
+        path: 'subscribedAt',
+        type: 'Date',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Complete timestamp when subscriber subscribed',
+      },
+      {
+        name: 'Website Name',
+        path: 'websiteName',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Name of the website where subscription occurred',
+      },
+      {
+        name: 'Website Domain',
+        path: 'websiteDomain',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Domain of the website where subscription occurred',
+      },
+      {
+        name: 'Website Logo',
+        path: 'websiteLogo',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Logo URL of the website',
+      },
+      {
+        name: 'Website Slug',
+        path: 'websiteSlug',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Slug identifier of the website',
+      },
+      {
+        name: 'Website Description',
+        path: 'websiteDescription',
+        type: 'String',
+        isArray: false,
+        modelName: 'Subscriber',
+        categoryGroup: VariableCategoryGroup.SUBSCRIBER,
+        description: 'Description of the website',
+      },
+
+      // ==========================================
+      // 7. WEBSITE VARIABLES (WEBSITE)
       // ==========================================
       {
         name: 'Website Name',
@@ -664,7 +787,7 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
       },
 
       // ==========================================
-      // 7. SPONSOR VARIABLES (SPONSOR)
+      // 8. SPONSOR VARIABLES (SPONSOR)
       // ==========================================
       {
         name: 'Sponsor Name',
@@ -786,7 +909,7 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
       },
 
       // ==========================================
-      // 8. REPORT VARIABLES (REPORT)
+      // 9. REPORT VARIABLES (REPORT)
       // ==========================================
       {
         name: 'Report ID',

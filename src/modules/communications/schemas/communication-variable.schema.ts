@@ -15,6 +15,7 @@ export enum VariableCategoryGroup {
   SYSTEM = 'SYSTEM',
   REPORT = 'REPORT',
   ATTENDEE = 'ATTENDEE',
+  SUBSCRIBER = 'SUBSCRIBER',
   OTHER = 'OTHER',
 }
 

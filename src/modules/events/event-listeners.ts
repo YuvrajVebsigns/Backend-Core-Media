@@ -617,6 +617,58 @@ export class EventListeners {
         }
       }
 
+      // Enrich with Subscriber details if subscriberId is present (from subscriber.subscribed event)
+      if (payload.subscriberId) {
+        try {
+          // Add subscriber-specific variables
+          enrichedParams.subscriberId = payload.subscriberId;
+          enrichedParams.subscriberEmail = payload.email;
+          enrichedParams.subscriptionSource = payload.source || 'website';
+          
+          // Format subscription date and time
+          if (payload.subscribedAt) {
+            const subscriptionDate = new Date(payload.subscribedAt);
+            const optionsDate: Intl.DateTimeFormatOptions = {
+              timeZone: 'Asia/Kolkata',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            };
+            const optionsTime: Intl.DateTimeFormatOptions = {
+              timeZone: 'Asia/Kolkata',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            };
+            const formatterDate = new Intl.DateTimeFormat('en-US', optionsDate);
+            const formatterTime = new Intl.DateTimeFormat('en-US', optionsTime);
+            
+            enrichedParams.subscribedAtDate = formatterDate.format(subscriptionDate);
+            enrichedParams.subscribedAtTime = formatterTime.format(subscriptionDate);
+            enrichedParams.subscribedAt = payload.subscribedAt;
+          }
+
+          // Ensure website details are populated for subscriber context
+          if (payload.websiteId) {
+            try {
+              const website = await this.websitesService.findOne(payload.websiteId);
+              if (website) {
+                enrichedParams.websiteName = website.name;
+                enrichedParams.websiteSlug = website.slug;
+                enrichedParams.websiteDomain = website.domain;
+                enrichedParams.websiteDescription = website.description || '';
+                enrichedParams.websiteLogo = website.logo || '';
+                enrichedParams.websiteOgImage = website.seo?.ogImage || '';
+              }
+            } catch (e) {
+              this.logger.error(`Error resolving website details for subscriber: ${e.message}`);
+            }
+          }
+        } catch (e) {
+          this.logger.error(`Error enriching subscriber details: ${e.message}`);
+        }
+      }
+
       // Helper function to set nested value inside an object (cloned context)
       const setNestedValue = (obj: any, path: string, val: any) => {
         if (!obj || !path) return;

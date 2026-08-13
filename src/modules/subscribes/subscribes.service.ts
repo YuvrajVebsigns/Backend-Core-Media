@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Model, Types } from 'mongoose';
@@ -17,6 +17,8 @@ import {
 
 @Injectable()
 export class SubscribesService {
+  private readonly logger = new Logger(SubscribesService.name);
+
   constructor(
     @InjectModel(Subscribe.name) private readonly subscribeModel: Model<Subscribe>,
     private readonly communicationsService: CommunicationsService,
@@ -29,7 +31,10 @@ export class SubscribesService {
       websiteId: new Types.ObjectId(websiteId),
     };
     const existing = await this.subscribeModel.findOne(matchQuery).exec();
-    if (existing) return existing;
+    if (existing) {
+      this.logger.log(`⚠️  Subscriber already exists: ${createDto.email} for website: ${websiteId}`);
+      return existing;
+    }
 
     const doc = new this.subscribeModel({
       email: createDto.email,
@@ -40,6 +45,10 @@ export class SubscribesService {
 
     const saved = await doc.save();
 
+    this.logger.log(
+      `✅ New subscriber created: ${saved.email} (ID: ${saved._id}) for website: ${websiteId}`,
+    );
+
     this.eventEmitter.emit(
       AppEvents.SUBSCRIBER_SUBSCRIBED,
       new SubscriberSubscribedEvent(
@@ -49,6 +58,10 @@ export class SubscribesService {
         saved.source || 'website',
         saved.subscribedAt || new Date(),
       ),
+    );
+
+    this.logger.log(
+      `📤 Emitted SUBSCRIBER_SUBSCRIBED event for: ${saved.email} (website: ${websiteId})`,
     );
 
     return saved;
