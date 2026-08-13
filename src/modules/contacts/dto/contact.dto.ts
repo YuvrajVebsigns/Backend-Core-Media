@@ -50,6 +50,14 @@ export class CreateContactDto {
   @IsString()
   @IsNotEmpty()
   message: string;
+
+  @ApiProperty({
+    example: '0.eJzNV01vozAM_ZWKV3hFgCTkVU077JhJO0jbabKUQsHmNonE',
+    description: 'Cloudflare Turnstile CAPTCHA token',
+  })
+  @IsString()
+  @IsNotEmpty()
+  captchaToken: string;
 }
 
 export class ReplyContactDto {

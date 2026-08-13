@@ -53,6 +53,18 @@ export class Contact extends BaseSchema {
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'SystemUser' })
   repliedBy?: MongooseSchema.Types.ObjectId;
+
+  @Prop({ trim: true })
+  captchaToken?: string;
+
+  @Prop({ type: Boolean, default: false })
+  captchaVerified: boolean;
+
+  @Prop({ type: Date })
+  captchaVerifiedAt?: Date;
+
+  @Prop({ trim: true })
+  captchaErrorCode?: string;
 }
 
 export const ContactSchema = SchemaFactory.createForClass(Contact);

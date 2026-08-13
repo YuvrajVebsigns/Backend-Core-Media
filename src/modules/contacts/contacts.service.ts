@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -13,23 +13,45 @@ import {
   ContactRepliedEvent,
   AppEvents,
 } from '@modules/events/event-definitions';
+import { CaptchaService } from './services/captcha.service';
 
 @Injectable()
 export class ContactsService {
   constructor(
     @InjectModel(Contact.name) private readonly contactModel: Model<Contact>,
     private readonly eventEmitter: EventEmitter2,
+    private readonly captchaService: CaptchaService,
   ) {}
 
   /**
-   * Public contact submission
+   * Public contact submission with CAPTCHA verification
    */
   async create(
     createDto: CreateContactDto,
     websiteId: string,
   ): Promise<Contact> {
+    // Verify CAPTCHA token
+    const captchaResult = await this.captchaService.verifyCaptcha(
+      createDto.captchaToken,
+    );
+
+    if (!captchaResult.success) {
+      throw new BadRequestException({
+        message: 'CAPTCHA verification failed',
+        errorCode: captchaResult.errorCode,
+        errors: captchaResult.errors,
+      });
+    }
+
     const contact = new this.contactModel({
-      ...createDto,
+      fullName: createDto.fullName,
+      email: createDto.email,
+      phone: createDto.phone,
+      service: createDto.service,
+      message: createDto.message,
+      captchaToken: createDto.captchaToken,
+      captchaVerified: true,
+      captchaVerifiedAt: new Date(),
       websiteId: new Types.ObjectId(websiteId),
       status: ContactStatus.PENDING,
     });
