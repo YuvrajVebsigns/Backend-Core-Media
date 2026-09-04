@@ -61,16 +61,20 @@ const redisQueueImports =
         BullModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: async (configService: ConfigService) => ({
-            redis: {
-              host: configService.get<string>('REDIS_HOST') || 'localhost',
-              port: parseInt(
-                configService.get<string>('REDIS_PORT') || '6379',
-                10,
-              ),
-              maxRetriesPerRequest: null,
-            },
-          }),
+          useFactory: async (configService: ConfigService) => {
+            const password = configService.get<string>('REDIS_PASSWORD');
+            return {
+              redis: {
+                host: configService.get<string>('REDIS_HOST') || 'localhost',
+                port: parseInt(
+                  configService.get<string>('REDIS_PORT') || '6379',
+                  10,
+                ),
+                ...(password ? { password } : {}),
+                maxRetriesPerRequest: null,
+              },
+            };
+          },
         }),
         JobsModule,
       ]
@@ -92,6 +96,7 @@ const redisQueueImports =
         USE_REDIS: Joi.boolean().default(false),
         REDIS_HOST: Joi.string().optional(),
         REDIS_PORT: Joi.number().optional(),
+        REDIS_PASSWORD: Joi.string().optional().allow(''),
         STORAGE_PROVIDER: Joi.string().optional().default('local'),
         STORAGE_ENV: Joi.string().optional(),
         S3_ENDPOINT: Joi.string().optional(),
@@ -139,7 +144,17 @@ const redisQueueImports =
       ...(useRedis
         ? {
             storage: new ThrottlerStorageRedisService(
-              `redis://${envConfig.REDIS_HOST || process.env.REDIS_HOST || 'localhost'}:${envConfig.REDIS_PORT || process.env.REDIS_PORT || '6379'}`,
+              (() => {
+                const host =
+                  envConfig.REDIS_HOST || process.env.REDIS_HOST || 'localhost';
+                const port =
+                  envConfig.REDIS_PORT || process.env.REDIS_PORT || '6379';
+                const pass =
+                  envConfig.REDIS_PASSWORD || process.env.REDIS_PASSWORD;
+                return pass
+                  ? `redis://:${encodeURIComponent(pass)}@${host}:${port}`
+                  : `redis://${host}:${port}`;
+              })(),
             ),
           }
         : {}),
@@ -156,6 +171,7 @@ const redisQueueImports =
 
         if (useRedis) {
           try {
+            const password = configService.get<string>('REDIS_PASSWORD');
             const store = await redisStore({
               socket: {
                 host: configService.get<string>('REDIS_HOST') || 'localhost',
@@ -164,6 +180,7 @@ const redisQueueImports =
                   10,
                 ),
               },
+              ...(password ? { password } : {}),
               ttl: 60 * 1000,
             });
             return { store };
