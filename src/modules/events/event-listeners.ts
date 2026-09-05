@@ -154,6 +154,15 @@ export class EventListeners {
         time: rawPayloadObj.time || timeStr,
       };
 
+      try {
+        const adminEmail = await this.communicationsService.getAdminEmail();
+        if (adminEmail) {
+          enrichedParams.adminEmail = adminEmail;
+        }
+      } catch (e) {
+        this.logger.error(`Error resolving admin email: ${e.message}`);
+      }
+
       // Enrich with Registree details if registreeId is present (or via attendeeId fallback)
       let resolvedRegistreeId = payload.registreeId;
       let resolvedAttendee: any = null;
@@ -715,7 +724,12 @@ export class EventListeners {
           const trimmed = part.trim();
           if (!trimmed) continue;
           const cleanPath = trimmed.replace(/[{}]/g, '').trim();
-          if (cleanPath.includes('@') || cleanPath === 'admin') {
+          if (cleanPath === 'admin') {
+            if (enrichedParams.adminEmail) {
+              const emails = enrichedParams.adminEmail.split(',');
+              results.push(...emails.map((e: string) => e.trim()));
+            }
+          } else if (cleanPath.includes('@')) {
             results.push(cleanPath);
           } else {
             const resolved = this.variableResolverService.resolvePath(
@@ -732,7 +746,7 @@ export class EventListeners {
           }
         }
         return [...new Set(results)].filter(
-          (email) => email.includes('@') || email === 'admin',
+          (email) => email.includes('@'),
         );
       };
 

@@ -171,6 +171,14 @@ export class CommunicationsService implements OnApplicationBootstrap {
     return savedLog;
   }
 
+  async getAdminEmail(): Promise<string> {
+    const brevo = await this.providerModel.findOne({ name: 'brevo', isDeleted: null }).exec();
+    if (brevo && brevo.config && typeof brevo.config.adminEmail === 'string') {
+      return brevo.config.adminEmail;
+    }
+    return '';
+  }
+
   /**
    * Executing templates for workflows lacking NestJS system event hooks.
    */
