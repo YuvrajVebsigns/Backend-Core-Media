@@ -94,11 +94,12 @@ export class NominationsService {
         websiteId,
       );
 
+      const subCatId = nominee.subCategoryId || (nominee as any).subcategoryId;
       nomineeEntries.push({
         nomineeId: nomineeRegistree._id,
         categoryId: new Types.ObjectId(nominee.categoryId),
-        ...(nominee.subCategoryId
-          ? { subCategoryId: new Types.ObjectId(nominee.subCategoryId) }
+        ...(subCatId
+          ? { subCategoryId: new Types.ObjectId(subCatId) }
           : {}),
       });
     }
