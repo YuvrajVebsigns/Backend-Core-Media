@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Schema as MongooseSchema } from 'mongoose';
+import { Schema as MongooseSchema, Types } from 'mongoose';
 import {
   BaseSchema,
   applySoftDeleteMiddleware,
@@ -19,21 +19,33 @@ export class NomineeEntry {
     ref: 'Registree',
     required: true,
   })
-  nomineeId: MongooseSchema.Types.ObjectId;
+  nomineeId: Types.ObjectId;
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     ref: 'NominationCategory',
     required: true,
   })
-  categoryId: MongooseSchema.Types.ObjectId;
+  categoryId: Types.ObjectId;
 
   @Prop({
     type: MongooseSchema.Types.ObjectId,
     ref: 'NominationSubCategory',
     required: false,
   })
-  subCategoryId?: MongooseSchema.Types.ObjectId;
+  subCategoryId?: Types.ObjectId;
+
+  @Prop({ type: String, required: false })
+  contactName?: string;
+
+  @Prop({ type: String, required: false })
+  companyName?: string;
+
+  @Prop({ type: String, required: false })
+  contactEmail?: string;
+
+  @Prop({ type: String, required: false })
+  mobileNo?: string;
 }
 
 export const NomineeEntrySchema = SchemaFactory.createForClass(NomineeEntry);
@@ -49,7 +61,7 @@ export class Nomination extends BaseSchema {
     required: true,
     index: true,
   })
-  nominatorId: MongooseSchema.Types.ObjectId;
+  nominatorId: Types.ObjectId;
 
   @Prop({
     type: [NomineeEntrySchema],
@@ -67,7 +79,7 @@ export class Nomination extends BaseSchema {
     ref: 'Website',
     required: false,
   })
-  websiteId?: MongooseSchema.Types.ObjectId;
+  websiteId?: Types.ObjectId;
 
   @Prop({
     type: String,

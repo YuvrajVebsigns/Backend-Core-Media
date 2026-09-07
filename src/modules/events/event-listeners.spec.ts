@@ -347,4 +347,103 @@ describe('EventListeners', () => {
       undefined,
     );
   });
+
+  it('should send separate emails for each category when a user is nominated multiple times with the same email', async () => {
+    mockCommunicationsService.dispatch.mockClear();
+
+    const mockMapping = {
+      triggers: [
+        {
+          channel: 'email',
+          to: 'nomineeEmails',
+          templateId: {
+            slug: 'nominee-notice',
+            channel: 'email',
+            subject: 'Nominated in {{ category }}',
+            htmlContent: '<p>Hi {{ nomineeName }} ({{ nomineeCompany }}), category is {{ category }} & subcategory {{ subCategory }}.</p>',
+          },
+          isActive: true,
+        },
+      ],
+    };
+    mockCommunicationsService.findEventMappingsByEvent.mockResolvedValue([
+      mockMapping,
+    ]);
+
+    const sharedRegistreeId = {
+      _id: 'shared-id',
+      name: 'Fallback Name',
+      email: 'sanjay@vendor.com',
+      organization: 'Fallback Corp',
+    };
+
+    const mockNomination = {
+      _id: 'nom-123',
+      nominatorId: {
+        name: 'Nominator Person',
+        email: 'nominator@gmail.com',
+      },
+      nominees: [
+        {
+          nomineeId: sharedRegistreeId,
+          categoryId: { name: 'Cloud Services Vendor' },
+          subCategoryId: { name: 'Private Cloud AI' },
+          contactName: 'Sanjay Entry 1',
+          companyName: 'Company 1',
+          contactEmail: 'sanjay@vendor.com',
+          mobileNo: '1111111111',
+        },
+        {
+          nomineeId: sharedRegistreeId,
+          categoryId: { name: 'Data Center Vendor' },
+          subCategoryId: { name: 'Disaster Recovery' },
+          contactName: 'Sanjay Entry 2',
+          companyName: 'Company 2',
+          contactEmail: 'sanjay@vendor.com',
+          mobileNo: '2222222222',
+        },
+      ],
+      status: 'pending',
+    };
+    mockNominationsService.findOne.mockResolvedValue(mockNomination);
+
+    const eventPayload = {
+      nominationId: 'nom-123',
+      nomineeName: 'Sanjay Entry 1, Sanjay Entry 2',
+    };
+
+    await (eventListeners as any).triggerMappedEvent(
+      'nomination.submitted',
+      eventPayload,
+    );
+
+    // Expect 2 distinct dispatches to sanjay@vendor.com, one for each category
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(2);
+
+    expect(mockCommunicationsService.dispatch).toHaveBeenNthCalledWith(
+      1,
+      'email',
+      'sanjay@vendor.com',
+      'Nominated in Cloud Services Vendor',
+      '<p>Hi Sanjay Entry 1 (Company 1), category is Cloud Services Vendor & subcategory Private Cloud AI.</p>',
+      expect.objectContaining({
+        templateSlug: 'nominee-notice',
+      }),
+      undefined,
+      undefined,
+    );
+
+    expect(mockCommunicationsService.dispatch).toHaveBeenNthCalledWith(
+      2,
+      'email',
+      'sanjay@vendor.com',
+      'Nominated in Data Center Vendor',
+      '<p>Hi Sanjay Entry 2 (Company 2), category is Data Center Vendor & subcategory Disaster Recovery.</p>',
+      expect.objectContaining({
+        templateSlug: 'nominee-notice',
+      }),
+      undefined,
+      undefined,
+    );
+  });
 });
