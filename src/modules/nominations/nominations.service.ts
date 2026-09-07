@@ -35,8 +35,8 @@ export class NominationsService {
   /**
    * Submit a nomination (website form)
    * 1. Find-or-create Registree for nominator (tag: 'nominator')
-   * 2. For each nominee, find-or-create Registree (tag: 'nominee')
-   * 3. Enforce max 10 nominees total per nominator email
+   * 2. Enforce max 10 nominees per single request
+   * 3. For each nominee, find-or-create Registree (tag: 'nominee')
    * 4. Create the Nomination relationship document
    */
   async create(
@@ -52,7 +52,18 @@ export class NominationsService {
       }
     }
 
-    // Step 1: Find or create nominator in registrees
+    // Step 1: Validate nominees count per request (max 10 nominees in a single request)
+    if (!createDto.nominees || createDto.nominees.length === 0) {
+      throw new BadRequestException('At least one nominee is required.');
+    }
+
+    if (createDto.nominees.length > 10) {
+      throw new BadRequestException(
+        'You can nominate a maximum of 10 nominees in a single request.',
+      );
+    }
+
+    // Step 2: Find or create nominator in registrees
     const nominatorRegistree = await this.findOrCreateRegistree(
       {
         name: createDto.nominatorName,
@@ -64,26 +75,6 @@ export class NominationsService {
       'nominator',
       websiteId,
     );
-
-    // Step 2: Check if this nominator already has existing nominees — enforce 10 max total
-    const existingNominations = await this.nominationModel
-      .find({
-        nominatorId: nominatorRegistree._id as any,
-        isDeleted: null,
-      })
-      .exec();
-
-    const existingNomineeCount = existingNominations.reduce(
-      (acc, nom) => acc + nom.nominees.length,
-      0,
-    );
-
-    if (existingNomineeCount + createDto.nominees.length > 10) {
-      throw new BadRequestException(
-        `You can nominate up to 10 CIOs only. You have already nominated ${existingNomineeCount}. ` +
-          `You can add ${10 - existingNomineeCount} more.`,
-      );
-    }
 
     // Step 3: Find or create registree for each nominee
     const nomineeEntries: {
@@ -139,10 +130,7 @@ export class NominationsService {
     return result;
   }
 
-  async updateWebsiteNominationStatus(
-    websiteId: string,
-    isActive: boolean,
-  ) {
+  async updateWebsiteNominationStatus(websiteId: string, isActive: boolean) {
     const website = await this.websitesService.update(websiteId, {
       nominationActive: isActive,
     });

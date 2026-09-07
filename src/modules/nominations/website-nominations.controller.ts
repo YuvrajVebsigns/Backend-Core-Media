@@ -55,7 +55,7 @@ export class WebsiteNominationsController {
     description:
       'A nominator submits their details along with up to 10 CIO nominees. ' +
       'Creates/updates registree records for both the nominator and each nominee. ' +
-      'Enforces a max of 10 nominees per nominator email across all submissions.',
+      'Enforces a max of 10 nominees per single request with unlimited submissions allowed per nominator.',
   })
   @ApiResponse({
     status: 201,
@@ -63,7 +63,7 @@ export class WebsiteNominationsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Validation error or max nominees exceeded',
+    description: 'Validation error or max 10 nominees per request exceeded',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized website token' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
@@ -92,7 +92,10 @@ export class WebsiteNominationsController {
   @ApiOperation({
     summary: 'Get all active nomination sub categories for dropdown',
   })
-  @ApiResponse({ status: 200, description: 'List of active nomination sub categories' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of active nomination sub categories',
+  })
   getSubCategories() {
     return this.subCategoriesService.findAllActive();
   }

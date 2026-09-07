@@ -56,7 +56,8 @@ export class Nomination extends BaseSchema {
     default: [],
     validate: {
       validator: (v: NomineeEntry[]) => v.length <= 10,
-      message: 'A nominator can nominate up to 10 nominees only.',
+      message:
+        'A single nomination submission can contain up to 10 nominees only.',
     },
   })
   nominees: NomineeEntry[];
