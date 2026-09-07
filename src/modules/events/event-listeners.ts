@@ -525,7 +525,9 @@ export class EventListeners {
                     category: catName,
                     categoryName: catName,
                     subCategory: subCatName,
+                    subcategory: subCatName,
                     subCategoryName: subCatName,
+                    nomineeSubCategory: subCatName,
                   };
                 },
               );
