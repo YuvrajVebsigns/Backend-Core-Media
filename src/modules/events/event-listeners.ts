@@ -550,6 +550,13 @@ export class EventListeners {
                 .map((n: any) => n.category)
                 .filter(Boolean);
 
+              enrichedParams.category = formattedNominees[0]?.category || '';
+              enrichedParams.categoryName = formattedNominees[0]?.category || '';
+              enrichedParams.nomineeCategory = formattedNominees[0]?.category || '';
+              enrichedParams.subCategory = formattedNominees[0]?.subCategory || '';
+              enrichedParams.subCategoryName = formattedNominees[0]?.subCategory || '';
+              enrichedParams.nomineeSubCategory = formattedNominees[0]?.subCategory || '';
+
               enrichedParams.nomineePhones = formattedNominees
                 .map((n: any) => n.phone)
                 .filter(Boolean);
@@ -887,6 +894,11 @@ export class EventListeners {
         targetParams.nomineeCompany = companyName;
         targetParams.nomineePhone = nomineePhone;
         targetParams.nomineeCategory = categoryName;
+        targetParams.category = categoryName;
+        targetParams.categoryName = categoryName;
+        targetParams.subCategory = matchedNominee.subCategoryId?.name || '';
+        targetParams.subCategoryName = matchedNominee.subCategoryId?.name || '';
+        targetParams.nomineeSubCategory = matchedNominee.subCategoryId?.name || '';
 
         targetParams.nomineeNames = [nomineeName];
         targetParams.nomineeEmails = [nomineeEmail];
@@ -902,6 +914,11 @@ export class EventListeners {
           targetParams.params.nomineeCompany = companyName;
           targetParams.params.nomineePhone = nomineePhone;
           targetParams.params.nomineeCategory = categoryName;
+          targetParams.params.category = categoryName;
+          targetParams.params.categoryName = categoryName;
+          targetParams.params.subCategory = targetParams.subCategory;
+          targetParams.params.subCategoryName = targetParams.subCategoryName;
+          targetParams.params.nomineeSubCategory = targetParams.nomineeSubCategory;
           targetParams.params.nomineeNames = [nomineeName];
           targetParams.params.nomineeEmails = [nomineeEmail];
           targetParams.params.nomineeCompanies = [companyName];

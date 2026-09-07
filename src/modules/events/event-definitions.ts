@@ -1621,6 +1621,26 @@ export const EventPayloadRegistry: Record<
       description: 'Name of the nominee',
     },
     {
+      field: 'category',
+      type: 'string',
+      description: 'Nominated category name',
+    },
+    {
+      field: 'categoryName',
+      type: 'string',
+      description: 'Nominated category name',
+    },
+    {
+      field: 'nomineeCategory',
+      type: 'string',
+      description: 'Award category of the nominee',
+    },
+    {
+      field: 'subCategory',
+      type: 'string',
+      description: 'Nominated sub-category name',
+    },
+    {
       field: 'submittedBy',
       type: 'string',
       description: 'Submitter identifier',
