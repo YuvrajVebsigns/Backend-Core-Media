@@ -1637,6 +1637,41 @@ export const EventPayloadRegistry: Record<
     },
     { field: 'nominatorCity', type: 'string', description: 'Nominator City' },
     {
+      field: 'nominees',
+      type: 'array',
+      description: 'Structured array of nominee objects',
+    },
+    {
+      field: 'nomineesTable',
+      type: 'string',
+      description: 'Pre-rendered styled HTML table of all nominees',
+    },
+    {
+      field: 'nomineesList',
+      type: 'string',
+      description: 'Pre-rendered styled HTML bulleted list of all nominees',
+    },
+    {
+      field: 'nomineeNames',
+      type: 'array',
+      description: 'Array list of nominee names',
+    },
+    {
+      field: 'nomineeEmails',
+      type: 'array',
+      description: 'Array list of nominee email addresses',
+    },
+    {
+      field: 'nomineeCompanies',
+      type: 'array',
+      description: 'Array list of nominee companies',
+    },
+    {
+      field: 'nomineeCategories',
+      type: 'array',
+      description: 'Array list of nominee category names',
+    },
+    {
       field: 'nomineeDetails',
       type: 'string',
       description: 'Nominees List Detail Summary',

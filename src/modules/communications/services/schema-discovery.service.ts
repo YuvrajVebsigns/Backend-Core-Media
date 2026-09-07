@@ -65,6 +65,8 @@ export class SchemaDiscoveryService {
     // Filter models to keep only communication-relevant CMS collections
     const allowedModels = [
       'Nomination',
+      'NominationCategory',
+      'NominationSubCategory',
       'Registree',
       'Website',
       'Blog',

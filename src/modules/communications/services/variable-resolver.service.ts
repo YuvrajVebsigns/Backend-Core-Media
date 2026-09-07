@@ -67,40 +67,154 @@ export class VariableResolverService {
   }
 
   /**
+   * Resolves a path or token against context, transparently supporting params. prefix or nested context.params.
+   */
+  resolveVariable(context: any, path: string): any {
+    if (!context || !path) return null;
+
+    let resolved = this.resolvePath(context, path);
+
+    if (resolved === null || resolved === undefined) {
+      if (path.startsWith('params.')) {
+        const fallbackPath = path.substring(7); // remove 'params.'
+        resolved = this.resolvePath(context, fallbackPath);
+      } else {
+        let paramsContext: any;
+        if (context && typeof context.get === 'function') {
+          paramsContext = context.get('params');
+        } else if (context && typeof context === 'object') {
+          paramsContext = context.params;
+        }
+        if (paramsContext) {
+          resolved = this.resolvePath(paramsContext, path);
+        }
+      }
+    }
+
+    return resolved;
+  }
+
+  /**
+   * Renders a loop block over an array path with child items having priority access to their own fields.
+   */
+  private renderLoopBlock(
+    arrayPath: string,
+    blockContent: string,
+    parentContext: any,
+  ): string {
+    const list = this.resolveVariable(parentContext, arrayPath);
+    if (!Array.isArray(list) || list.length === 0) {
+      return '';
+    }
+
+    return list
+      .map((item, index) => {
+        const itemObj =
+          item && typeof item.toObject === 'function'
+            ? item.toObject()
+            : item && typeof item === 'object'
+              ? item
+              : { value: item };
+
+        const iterationContext = {
+          ...parentContext,
+          ...itemObj,
+          index: index + 1,
+          '@index': index,
+          '@number': index + 1,
+          '@first': index === 0,
+          '@last': index === list.length - 1,
+          this: itemObj,
+        };
+
+        return this.interpolate(blockContent, iterationContext);
+      })
+      .join('');
+  }
+
+  /**
    * Scans a template string for standard double curly-brace syntax {{ path.key }}
-   * and replaces tokens with resolved data. Supports transparent fallback for paths
+   * and block loops {{#each path}}...{{/each}} or {{#path}}...{{/path}}.
+   * Replaces tokens with resolved data. Supports transparent fallback for paths
    * starting with 'params.' prefix or resolving from context.params if nested.
-   * If the resolved value is an array, joins elements with a comma and a space.
    */
   interpolate(templateText: string, context: any): string {
     if (!templateText) return '';
-    return templateText.replace(/{{\s*([^}]+)\s*}}/g, (match, pathKey) => {
-      const trimmedPath = pathKey.trim();
-      let resolved = this.resolvePath(context, trimmedPath);
 
-      if (resolved === null || resolved === undefined) {
-        if (trimmedPath.startsWith('params.')) {
-          const fallbackPath = trimmedPath.substring(7); // remove 'params.'
-          resolved = this.resolvePath(context, fallbackPath);
-        } else {
-          let paramsContext: any;
-          if (context && typeof context.get === 'function') {
-            paramsContext = context.get('params');
-          } else if (context && typeof context === 'object') {
-            paramsContext = context.params;
-          }
-          if (paramsContext) {
-            resolved = this.resolvePath(paramsContext, trimmedPath);
-          }
+    // Step 1: Process explicit block loop iterations: {{#each arrayPath}}...{{/each}}
+    let processed = templateText.replace(
+      /{{\s*#each\s+([^}]+)\s*}}([\s\S]*?){{\s*\/each\s*}}/g,
+      (_match, arrayPath, blockContent) => {
+        return this.renderLoopBlock(arrayPath.trim(), blockContent, context);
+      },
+    );
+
+    // Also support section block syntax: {{#arrayPath}}...{{/arrayPath}}
+    processed = processed.replace(
+      /{{\s*#([a-zA-Z0-9_.]+)\s*}}([\s\S]*?){{\s*\/\1\s*}}/g,
+      (_match, arrayPath, blockContent) => {
+        const trimmedPath = arrayPath.trim();
+        const resolved = this.resolveVariable(context, trimmedPath);
+        if (Array.isArray(resolved)) {
+          return this.renderLoopBlock(trimmedPath, blockContent, context);
         }
+        if (resolved) {
+          return this.interpolate(blockContent, context);
+        }
+        return '';
+      },
+    );
+
+    // Step 2: Standard token interpolation {{ token }}
+    return processed.replace(/{{\s*([^}]+)\s*}}/g, (_match, pathKey) => {
+      const trimmedPath = pathKey.trim();
+
+      // Skip helper/block delimiters if unmatched
+      if (
+        trimmedPath.startsWith('#') ||
+        trimmedPath.startsWith('/') ||
+        trimmedPath === 'else'
+      ) {
+        return '';
       }
+
+      const resolved = this.resolveVariable(context, trimmedPath);
 
       if (resolved === null || resolved === undefined) {
         return '';
       }
+
       if (Array.isArray(resolved)) {
+        // If array of objects, format gracefully rather than returning [object Object]
+        if (
+          resolved.length > 0 &&
+          typeof resolved[0] === 'object' &&
+          resolved[0] !== null
+        ) {
+          if (
+            trimmedPath === 'nominees' ||
+            trimmedPath === 'params.nominees'
+          ) {
+            const tableVal = this.resolveVariable(context, 'nomineesTable');
+            if (tableVal) return String(tableVal);
+          }
+
+          return resolved
+            .map((item, idx) => {
+              const label =
+                item.name ||
+                item.contactName ||
+                item.title ||
+                item.email ||
+                `Item ${idx + 1}`;
+              const extra = item.category || item.company || item.organization;
+              return extra ? `${label} (${extra})` : label;
+            })
+            .join(', ');
+        }
         return resolved.join(', ');
       }
+
       return String(resolved);
     });
   }

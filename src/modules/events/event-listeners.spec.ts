@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventListeners } from './event-listeners';
 import { CommunicationsService } from '../communications/communications.service';
+import { TemplateService } from '../communications/services/template.service';
 import { SystemUsersService } from '@core/system-users/system-users.service';
 import { AttendeesService } from '../attendees/attendees.service';
 import { EventsService } from '../event-management/event-management.service';
@@ -38,6 +39,7 @@ describe('EventListeners', () => {
         EventListeners,
         VariableResolverService,
         { provide: CommunicationsService, useValue: mockCommunicationsService },
+        { provide: TemplateService, useValue: { findOne: jest.fn() } },
         { provide: SystemUsersService, useValue: {} },
         { provide: AttendeesService, useValue: mockAttendeesService },
         { provide: EventsService, useValue: {} },
