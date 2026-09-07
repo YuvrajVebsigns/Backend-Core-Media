@@ -184,5 +184,56 @@ describe('VariableResolverService', () => {
         'Summary: <table><tr><td>Alice</td></tr></table>',
       );
     });
+
+    it('should render Brevo {% for nominee in params.nominees %} loop with {{ nominee.prop }} and {% if %}', () => {
+      const context = {
+        params: {
+          nominees: [
+            {
+              index: 1,
+              name: 'yuvraj shete',
+              company: 'vebsigns',
+              category: 'CIO Choice',
+              subCategory: 'Cloud Platform',
+              email: 'yuvraj@vebsigns.com',
+            },
+            {
+              index: 2,
+              name: 'Jane Doe',
+              company: 'Acme Corp',
+              category: 'Innovation',
+              subCategory: '',
+              email: 'jane@acme.com',
+            },
+          ],
+        },
+      };
+
+      const template =
+        '{% for nominee in params.nominees %}\n' +
+        'Vendor #{{ nominee.index }}: {{ nominee.company }} - {{ nominee.category }}\n' +
+        '{% if nominee.subCategory %}Sub: {{ nominee.subCategory }}\n{% endif %}' +
+        'Contact: {{ nominee.name }} ({{ nominee.email }})\n' +
+        '{% endfor %}';
+
+      const result = service.interpolate(template, context);
+      expect(result).toContain('Vendor #1: vebsigns - CIO Choice');
+      expect(result).toContain('Sub: Cloud Platform');
+      expect(result).toContain('Contact: yuvraj shete (yuvraj@vebsigns.com)');
+      expect(result).toContain('Vendor #2: Acme Corp - Innovation');
+      expect(result).not.toContain('Sub: \nContact: Jane Doe');
+      expect(result).toContain('Contact: Jane Doe (jane@acme.com)');
+      expect(result).not.toContain('{% for');
+      expect(result).not.toContain('{% endfor');
+      expect(result).not.toContain('{% if');
+    });
+
+    it('should support {{ for nominee in nominees }} with double-brace syntax as fallback', () => {
+      const context = {
+        nominees: [{ name: 'Alice', company: 'Wonderland' }],
+      };
+      const template = '{{ for nominee in nominees }}{{ nominee.name }} at {{ nominee.company }}{{ endfor }}';
+      expect(service.interpolate(template, context)).toBe('Alice at Wonderland');
+    });
   });
 });

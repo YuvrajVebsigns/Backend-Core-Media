@@ -101,6 +101,7 @@ export class VariableResolverService {
     arrayPath: string,
     blockContent: string,
     parentContext: any,
+    itemAlias?: string,
   ): string {
     const list = this.resolveVariable(parentContext, arrayPath);
     if (!Array.isArray(list) || list.length === 0) {
@@ -113,10 +114,15 @@ export class VariableResolverService {
           item && typeof item.toObject === 'function'
             ? item.toObject()
             : item && typeof item === 'object'
-              ? item
+              ? { ...item }
               : { value: item };
 
-        const iterationContext = {
+        // Ensure 1-based index is present on the item
+        if (itemObj.index === undefined) {
+          itemObj.index = index + 1;
+        }
+
+        const iterationContext: any = {
           ...parentContext,
           ...itemObj,
           index: index + 1,
@@ -124,8 +130,20 @@ export class VariableResolverService {
           '@number': index + 1,
           '@first': index === 0,
           '@last': index === list.length - 1,
+          'forloop.index': index + 1,
+          'forloop.index0': index,
+          'forloop.first': index === 0,
+          'forloop.last': index === list.length - 1,
+          'loop.index': index + 1,
+          'loop.index0': index,
+          'loop.first': index === 0,
+          'loop.last': index === list.length - 1,
           this: itemObj,
         };
+
+        if (itemAlias) {
+          iterationContext[itemAlias] = itemObj;
+        }
 
         return this.interpolate(blockContent, iterationContext);
       })
@@ -133,27 +151,47 @@ export class VariableResolverService {
   }
 
   /**
-   * Scans a template string for standard double curly-brace syntax {{ path.key }}
-   * and block loops {{#each path}}...{{/each}} or {{#path}}...{{/path}}.
-   * Replaces tokens with resolved data. Supports transparent fallback for paths
-   * starting with 'params.' prefix or resolving from context.params if nested.
+   * Scans a template string for:
+   * 1. Brevo / Liquid / Django loop blocks:
+   *    {% for item in arrayPath %}...{% endfor %} or {{ for item in arrayPath }}...{{ endfor }}
+   * 2. Handlebars block loops:
+   *    {{#each path}}...{{/each}} or {{#path}}...{{/path}}
+   * 3. Conditional blocks:
+   *    {% if condition %}...{% else %}...{% endif %} or {{#if condition}}...{{/if}}
+   * 4. Double curly-brace tokens:
+   *    {{ path.key }} or {{- path.key -}}
    */
   interpolate(templateText: string, context: any): string {
     if (!templateText) return '';
 
-    // Step 1: Process explicit block loop iterations: {{#each arrayPath}}...{{/each}}
+    // Step 1: Process Brevo / Liquid / Django loops:
+    // {% for item in arrayPath %}...{% endfor %} or {{ for item in arrayPath }}...{{ endfor }}
     let processed = templateText.replace(
+      /(?:{%|{{)[-~]?\s*for\s+([a-zA-Z0-9_]+)\s+in\s+([a-zA-Z0-9_.]+)\s*[-~]?(?:%}|}})([\s\S]*?)(?:{%|{{)[-~]?\s*endfor\s*[-~]?(?:%}|}})/gi,
+      (_match, itemAlias, arrayPath, blockContent) => {
+        return this.renderLoopBlock(
+          arrayPath.trim(),
+          blockContent,
+          context,
+          itemAlias.trim(),
+        );
+      },
+    );
+
+    // Step 2: Process Handlebars explicit block loop iterations: {{#each arrayPath}}...{{/each}}
+    processed = processed.replace(
       /{{\s*#each\s+([^}]+)\s*}}([\s\S]*?){{\s*\/each\s*}}/g,
       (_match, arrayPath, blockContent) => {
         return this.renderLoopBlock(arrayPath.trim(), blockContent, context);
       },
     );
 
-    // Also support section block syntax: {{#arrayPath}}...{{/arrayPath}}
+    // Step 3: Handlebars section block syntax: {{#arrayPath}}...{{/arrayPath}}
     processed = processed.replace(
       /{{\s*#([a-zA-Z0-9_.]+)\s*}}([\s\S]*?){{\s*\/\1\s*}}/g,
       (_match, arrayPath, blockContent) => {
         const trimmedPath = arrayPath.trim();
+        if (trimmedPath === 'if' || trimmedPath === 'each') return _match;
         const resolved = this.resolveVariable(context, trimmedPath);
         if (Array.isArray(resolved)) {
           return this.renderLoopBlock(trimmedPath, blockContent, context);
@@ -165,15 +203,58 @@ export class VariableResolverService {
       },
     );
 
-    // Step 2: Standard token interpolation {{ token }}
-    return processed.replace(/{{\s*([^}]+)\s*}}/g, (_match, pathKey) => {
-      const trimmedPath = pathKey.trim();
+    // Step 4: Conditional blocks:
+    // Brevo / Liquid: {% if condition %}...{% else %}...{% endif %}
+    processed = processed.replace(
+      /(?:{%|{{)[-~]?\s*if\s+(not\s+)?([a-zA-Z0-9_.]+)\s*[-~]?(?:%}|}})([\s\S]*?)(?:(?:{%|{{)[-~]?\s*else\s*[-~]?(?:%}|}})([\s\S]*?))?(?:{%|{{)[-~]?\s*endif\s*[-~]?(?:%}|}})/gi,
+      (_match, isNot, conditionPath, ifBlock, elseBlock = '') => {
+        const trimmedPath = conditionPath.trim();
+        const val = this.resolveVariable(context, trimmedPath);
+        const isTruthy = Boolean(
+          val &&
+            (Array.isArray(val)
+              ? val.length > 0
+              : String(val).trim().length > 0 &&
+                String(val).trim() !== 'false' &&
+                String(val).trim() !== '0'),
+        );
+        const shouldRenderIf = isNot ? !isTruthy : isTruthy;
+        return shouldRenderIf
+          ? this.interpolate(ifBlock, context)
+          : this.interpolate(elseBlock, context);
+      },
+    );
+
+    // Handlebars: {{#if condition}}...{{else}}...{{/if}}
+    processed = processed.replace(
+      /{{\s*#if\s+([a-zA-Z0-9_.]+)\s*}}([\s\S]*?)(?:{{\s*else\s*}}([\s\S]*?))?{{\s*\/if\s*}}/gi,
+      (_match, conditionPath, ifBlock, elseBlock = '') => {
+        const trimmedPath = conditionPath.trim();
+        const val = this.resolveVariable(context, trimmedPath);
+        const isTruthy = Boolean(
+          val &&
+            (Array.isArray(val)
+              ? val.length > 0
+              : String(val).trim().length > 0 &&
+                String(val).trim() !== 'false' &&
+                String(val).trim() !== '0'),
+        );
+        return isTruthy
+          ? this.interpolate(ifBlock, context)
+          : this.interpolate(elseBlock, context);
+      },
+    );
+
+    // Step 5: Standard token interpolation {{ token }} or {{- token -}}
+    return processed.replace(/{{\s*([^}]+)\s*}}/g, (_match, rawPathKey) => {
+      const trimmedPath = rawPathKey.trim().replace(/^[-~]\s*|\s*[-~]$/g, '');
 
       // Skip helper/block delimiters if unmatched
       if (
         trimmedPath.startsWith('#') ||
         trimmedPath.startsWith('/') ||
-        trimmedPath === 'else'
+        trimmedPath === 'else' ||
+        trimmedPath.startsWith('%')
       ) {
         return '';
       }

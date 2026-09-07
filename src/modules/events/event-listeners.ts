@@ -528,6 +528,7 @@ export class EventListeners {
                     organization: org,
                     category: catName,
                     categoryName: catName,
+                    nomineeCategory: catName,
                     subCategory: subCatName,
                     subcategory: subCatName,
                     subCategoryName: subCatName,
@@ -876,6 +877,7 @@ export class EventListeners {
 
       // Collapse array fields of objects to their latest element (last item), preserving 'nominees'
       resolveLatestArrayRecords(enrichedParams, ['nominees']);
+      enrichedParams.params = { ...enrichedParams };
 
       const getPersonalizedParams = (targetEmail: string): any => {
         if (!nominationDoc || !nominationDoc.nominees || nominationDoc.nominees.length === 0) {
@@ -914,23 +916,7 @@ export class EventListeners {
           ? `${nomineeName} (Category: ${categoryName})`
           : nomineeName || categoryName;
 
-        if (targetParams.params) {
-          targetParams.params.nomineeName = nomineeName;
-          targetParams.params.nomineeEmail = nomineeEmail;
-          targetParams.params.nomineeCompany = companyName;
-          targetParams.params.nomineePhone = nomineePhone;
-          targetParams.params.nomineeCategory = categoryName;
-          targetParams.params.category = categoryName;
-          targetParams.params.categoryName = categoryName;
-          targetParams.params.subCategory = targetParams.subCategory;
-          targetParams.params.subCategoryName = targetParams.subCategoryName;
-          targetParams.params.nomineeSubCategory = targetParams.nomineeSubCategory;
-          targetParams.params.nomineeNames = [nomineeName];
-          targetParams.params.nomineeEmails = [nomineeEmail];
-          targetParams.params.nomineeCompanies = [companyName];
-          targetParams.params.nomineeCategories = [categoryName];
-          targetParams.params.nomineeDetails = targetParams.nomineeDetails;
-        }
+        targetParams.params = { ...targetParams };
 
         return targetParams;
       };
@@ -995,6 +981,7 @@ export class EventListeners {
                   senderName: trigger.senderName || mapping.senderName || template.senderName,
                   eventTrigger: true,
                   eventName,
+                  params: targetParams,
                 },
                 ccTargets,
                 bccTargets,
@@ -1093,6 +1080,7 @@ export class EventListeners {
               senderName: mapping.senderName || template.senderName,
               legacyTrigger: true,
               eventName,
+              params: targetParams,
             },
             ccTargets,
             bccTargets,
