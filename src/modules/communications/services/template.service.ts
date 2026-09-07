@@ -204,6 +204,8 @@ export class TemplateService {
 
       const templateId = template.providerSync?.brevo?.templateId;
 
+      const contentToSync = this.adaptHtmlForBrevo(template.htmlContent);
+
       if (templateId) {
         // Update existing Brevo template
         this.logger.debug(
@@ -213,7 +215,7 @@ export class TemplateService {
           templateId,
           templateName: template.name,
           subject: template.subject,
-          htmlContent: template.htmlContent,
+          htmlContent: contentToSync,
           isActive: template.isActive,
           sender: { name: defaultName, email: defaultEmail },
         });
@@ -233,7 +235,7 @@ export class TemplateService {
         const res = await brevoClient.transactionalEmails.createSmtpTemplate({
           templateName: template.name,
           subject: template.subject,
-          htmlContent: template.htmlContent,
+          htmlContent: contentToSync,
           isActive: template.isActive,
           sender: { name: defaultName, email: defaultEmail },
         });
@@ -277,6 +279,51 @@ export class TemplateService {
         { providerSync: template.providerSync },
       );
     }
+  }
+
+  /**
+   * Adapts Handlebars template syntax into Brevo Template Language (BTL).
+   * Brevo does not support Handlebars `{{#each params.xxx}}...{{/each}}` or `{{#if}}`.
+   * It requires Django/Jinja syntax: `{% for item in params.xxx %}` and `{{ item.property }}`.
+   */
+  adaptHtmlForBrevo(html: string): string {
+    if (!html) return '';
+
+    let adapted = html;
+
+    // Convert {{#each params.nominees}} or {{#each nominees}}
+    adapted = adapted.replace(
+      /{{\s*#each\s+(?:params\.)?([a-zA-Z0-9_]+)\s*}}([\s\S]*?){{\s*\/each\s*}}/gi,
+      (_match, arrayName, innerContent) => {
+        const itemVar = arrayName.endsWith('s')
+          ? arrayName.replace(/s$/, '')
+          : 'item';
+
+        // Inside innerContent, replace bare variables {{name}}, {{company}}, {{category}}, {{index}}, etc.
+        // with {{itemVar.name}}, {{itemVar.company}}, etc.
+        // But do not replace variables that already have a dot like {{itemVar.xxx}} or {{params.xxx}}
+        const transformedInner = innerContent.replace(
+          /{{\s*([a-zA-Z0-9_]+)\s*}}/g,
+          (varMatch: string, prop: string) => {
+            if (prop === itemVar || prop === 'params' || prop === 'forloop') {
+              return varMatch;
+            }
+            return `{{ ${itemVar}.${prop} }}`;
+          },
+        );
+
+        return `{% for ${itemVar} in params.${arrayName} %}${transformedInner}{% endfor %}`;
+      },
+    );
+
+    // Convert {{#if params.xxx}} to {% if params.xxx %} and {{/if}} to {% endif %}
+    adapted = adapted.replace(
+      /{{\s*#if\s+([^}]+)\s*}}/gi,
+      '{% if $1 %}',
+    );
+    adapted = adapted.replace(/{{\s*\/if\s*}}/gi, '{% endif %}');
+
+    return adapted;
   }
 
   /**
