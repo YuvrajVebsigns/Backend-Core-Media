@@ -501,11 +501,11 @@ export class EventListeners {
                   const category = n.categoryId || {};
                   const subCategory = n.subCategoryId || {};
 
-                  const name = nominee.name || '';
-                  const email = nominee.email || '';
-                  const phone = nominee.phoneNumber || '';
+                  const name = n.contactName || nominee.name || '';
+                  const email = n.contactEmail || nominee.email || '';
+                  const phone = n.mobileNo || nominee.phoneNumber || '';
                   const countryCode = nominee.countryCode || '91';
-                  const org = nominee.organization || '';
+                  const org = n.companyName || nominee.organization || '';
                   const catName = category.name || '';
                   const subCatName = subCategory.name || '';
 
@@ -884,18 +884,20 @@ export class EventListeners {
           return enrichedParams;
         }
         const matchedNominee = nominationDoc.nominees.find(
-          (n: any) => n.nomineeId?.email?.toLowerCase() === targetEmail.toLowerCase(),
+          (n: any) =>
+            (n.contactEmail && n.contactEmail.toLowerCase() === targetEmail.toLowerCase()) ||
+            n.nomineeId?.email?.toLowerCase() === targetEmail.toLowerCase(),
         );
         if (!matchedNominee) {
           return enrichedParams;
         }
 
         const targetParams = JSON.parse(JSON.stringify(enrichedParams));
-        const nomineeName = matchedNominee.nomineeId?.name || '';
-        const nomineeEmail = matchedNominee.nomineeId?.email || '';
+        const nomineeName = matchedNominee.contactName || matchedNominee.nomineeId?.name || '';
+        const nomineeEmail = matchedNominee.contactEmail || matchedNominee.nomineeId?.email || '';
         const categoryName = matchedNominee.categoryId?.name || '';
-        const companyName = matchedNominee.nomineeId?.organization || '';
-        const nomineePhone = matchedNominee.nomineeId?.phoneNumber || '';
+        const companyName = matchedNominee.companyName || matchedNominee.nomineeId?.organization || '';
+        const nomineePhone = matchedNominee.mobileNo || matchedNominee.nomineeId?.phoneNumber || '';
 
         targetParams.nomineeName = nomineeName;
         targetParams.nomineeEmail = nomineeEmail;
@@ -907,6 +909,41 @@ export class EventListeners {
         targetParams.subCategory = matchedNominee.subCategoryId?.name || '';
         targetParams.subCategoryName = matchedNominee.subCategoryId?.name || '';
         targetParams.nomineeSubCategory = matchedNominee.subCategoryId?.name || '';
+
+        targetParams.nomineeNames = [nomineeName];
+        targetParams.nomineeEmails = [nomineeEmail];
+        targetParams.nomineeCompanies = [companyName];
+        targetParams.nomineeCategories = [categoryName];
+        targetParams.nomineeDetails = nomineeName && categoryName
+          ? `${nomineeName} (Category: ${categoryName})`
+          : nomineeName || categoryName;
+
+        targetParams.params = { ...targetParams };
+
+        return targetParams;
+      };
+
+      const buildNomineeParams = (nomineeItem: any): any => {
+        const targetParams = JSON.parse(JSON.stringify(enrichedParams));
+        const nomineeName = nomineeItem.name || nomineeItem.contactName || '';
+        const nomineeEmail = nomineeItem.email || nomineeItem.contactEmail || '';
+        const categoryName = nomineeItem.category || nomineeItem.categoryName || '';
+        const companyName = nomineeItem.company || nomineeItem.companyName || nomineeItem.organization || '';
+        const nomineePhone = nomineeItem.phone || nomineeItem.mobileNo || '';
+        const subCategoryName = nomineeItem.subCategory || nomineeItem.subcategory || nomineeItem.subCategoryName || '';
+
+        targetParams.nomineeName = nomineeName;
+        targetParams.nomineeEmail = nomineeEmail;
+        targetParams.nomineeCompany = companyName;
+        targetParams.nomineePhone = nomineePhone;
+        targetParams.nomineeCategory = categoryName;
+        targetParams.category = categoryName;
+        targetParams.categoryName = categoryName;
+        targetParams.subCategory = subCategoryName;
+        targetParams.subCategoryName = subCategoryName;
+        targetParams.nomineeSubCategory = subCategoryName;
+        targetParams.index = nomineeItem.index;
+        targetParams.nomineeIndex = nomineeItem.index;
 
         targetParams.nomineeNames = [nomineeName];
         targetParams.nomineeEmails = [nomineeEmail];
@@ -937,21 +974,94 @@ export class EventListeners {
               continue;
             }
 
-            const targets = resolveRecipientList(trigger.to);
-
-            if (targets.length === 0) {
-              this.logger.warn(
-                `Could not resolve any recipients for trigger channel ${trigger.channel} on event ${eventName}`,
-              );
-              continue;
-            }
-
             const ccTargets = trigger.cc
               ? resolveRecipientList(trigger.cc).join(', ')
               : undefined;
             const bccTargets = trigger.bcc
               ? resolveRecipientList(trigger.bcc).join(', ')
               : undefined;
+
+            // When nomination is submitted and trigger targets nominees, dispatch each nomination row individually
+            const isNominationSubmitted = eventName === AppEvents.NOMINATION_SUBMITTED;
+            const toExpression = trigger.to || '';
+            const toParts = toExpression.split(',').map((p: string) => p.trim().replace(/[{}]/g, ''));
+            const isNomineeTrigger = isNominationSubmitted && toParts.some((p: string) => p === 'nomineeEmails');
+
+            if (isNomineeTrigger && enrichedParams.nominees && enrichedParams.nominees.length > 0) {
+              const otherParts = toParts.filter((p: string) => p !== 'nomineeEmails' && p !== '');
+              if (otherParts.length > 0) {
+                const otherTargets = resolveRecipientList(otherParts.join(', '));
+                for (const otherTarget of otherTargets) {
+                  const targetParams = getPersonalizedParams(otherTarget);
+                  const interpolatedSubject = this.variableResolverService.interpolate(
+                    template.subject || '',
+                    targetParams,
+                  );
+                  const contentTemplate = template.htmlContent || template.textContent || '';
+                  const interpolatedContent = this.variableResolverService.interpolate(
+                    contentTemplate,
+                    targetParams,
+                  );
+                  await this.communicationsService.dispatch(
+                    template.channel,
+                    otherTarget,
+                    interpolatedSubject,
+                    interpolatedContent,
+                    {
+                      templateSlug: template.slug,
+                      senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
+                      senderName: trigger.senderName || mapping.senderName || template.senderName,
+                      eventTrigger: true,
+                      eventName,
+                      params: targetParams,
+                    },
+                    ccTargets,
+                    bccTargets,
+                  );
+                }
+              }
+
+              for (const nomineeItem of enrichedParams.nominees) {
+                const nomineeEmail = nomineeItem.email || nomineeItem.contactEmail;
+                if (!nomineeEmail || !nomineeEmail.includes('@')) {
+                  continue;
+                }
+                const targetParams = buildNomineeParams(nomineeItem);
+                const interpolatedSubject = this.variableResolverService.interpolate(
+                  template.subject || '',
+                  targetParams,
+                );
+                const contentTemplate = template.htmlContent || template.textContent || '';
+                const interpolatedContent = this.variableResolverService.interpolate(
+                  contentTemplate,
+                  targetParams,
+                );
+
+                this.logger.log(
+                  `Dispatching nominee template "${template.slug}" [Channel: ${trigger.channel}] for event: ${eventName} to: ${nomineeEmail} (Nominee: ${nomineeItem.name}, Category: ${nomineeItem.category})`,
+                );
+
+                await this.communicationsService.dispatch(
+                  template.channel,
+                  nomineeEmail,
+                  interpolatedSubject,
+                  interpolatedContent,
+                  {
+                    templateSlug: template.slug,
+                    senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
+                    senderName: trigger.senderName || mapping.senderName || template.senderName,
+                    eventTrigger: true,
+                    eventName,
+                    params: targetParams,
+                  },
+                  ccTargets,
+                  bccTargets,
+                );
+              }
+              continue;
+            }
+
+            const targets = resolveRecipientList(trigger.to);
 
             for (const target of targets) {
               const targetParams = getPersonalizedParams(target);
@@ -1051,6 +1161,80 @@ export class EventListeners {
         const bccTargets = mapping.bcc
           ? resolveRecipientList(mapping.bcc).join(', ')
           : undefined;
+
+        const isLegacyNominationSubmitted = eventName === AppEvents.NOMINATION_SUBMITTED;
+        const legacyToExpression = mapping.to || '';
+        const legacyToParts = legacyToExpression.split(',').map((p: string) => p.trim().replace(/[{}]/g, ''));
+        const isLegacyNomineeTrigger = isLegacyNominationSubmitted && legacyToParts.some((p: string) => p === 'nomineeEmails');
+
+        if (isLegacyNomineeTrigger && enrichedParams.nominees && enrichedParams.nominees.length > 0) {
+          const otherParts = legacyToParts.filter((p: string) => p !== 'nomineeEmails' && p !== '');
+          if (otherParts.length > 0) {
+            const otherTargets = resolveRecipientList(otherParts.join(', '));
+            for (const otherTarget of otherTargets) {
+              const targetParams = getPersonalizedParams(otherTarget);
+              const interpolatedSubject = this.variableResolverService.interpolate(
+                template.subject || '',
+                targetParams,
+              );
+              const contentTemplate = template.htmlContent || template.textContent || '';
+              const interpolatedContent = this.variableResolverService.interpolate(
+                contentTemplate,
+                targetParams,
+              );
+              await this.communicationsService.dispatch(
+                template.channel,
+                otherTarget,
+                interpolatedSubject,
+                interpolatedContent,
+                {
+                  templateSlug: template.slug,
+                  senderEmail: mapping.senderEmail || template.senderEmail,
+                  senderName: mapping.senderName || template.senderName,
+                  legacyTrigger: true,
+                  eventName,
+                  params: targetParams,
+                },
+                ccTargets,
+                bccTargets,
+              );
+            }
+          }
+
+          for (const nomineeItem of enrichedParams.nominees) {
+            const nomineeEmail = nomineeItem.email || nomineeItem.contactEmail;
+            if (!nomineeEmail || !nomineeEmail.includes('@')) {
+              continue;
+            }
+            const targetParams = buildNomineeParams(nomineeItem);
+            const interpolatedSubject = this.variableResolverService.interpolate(
+              template.subject || '',
+              targetParams,
+            );
+            const contentTemplate = template.htmlContent || template.textContent || '';
+            const interpolatedContent = this.variableResolverService.interpolate(
+              contentTemplate,
+              targetParams,
+            );
+            await this.communicationsService.dispatch(
+              template.channel,
+              nomineeEmail,
+              interpolatedSubject,
+              interpolatedContent,
+              {
+                templateSlug: template.slug,
+                senderEmail: mapping.senderEmail || template.senderEmail,
+                senderName: mapping.senderName || template.senderName,
+                legacyTrigger: true,
+                eventName,
+                params: targetParams,
+              },
+              ccTargets,
+              bccTargets,
+            );
+          }
+          continue;
+        }
 
         for (const target of targets) {
           const targetParams = getPersonalizedParams(target);

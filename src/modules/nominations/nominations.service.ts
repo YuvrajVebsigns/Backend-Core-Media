@@ -5,7 +5,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Nomination, NominationStatus } from './schemas/nomination.schema';
+import {
+  Nomination,
+  NominationStatus,
+  NomineeEntry,
+} from './schemas/nomination.schema';
 import { Registree } from '@modules/attendees/schemas/registree.schema';
 import { WebsitesService } from '@modules/websites/websites.service';
 import {
@@ -77,10 +81,7 @@ export class NominationsService {
     );
 
     // Step 3: Find or create registree for each nominee
-    const nomineeEntries: {
-      nomineeId: Types.ObjectId;
-      categoryId: Types.ObjectId;
-    }[] = [];
+    const nomineeEntries: NomineeEntry[] = [];
 
     for (const nominee of createDto.nominees) {
       const nomineeRegistree = await this.findOrCreateRegistree(
@@ -101,6 +102,10 @@ export class NominationsService {
         ...(subCatId
           ? { subCategoryId: new Types.ObjectId(subCatId) }
           : {}),
+        contactName: nominee.contactName,
+        companyName: nominee.companyName,
+        contactEmail: nominee.contactEmail.toLowerCase(),
+        mobileNo: nominee.mobileNo || '',
       });
     }
 
@@ -574,12 +579,12 @@ export class NominationsService {
           : undefined,
       });
     } else {
-      // Update details
-      registree.name = data.name;
-      if (data.phoneNumber) registree.phoneNumber = data.phoneNumber;
-      if (data.organization) registree.organization = data.organization;
-      if (data.city) registree.city = data.city;
-      if (websiteId) registree.websiteId = new Types.ObjectId(websiteId) as any;
+      // Preserve existing profile details if already set; fill in if missing
+      if (!registree.name && data.name) registree.name = data.name;
+      if (!registree.phoneNumber && data.phoneNumber) registree.phoneNumber = data.phoneNumber;
+      if (!registree.organization && data.organization) registree.organization = data.organization;
+      if (!registree.city && data.city) registree.city = data.city;
+      if (!registree.websiteId && websiteId) registree.websiteId = new Types.ObjectId(websiteId) as any;
 
       // Add tag if not already present
       if (!registree.tags) {
