@@ -47,7 +47,10 @@ export class AdminNominationsController {
       'Manually create a nomination entry. Creates/updates registrees for both the nominator and all nominees.',
   })
   @ApiResponse({ status: 201, description: 'Nomination created successfully' })
-  @ApiResponse({ status: 400, description: 'Max 10 nominees exceeded' })
+  @ApiResponse({
+    status: 400,
+    description: 'Max 10 nominees per request exceeded',
+  })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   create(@Body() createDto: CreateNominationDto) {
     return this.nominationsService.create(createDto);
@@ -124,7 +127,10 @@ export class AdminNominationsController {
   @Permission('nominations.update')
   @ApiOperation({ summary: 'Update website nomination form status' })
   @ApiParam({ name: 'websiteId', description: 'MongoDB ID of the website' })
-  @ApiResponse({ status: 200, description: 'Website nomination form status updated' })
+  @ApiResponse({
+    status: 200,
+    description: 'Website nomination form status updated',
+  })
   @ApiResponse({ status: 404, description: 'Website not found' })
   updateWebsiteNominationStatus(
     @Param('websiteId') websiteId: string,

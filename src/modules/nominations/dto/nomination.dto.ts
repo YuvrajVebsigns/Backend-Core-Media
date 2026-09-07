@@ -60,7 +60,7 @@ export class NomineeDto {
 }
 
 /**
- * DTO for website form submission — nominator submits their details + up to 10 nominees
+ * DTO for website form submission — nominator submits their details + up to 10 nominees in a single request
  */
 export class CreateNominationDto {
   // Nominator details
@@ -92,10 +92,10 @@ export class CreateNominationDto {
   @IsEmail()
   nominatorEmail!: string;
 
-  // Nominees (1 to 10)
+  // Nominees (1 to 10 per request)
   @ApiProperty({
     type: [NomineeDto],
-    description: 'CIO nominations (up to 10)',
+    description: 'CIO nominations (up to 10 in a single request)',
     minItems: 1,
     maxItems: 10,
   })
