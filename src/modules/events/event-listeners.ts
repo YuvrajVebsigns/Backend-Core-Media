@@ -504,6 +504,7 @@ export class EventListeners {
                   const name = nominee.name || '';
                   const email = nominee.email || '';
                   const phone = nominee.phoneNumber || '';
+                  const countryCode = nominee.countryCode || '91';
                   const org = nominee.organization || '';
                   const catName = category.name || '';
                   const subCatName = subCategory.name || '';
@@ -518,7 +519,10 @@ export class EventListeners {
                     nomineeEmail: email,
                     phone,
                     mobileNo: phone,
+                    mobileNumber: phone,
                     nomineePhone: phone,
+                    countryCode,
+                    mobileCountryCode: countryCode,
                     company: org,
                     companyName: org,
                     organization: org,
