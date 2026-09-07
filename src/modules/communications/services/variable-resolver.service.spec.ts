@@ -127,5 +127,62 @@ describe('VariableResolverService', () => {
       const template = 'Hello {{ nominatorName }}!';
       expect(service.interpolate(template, obj)).toBe('Hello Vaibhav!');
     });
+
+    it('should render block loop iteration {{#each nominees}} with inner properties and index', () => {
+      const context = {
+        nominatorName: 'John Doe',
+        nominees: [
+          { name: 'Jane Smith', company: 'Infosys', category: 'CIO of the Year' },
+          { name: 'Bob Jones', company: 'Wipro', category: 'Cloud Innovation' },
+        ],
+      };
+      const template =
+        'Nominator: {{nominatorName}}\n' +
+        '{{#each nominees}}\n' +
+        '#{{index}}: {{name}} ({{company}}) - {{category}}\n' +
+        '{{/each}}';
+
+      const result = service.interpolate(template, context);
+      expect(result).toContain('Nominator: John Doe');
+      expect(result).toContain('#1: Jane Smith (Infosys) - CIO of the Year');
+      expect(result).toContain('#2: Bob Jones (Wipro) - Cloud Innovation');
+    });
+
+    it('should support {{#each params.nominees}} when data is in params', () => {
+      const context = {
+        params: {
+          nominees: [
+            { name: 'Alice', category: 'Security' },
+            { name: 'Charlie', category: 'DevOps' },
+          ],
+        },
+      };
+      const template = '{{#each params.nominees}}[{{name}} - {{category}}]{{/each}}';
+      expect(service.interpolate(template, context)).toBe('[Alice - Security][Charlie - DevOps]');
+    });
+
+    it('should format array of objects cleanly without [object Object] when referenced as a single token', () => {
+      const context = {
+        nominees: [
+          { name: 'Alice', category: 'Security' },
+          { name: 'Charlie', category: 'DevOps' },
+        ],
+      };
+      const template = 'Nominees: {{nominees}}';
+      expect(service.interpolate(template, context)).toBe(
+        'Nominees: Alice (Security), Charlie (DevOps)',
+      );
+    });
+
+    it('should prefer nomineesTable if available when {{nominees}} is referenced directly', () => {
+      const context = {
+        nominees: [{ name: 'Alice' }],
+        nomineesTable: '<table><tr><td>Alice</td></tr></table>',
+      };
+      const template = 'Summary: {{nominees}}';
+      expect(service.interpolate(template, context)).toBe(
+        'Summary: <table><tr><td>Alice</td></tr></table>',
+      );
+    });
   });
 });

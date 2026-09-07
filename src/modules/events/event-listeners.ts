@@ -495,26 +495,130 @@ export class EventListeners {
             }
 
             if (nomination.nominees && nomination.nominees.length > 0) {
-              enrichedParams.nomineeEmails = nomination.nominees
-                .map((n: any) => n.nomineeId?.email)
+              const formattedNominees = nomination.nominees.map(
+                (n: any, idx: number) => {
+                  const nominee = n.nomineeId || {};
+                  const category = n.categoryId || {};
+                  const subCategory = n.subCategoryId || {};
+
+                  const name = nominee.name || '';
+                  const email = nominee.email || '';
+                  const phone = nominee.phoneNumber || '';
+                  const org = nominee.organization || '';
+                  const catName = category.name || '';
+                  const subCatName = subCategory.name || '';
+
+                  return {
+                    index: idx + 1,
+                    name,
+                    contactName: name,
+                    nomineeName: name,
+                    email,
+                    contactEmail: email,
+                    nomineeEmail: email,
+                    phone,
+                    mobileNo: phone,
+                    nomineePhone: phone,
+                    company: org,
+                    companyName: org,
+                    organization: org,
+                    category: catName,
+                    categoryName: catName,
+                    subCategory: subCatName,
+                    subCategoryName: subCatName,
+                  };
+                },
+              );
+
+              enrichedParams.nominees = formattedNominees;
+
+              enrichedParams.nomineeEmails = formattedNominees
+                .map((n: any) => n.email)
                 .filter(Boolean);
 
-              enrichedParams.nomineeNames = nomination.nominees
-                .map((n: any) => n.nomineeId?.name)
+              enrichedParams.nomineeNames = formattedNominees
+                .map((n: any) => n.name)
                 .filter(Boolean);
 
-              enrichedParams.nomineeDetails = nomination.nominees
+              enrichedParams.nomineeCompanies = formattedNominees
+                .map((n: any) => n.company)
+                .filter(Boolean);
+
+              enrichedParams.nomineeOrganizations = enrichedParams.nomineeCompanies;
+
+              enrichedParams.nomineeCategories = formattedNominees
+                .map((n: any) => n.category)
+                .filter(Boolean);
+
+              enrichedParams.nomineePhones = formattedNominees
+                .map((n: any) => n.phone)
+                .filter(Boolean);
+
+              enrichedParams.nomineeDetails = formattedNominees
                 .map((n: any) => {
-                  const name = n.nomineeId?.name || '';
-                  const category = n.categoryId?.name || '';
+                  const name = n.name || '';
+                  const category = n.category || '';
                   return name && category
                     ? `${name} (Category: ${category})`
                     : name || category;
                 })
                 .filter(Boolean)
                 .join(', ');
+
+              // Pre-rendered HTML Table of all nominees (inline styles for email clients)
+              const tableRows = formattedNominees
+                .map(
+                  (item: any, idx: number) => `
+        <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fafc'}; border-bottom: 1px solid #e2e8f0;">
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">${item.index}</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; font-weight: 600; color: #0f172a;">${item.name || '—'}</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #334155;">${item.company || '—'}</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #334155;"><a href="mailto:${item.email}" style="color: #2563eb; text-decoration: none;">${item.email || '—'}</a></td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #334155;">${item.phone || '—'}</td>
+          <td style="padding: 10px 12px; border: 1px solid #e2e8f0; color: #334155;">${item.category || '—'}${item.subCategory ? `<br/><span style="font-size: 11px; color: #64748b;">(${item.subCategory})</span>` : ''}</td>
+        </tr>`,
+                )
+                .join('');
+
+              enrichedParams.nomineesTable = `
+      <table cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin: 16px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; line-height: 1.5; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background-color: #0f172a; color: #ffffff; text-align: left;">
+            <th style="padding: 10px 12px; font-weight: 600; width: 35px; text-align: center; border: 1px solid #1e293b;">#</th>
+            <th style="padding: 10px 12px; font-weight: 600; border: 1px solid #1e293b;">Nominee Name</th>
+            <th style="padding: 10px 12px; font-weight: 600; border: 1px solid #1e293b;">Company / Organization</th>
+            <th style="padding: 10px 12px; font-weight: 600; border: 1px solid #1e293b;">Email</th>
+            <th style="padding: 10px 12px; font-weight: 600; border: 1px solid #1e293b;">Phone</th>
+            <th style="padding: 10px 12px; font-weight: 600; border: 1px solid #1e293b;">Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>`;
+
+              // Pre-rendered HTML List of all nominees
+              const listItems = formattedNominees
+                .map((item: any) => {
+                  const orgStr = item.company ? ` (${item.company})` : '';
+                  const catStr = item.category ? ` &mdash; <strong>Category:</strong> ${item.category}` : '';
+                  const subStr = item.subCategory ? ` (${item.subCategory})` : '';
+                  const emailStr = item.email ? ` &bull; ${item.email}` : '';
+                  return `<li style="margin-bottom: 8px;"><strong>#${item.index}: ${item.name}</strong>${orgStr}${catStr}${subStr}${emailStr}</li>`;
+                })
+                .join('');
+
+              enrichedParams.nomineesList = `<ul style="margin: 14px 0; padding-left: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #334155;">${listItems}</ul>`;
             } else {
+              enrichedParams.nominees = [];
+              enrichedParams.nomineeEmails = [];
+              enrichedParams.nomineeNames = [];
+              enrichedParams.nomineeCompanies = [];
+              enrichedParams.nomineeCategories = [];
+              enrichedParams.nomineePhones = [];
               enrichedParams.nomineeDetails = '';
+              enrichedParams.nomineesTable = '';
+              enrichedParams.nomineesList = '';
             }
 
             enrichedParams.nominationStatus = nomination.status;
@@ -694,9 +798,16 @@ export class EventListeners {
       };
 
       // Resolve array fields of objects to their latest element (last item)
-      const resolveLatestArrayRecords = (obj: any) => {
+      // Preserves arrays that should remain iterable (e.g. 'nominees')
+      const resolveLatestArrayRecords = (
+        obj: any,
+        preservedKeys: string[] = ['nominees'],
+      ) => {
         if (!obj || typeof obj !== 'object') return;
         for (const [key, val] of Object.entries(obj)) {
+          if (preservedKeys.includes(key)) {
+            continue;
+          }
           if (Array.isArray(val)) {
             if (
               val.length > 0 &&
@@ -705,13 +816,13 @@ export class EventListeners {
             ) {
               // Resolve nested arrays first
               for (const item of val) {
-                resolveLatestArrayRecords(item);
+                resolveLatestArrayRecords(item, preservedKeys);
               }
               // Override with latest element
               obj[key] = val[val.length - 1];
             }
           } else if (val && typeof val === 'object') {
-            resolveLatestArrayRecords(val);
+            resolveLatestArrayRecords(val, preservedKeys);
           }
         }
       };
@@ -750,8 +861,8 @@ export class EventListeners {
         );
       };
 
-      // Collapse array fields of objects to their latest element (last item) for template parameters
-      resolveLatestArrayRecords(enrichedParams);
+      // Collapse array fields of objects to their latest element (last item), preserving 'nominees'
+      resolveLatestArrayRecords(enrichedParams, ['nominees']);
 
       const getPersonalizedParams = (targetEmail: string): any => {
         if (!nominationDoc || !nominationDoc.nominees || nominationDoc.nominees.length === 0) {
@@ -768,11 +879,19 @@ export class EventListeners {
         const nomineeName = matchedNominee.nomineeId?.name || '';
         const nomineeEmail = matchedNominee.nomineeId?.email || '';
         const categoryName = matchedNominee.categoryId?.name || '';
+        const companyName = matchedNominee.nomineeId?.organization || '';
+        const nomineePhone = matchedNominee.nomineeId?.phoneNumber || '';
 
         targetParams.nomineeName = nomineeName;
         targetParams.nomineeEmail = nomineeEmail;
+        targetParams.nomineeCompany = companyName;
+        targetParams.nomineePhone = nomineePhone;
+        targetParams.nomineeCategory = categoryName;
+
         targetParams.nomineeNames = [nomineeName];
         targetParams.nomineeEmails = [nomineeEmail];
+        targetParams.nomineeCompanies = [companyName];
+        targetParams.nomineeCategories = [categoryName];
         targetParams.nomineeDetails = nomineeName && categoryName
           ? `${nomineeName} (Category: ${categoryName})`
           : nomineeName || categoryName;
@@ -780,8 +899,13 @@ export class EventListeners {
         if (targetParams.params) {
           targetParams.params.nomineeName = nomineeName;
           targetParams.params.nomineeEmail = nomineeEmail;
+          targetParams.params.nomineeCompany = companyName;
+          targetParams.params.nomineePhone = nomineePhone;
+          targetParams.params.nomineeCategory = categoryName;
           targetParams.params.nomineeNames = [nomineeName];
           targetParams.params.nomineeEmails = [nomineeEmail];
+          targetParams.params.nomineeCompanies = [companyName];
+          targetParams.params.nomineeCategories = [categoryName];
           targetParams.params.nomineeDetails = targetParams.nomineeDetails;
         }
 

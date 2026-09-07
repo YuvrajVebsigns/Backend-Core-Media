@@ -362,13 +362,62 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
         description: 'Array list of nominee names',
       },
       {
+        name: 'Nominees (Array List)',
+        path: 'nominees',
+        type: 'Object',
+        isArray: true,
+        modelName: 'Nomination',
+        categoryGroup: VariableCategoryGroup.NOMINATION,
+        description:
+          'Structured array list of all nominees for use with {{#each nominees}}...{{/each}} loops (fields: name, company, email, phone, category, index)',
+      },
+      {
+        name: 'Nominees Table (HTML)',
+        path: 'nomineesTable',
+        type: 'String',
+        isArray: false,
+        modelName: 'Nomination',
+        categoryGroup: VariableCategoryGroup.NOMINATION,
+        description:
+          'Pre-rendered styled responsive HTML table displaying all nominees and their categories',
+      },
+      {
+        name: 'Nominees List (HTML)',
+        path: 'nomineesList',
+        type: 'String',
+        isArray: false,
+        modelName: 'Nomination',
+        categoryGroup: VariableCategoryGroup.NOMINATION,
+        description:
+          'Pre-rendered styled HTML bulleted list displaying all nominees and their categories',
+      },
+      {
+        name: 'Nominee Companies List',
+        path: 'nomineeCompanies',
+        type: 'String',
+        isArray: true,
+        modelName: 'Nomination',
+        categoryGroup: VariableCategoryGroup.NOMINATION,
+        description: 'Array list of nominee company / organization names',
+      },
+      {
+        name: 'Nominee Categories List',
+        path: 'nomineeCategories',
+        type: 'String',
+        isArray: true,
+        modelName: 'Nomination',
+        categoryGroup: VariableCategoryGroup.NOMINATION,
+        description: 'Array list of nominated category names',
+      },
+      {
         name: 'Nominee Details (Formatted)',
         path: 'nomineeDetails',
         type: 'String',
         isArray: false,
         modelName: 'Nomination',
         categoryGroup: VariableCategoryGroup.NOMINATION,
-        description: 'Pre-formatted comma-separated string of nominees and their categories',
+        description:
+          'Pre-formatted comma-separated string of nominees and their categories',
       },
       {
         name: 'Nomination Session Title',

@@ -30,7 +30,7 @@ export class NominationsService {
     private readonly registreeModel: Model<Registree>,
     private readonly websitesService: WebsitesService,
     private readonly eventEmitter: EventEmitter2,
-  ) {}
+  ) { }
 
   /**
    * Submit a nomination (website form)
@@ -130,7 +130,10 @@ export class NominationsService {
     return result;
   }
 
-  async updateWebsiteNominationStatus(websiteId: string, isActive: boolean) {
+  async updateWebsiteNominationStatus(
+    websiteId: string,
+    isActive: boolean,
+  ) {
     const website = await this.websitesService.update(websiteId, {
       nominationActive: isActive,
     });
