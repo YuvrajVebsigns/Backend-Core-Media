@@ -34,6 +34,15 @@ export class NomineeDto {
   @IsOptional()
   subCategoryId?: string;
 
+  @ApiProperty({
+    example: '60d5ecb8b392d7001f3e3a4c',
+    description: 'CIO nomination sub category ID (alternative casing)',
+    required: false,
+  })
+  @IsMongoId()
+  @IsOptional()
+  subcategoryId?: string;
+
   @ApiProperty({ example: 'Jane Smith', description: 'CIO Contact Name' })
   @IsString()
   contactName!: string;
