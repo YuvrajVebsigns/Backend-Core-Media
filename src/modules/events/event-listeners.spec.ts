@@ -446,4 +446,70 @@ describe('EventListeners', () => {
       undefined,
     );
   });
+
+  it('should use nominatorSnapshot values instead of nominatorId values in nomination event parameters', async () => {
+    const mockMapping = {
+      to: '{{ nominatorEmail }}',
+      templateId: {
+        slug: 'nominator-thank-you',
+        subject: 'Thank you {{ nominatorName }}',
+        htmlContent: '<p>Hi {{ nominatorName }} from {{ nominatorCompany }} ({{ nominatorId.organization }}), your phone is {{ nominatorPhone }}</p>',
+      },
+      senderEmail: 'sender@coremedia.com',
+      senderName: 'Core Media Admin',
+    };
+    mockCommunicationsService.findEventMappingsByEvent.mockResolvedValue([
+      mockMapping,
+    ]);
+
+    const mockNomination = {
+      nominatorSnapshot: {
+        name: 'Snapshot Nominator',
+        email: 'snapshot.nominator@test.com',
+        company: 'Snapshot Company Ltd',
+        city: 'Mumbai',
+        phone: '+91 99999 88888',
+      },
+      nominatorId: {
+        name: 'Old CRM Name',
+        email: 'old.crm@test.com',
+        organization: 'Old CRM Org',
+        phoneNumber: '1111111111',
+        city: 'Old City',
+      },
+      nominees: [],
+      status: 'pending',
+    };
+    mockNominationsService.findOne.mockResolvedValue(mockNomination);
+
+    const eventPayload = {
+      nominationId: 'snap-nom-123',
+    };
+
+    await (eventListeners as any).triggerMappedEvent(
+      'nomination.submitted',
+      eventPayload,
+    );
+
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledWith(
+      undefined,
+      'snapshot.nominator@test.com',
+      'Thank you Snapshot Nominator',
+      '<p>Hi Snapshot Nominator from Snapshot Company Ltd (Snapshot Company Ltd), your phone is +91 99999 88888</p>',
+      expect.objectContaining({
+        templateSlug: 'nominator-thank-you',
+        params: expect.objectContaining({
+          nominatorName: 'Snapshot Nominator',
+          nominatorEmail: 'snapshot.nominator@test.com',
+          nominatorCompany: 'Snapshot Company Ltd',
+          nominatorOrg: 'Snapshot Company Ltd',
+          nominatorPhone: '+91 99999 88888',
+          nominatorCity: 'Mumbai',
+        }),
+      }),
+      undefined,
+      undefined,
+    );
+  });
 });

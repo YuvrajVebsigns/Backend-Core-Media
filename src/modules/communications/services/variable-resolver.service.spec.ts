@@ -235,5 +235,53 @@ describe('VariableResolverService', () => {
       const template = '{{ for nominee in nominees }}{{ nominee.name }} at {{ nominee.company }}{{ endfor }}';
       expect(service.interpolate(template, context)).toBe('Alice at Wonderland');
     });
+
+    it('should prioritize nominatorSnapshot values when resolving nominatorId.* paths', () => {
+      const context = {
+        nominatorSnapshot: {
+          name: 'Snapshot Name',
+          email: 'snapshot@test.com',
+          company: 'Snapshot Company',
+          phone: '9999999999',
+          city: 'Snapshot City',
+        },
+        nominatorId: {
+          name: 'Old CRM Name',
+          email: 'crm@test.com',
+          organization: 'Old CRM Org',
+          phoneNumber: '1111111111',
+          city: 'Old City',
+        },
+      };
+
+      expect(service.resolveVariable(context, 'nominatorId.name')).toBe('Snapshot Name');
+      expect(service.resolveVariable(context, 'nominatorId.email')).toBe('snapshot@test.com');
+      expect(service.resolveVariable(context, 'nominatorId.organization')).toBe('Snapshot Company');
+      expect(service.resolveVariable(context, 'nominatorId.phoneNumber')).toBe('9999999999');
+      expect(service.resolveVariable(context, 'nominatorId.city')).toBe('Snapshot City');
+
+      const template = 'Nominator: {{ nominatorId.name }} from {{ nominatorId.organization }} ({{ nominatorId.email }})';
+      expect(service.interpolate(template, context)).toBe(
+        'Nominator: Snapshot Name from Snapshot Company (snapshot@test.com)',
+      );
+    });
+
+    it('should resolve nominatorSnapshot.* directly and fallback to nominatorId on legacy records', () => {
+      const legacyContext = {
+        nominatorId: {
+          name: 'Legacy Nominator',
+          email: 'legacy@test.com',
+          organization: 'Legacy Org',
+          phoneNumber: '5555555555',
+          city: 'Legacy City',
+        },
+      };
+
+      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.name')).toBe('Legacy Nominator');
+      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.email')).toBe('legacy@test.com');
+      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.company')).toBe('Legacy Org');
+      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.phone')).toBe('5555555555');
+      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.city')).toBe('Legacy City');
+    });
   });
 });

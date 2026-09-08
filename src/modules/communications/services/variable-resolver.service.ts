@@ -68,9 +68,92 @@ export class VariableResolverService {
 
   /**
    * Resolves a path or token against context, transparently supporting params. prefix or nested context.params.
+   * Prioritizes nominatorSnapshot values over nominatorId references for point-in-time accuracy.
    */
   resolveVariable(context: any, path: string): any {
     if (!context || !path) return null;
+
+    // 1. If path is targeting nominatorId.<field> but nominatorSnapshot is present,
+    // prioritize the point-in-time snapshot values over nominatorId.
+    const isNominatorIdPath =
+      path.startsWith('nominatorId.') || path.startsWith('params.nominatorId.');
+    if (isNominatorIdPath) {
+      const isPrefixed = path.startsWith('params.');
+      const subField = path.replace(/^(params\.)?nominatorId\./, '');
+      const snapshot =
+        this.resolvePath(
+          context,
+          isPrefixed ? 'params.nominatorSnapshot' : 'nominatorSnapshot',
+        ) || this.resolvePath(context, 'nominatorSnapshot');
+
+      if (snapshot && typeof snapshot === 'object') {
+        if (subField === 'name' && snapshot.name !== undefined) return snapshot.name;
+        if (subField === 'email' && snapshot.email !== undefined) return snapshot.email;
+        if (
+          (subField === 'organization' || subField === 'company') &&
+          snapshot.company !== undefined
+        ) {
+          return snapshot.company;
+        }
+        if (
+          (subField === 'phone' || subField === 'phoneNumber') &&
+          snapshot.phone !== undefined
+        ) {
+          return snapshot.phone;
+        }
+        if (subField === 'city' && snapshot.city !== undefined) return snapshot.city;
+      }
+    }
+
+    // 2. If path is targeting nominatorSnapshot.<field> on a legacy record without snapshot,
+    // gracefully fall back to populated nominatorId fields.
+    const isNominatorSnapshotPath =
+      path.startsWith('nominatorSnapshot.') ||
+      path.startsWith('params.nominatorSnapshot.');
+    if (isNominatorSnapshotPath) {
+      let resolvedSnapshot = this.resolvePath(context, path);
+      if (
+        resolvedSnapshot === null ||
+        resolvedSnapshot === undefined ||
+        (path.startsWith('params.') && !resolvedSnapshot)
+      ) {
+        if (path.startsWith('params.')) {
+          resolvedSnapshot = this.resolvePath(context, path.substring(7));
+        } else {
+          const paramsCtx =
+            context && typeof context.get === 'function'
+              ? context.get('params')
+              : context?.params;
+          if (paramsCtx) {
+            resolvedSnapshot = this.resolvePath(paramsCtx, path);
+          }
+        }
+      }
+
+      if (resolvedSnapshot !== null && resolvedSnapshot !== undefined) {
+        return resolvedSnapshot;
+      }
+
+      const isPrefixed = path.startsWith('params.');
+      const subField = path.replace(/^(params\.)?nominatorSnapshot\./, '');
+      const nominator =
+        this.resolvePath(
+          context,
+          isPrefixed ? 'params.nominatorId' : 'nominatorId',
+        ) || this.resolvePath(context, 'nominatorId');
+
+      if (nominator && typeof nominator === 'object') {
+        if (subField === 'name') return nominator.name || null;
+        if (subField === 'email') return nominator.email || null;
+        if (subField === 'company' || subField === 'organization') {
+          return nominator.organization || nominator.company || null;
+        }
+        if (subField === 'phone' || subField === 'phoneNumber') {
+          return nominator.phoneNumber || nominator.phone || null;
+        }
+        if (subField === 'city') return nominator.city || null;
+      }
+    }
 
     let resolved = this.resolvePath(context, path);
 

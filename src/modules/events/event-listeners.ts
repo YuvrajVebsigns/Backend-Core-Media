@@ -482,15 +482,58 @@ export class EventListeners {
             nominationDoc = nominationObj;
             Object.assign(enrichedParams, nominationObj);
 
-            if (nomination.nominatorId) {
-              const nominator = nomination.nominatorId as any;
-              enrichedParams.nominatorName = nominator.name;
-              enrichedParams.nominatorEmail = nominator.email;
-              enrichedParams.nominatorPhone = nominator.phoneNumber || '';
-              enrichedParams.nominatorOrg = nominator.organization || '';
-              enrichedParams.nominatorCity = nominator.city || '';
+            if (nomination.nominatorId || (nomination as any).nominatorSnapshot) {
+              const snapshot = (nomination as any).nominatorSnapshot;
+              const nominator = (nomination.nominatorId || {}) as any;
+
+              // Prioritize snapshot values over nominatorId
+              const nominatorName = snapshot?.name || nominator.name || '';
+              const nominatorEmail = snapshot?.email || nominator.email || '';
+              const nominatorPhone = snapshot?.phone || nominator.phoneNumber || '';
+              const nominatorCompany = snapshot?.company || nominator.organization || '';
+              const nominatorCity = snapshot?.city || nominator.city || '';
+
+              enrichedParams.nominatorName = nominatorName;
+              enrichedParams.nominatorEmail = nominatorEmail;
+              enrichedParams.nominatorPhone = nominatorPhone;
+              enrichedParams.nominatorOrg = nominatorCompany;
+              enrichedParams.nominatorCompany = nominatorCompany;
+              enrichedParams.nominatorCity = nominatorCity;
+
+              // Override nominatorId object so existing templates using nominatorId.* get snapshot values
+              enrichedParams.nominatorId = {
+                ...(typeof nominator === 'object' ? nominator : {}),
+                name: nominatorName,
+                email: nominatorEmail,
+                phoneNumber: nominatorPhone,
+                phone: nominatorPhone,
+                organization: nominatorCompany,
+                company: nominatorCompany,
+                city: nominatorCity,
+              };
+
+              // Provide nominatorSnapshot object directly
+              enrichedParams.nominatorSnapshot = {
+                name: nominatorName,
+                email: nominatorEmail,
+                phone: nominatorPhone,
+                company: nominatorCompany,
+                city: nominatorCity,
+              };
+
+              // Provide nominator object alias
+              enrichedParams.nominator = {
+                name: nominatorName,
+                email: nominatorEmail,
+                phone: nominatorPhone,
+                phoneNumber: nominatorPhone,
+                company: nominatorCompany,
+                organization: nominatorCompany,
+                city: nominatorCity,
+              };
+
               if (!enrichedParams.email) {
-                enrichedParams.email = nominator.email;
+                enrichedParams.email = nominatorEmail;
               }
             }
 
