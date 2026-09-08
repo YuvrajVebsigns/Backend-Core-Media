@@ -184,6 +184,20 @@ export class NominationsService {
       matchQuery.websiteId = new Types.ObjectId(query.websiteId);
     }
 
+    if (query.startDate || query.endDate) {
+      matchQuery.createdAt = {};
+      if (query.startDate) {
+        matchQuery.createdAt.$gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        if (query.endDate.length === 10) {
+          end.setHours(23, 59, 59, 999);
+        }
+        matchQuery.createdAt.$lte = end;
+      }
+    }
+
     const pipeline: any[] = [
       { $match: matchQuery },
       { $sort: { createdAt: -1 } },
@@ -275,6 +289,20 @@ export class NominationsService {
     }
     if (query.nominatorId) {
       matchQuery.nominatorId = new Types.ObjectId(query.nominatorId);
+    }
+
+    if (query.startDate || query.endDate) {
+      matchQuery.createdAt = {};
+      if (query.startDate) {
+        matchQuery.createdAt.$gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        if (query.endDate.length === 10) {
+          end.setHours(23, 59, 59, 999);
+        }
+        matchQuery.createdAt.$lte = end;
+      }
     }
 
     const pipeline: any[] = [
@@ -378,6 +406,28 @@ export class NominationsService {
 
     if (query.websiteId) {
       matchQuery.websiteId = new Types.ObjectId(query.websiteId);
+    }
+
+    if (query.nominatorId) {
+      matchQuery.nominatorId = new Types.ObjectId(query.nominatorId);
+    }
+
+    if (query.nomineeId) {
+      matchQuery['nominees.nomineeId'] = new Types.ObjectId(query.nomineeId);
+    }
+
+    if (query.startDate || query.endDate) {
+      matchQuery.createdAt = {};
+      if (query.startDate) {
+        matchQuery.createdAt.$gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        const end = new Date(query.endDate);
+        if (query.endDate.length === 10) {
+          end.setHours(23, 59, 59, 999);
+        }
+        matchQuery.createdAt.$lte = end;
+      }
     }
 
     if (query.nominatorEmail) {

@@ -191,4 +191,25 @@ export class QueryNominationDto {
   @IsMongoId()
   @IsOptional()
   nominatorId?: string;
+
+  @ApiProperty({ required: false, description: 'Filter by nominee ID' })
+  @IsMongoId()
+  @IsOptional()
+  nomineeId?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Filter by start date (ISO string or YYYY-MM-DD)',
+  })
+  @IsString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Filter by end date (ISO string or YYYY-MM-DD)',
+  })
+  @IsString()
+  @IsOptional()
+  endDate?: string;
 }
