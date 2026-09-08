@@ -20,19 +20,25 @@ export class SubscribesService {
   private readonly logger = new Logger(SubscribesService.name);
 
   constructor(
-    @InjectModel(Subscribe.name) private readonly subscribeModel: Model<Subscribe>,
+    @InjectModel(Subscribe.name)
+    private readonly subscribeModel: Model<Subscribe>,
     private readonly communicationsService: CommunicationsService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async create(createDto: CreateSubscribeDto, websiteId: string): Promise<Subscribe> {
+  async create(
+    createDto: CreateSubscribeDto,
+    websiteId: string,
+  ): Promise<Subscribe> {
     const matchQuery: any = {
       email: createDto.email,
       websiteId: new Types.ObjectId(websiteId),
     };
     const existing = await this.subscribeModel.findOne(matchQuery).exec();
     if (existing) {
-      this.logger.log(`⚠️  Subscriber already exists: ${createDto.email} for website: ${websiteId}`);
+      this.logger.log(
+        `⚠️  Subscriber already exists: ${createDto.email} for website: ${websiteId}`,
+      );
       return existing;
     }
 
@@ -98,20 +104,29 @@ export class SubscribesService {
   }
 
   async findOne(id: string): Promise<Subscribe> {
-    const sub = await this.subscribeModel.findById(id).populate('websiteId', 'name domain').exec();
-    if (!sub) throw new NotFoundException(`Subscribe entry with ID ${id} not found`);
+    const sub = await this.subscribeModel
+      .findById(id)
+      .populate('websiteId', 'name domain')
+      .exec();
+    if (!sub)
+      throw new NotFoundException(`Subscribe entry with ID ${id} not found`);
     return sub;
   }
 
   async remove(id: string): Promise<void> {
-    const result = await this.subscribeModel.findByIdAndUpdate(id, { isDeleted: new Date() }).exec();
-    if (!result) throw new NotFoundException(`Subscribe entry with ID ${id} not found`);
+    const result = await this.subscribeModel
+      .findByIdAndUpdate(id, { isDeleted: new Date() })
+      .exec();
+    if (!result)
+      throw new NotFoundException(`Subscribe entry with ID ${id} not found`);
   }
 
   async sendSelectedEmails(dto: SendSelectedSubscribersDto) {
     const { subscriberIds, subject, content, websiteId } = dto;
 
-    const validSubscriberIds = subscriberIds.filter((id) => Types.ObjectId.isValid(id));
+    const validSubscriberIds = subscriberIds.filter((id) =>
+      Types.ObjectId.isValid(id),
+    );
     const query: any = {
       _id: { $in: validSubscriberIds.map((id) => new Types.ObjectId(id)) },
     };

@@ -317,10 +317,7 @@ export class TemplateService {
     );
 
     // Convert {{#if params.xxx}} to {% if params.xxx %} and {{/if}} to {% endif %}
-    adapted = adapted.replace(
-      /{{\s*#if\s+([^}]+)\s*}}/gi,
-      '{% if $1 %}',
-    );
+    adapted = adapted.replace(/{{\s*#if\s+([^}]+)\s*}}/gi, '{% if $1 %}');
     adapted = adapted.replace(/{{\s*\/if\s*}}/gi, '{% endif %}');
 
     return adapted;

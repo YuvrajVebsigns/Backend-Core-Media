@@ -167,16 +167,12 @@ export class EventsService {
     }
 
     const saved: any = await this.findOne(savedEvent._id.toString());
-    const eventId = saved.id || saved._id?.toString() || savedEvent._id.toString();
+    const eventId =
+      saved.id || saved._id?.toString() || savedEvent._id.toString();
 
     this.eventEmitter.emit(
       AppEvents.EVENT_CREATED,
-      new EventCreatedEvent(
-        eventId,
-        saved.title,
-        saved.type,
-        uploadedBy || '',
-      ),
+      new EventCreatedEvent(eventId, saved.title, saved.type, uploadedBy || ''),
     );
 
     return saved;
@@ -590,7 +586,10 @@ export class EventsService {
       : '';
     const eventDetails = event.excerpt || '';
 
-    const meetingId = (result as any).id || (result as any)._id?.toString() || savedMeeting._id.toString();
+    const meetingId =
+      (result as any).id ||
+      (result as any)._id?.toString() ||
+      savedMeeting._id.toString();
 
     this.eventEmitter.emit(
       AppEvents.EVENT_MEETING_CREATED,

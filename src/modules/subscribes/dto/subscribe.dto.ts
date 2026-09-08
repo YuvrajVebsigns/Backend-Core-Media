@@ -1,16 +1,29 @@
-import { IsEmail, IsOptional, IsString, IsMongoId, IsArray, ArrayNotEmpty } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsMongoId,
+  IsArray,
+  ArrayNotEmpty,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { cleanEmail } from '@common/utils/string.util';
 
 export class CreateSubscribeDto {
-  @ApiProperty({ example: 'jane.doe@example.com', description: 'Subscriber email' })
+  @ApiProperty({
+    example: 'jane.doe@example.com',
+    description: 'Subscriber email',
+  })
   @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   email: string;
 
-  @ApiPropertyOptional({ example: 'footer', description: 'Source or placement of subscribe widget' })
+  @ApiPropertyOptional({
+    example: 'footer',
+    description: 'Source or placement of subscribe widget',
+  })
   @IsString()
   @IsOptional()
   source?: string;

@@ -82,7 +82,9 @@ export class BrevoEmailProvider implements ICommunicationProvider {
         htmlContent: payload.content,
         ...(ccList && ccList.length > 0 ? { cc: ccList } : {}),
         ...(bccList && bccList.length > 0 ? { bcc: bccList } : {}),
-        ...(payload.metadata?.params ? { params: payload.metadata.params } : {}),
+        ...(payload.metadata?.params
+          ? { params: payload.metadata.params }
+          : {}),
       });
 
       return {

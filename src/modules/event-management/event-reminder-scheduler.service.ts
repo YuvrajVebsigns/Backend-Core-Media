@@ -4,7 +4,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Event, ScheduleType } from './schemas/event.schema';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AppEvents, EventReminderEvent } from '@modules/events/event-definitions';
+import {
+  AppEvents,
+  EventReminderEvent,
+} from '@modules/events/event-definitions';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -23,11 +26,14 @@ export class EventReminderSchedulerService {
     const now = dayjs();
 
     // Find active events with scheduled emails
-    const events = await this.eventModel.find({
-      isActive: true,
-      'scheduledEmails.isActive': true,
-      'scheduledEmails.isProcessed': false,
-    }).select('startDate scheduledEmails title').exec();
+    const events = await this.eventModel
+      .find({
+        isActive: true,
+        'scheduledEmails.isActive': true,
+        'scheduledEmails.isProcessed': false,
+      })
+      .select('startDate scheduledEmails title')
+      .exec();
 
     let processedCount = 0;
 
@@ -78,8 +84,10 @@ export class EventReminderSchedulerService {
         }
 
         if (shouldTrigger) {
-          this.logger.log(`Triggering scheduled email (Template: ${schedule.templateId}) for Event: ${event.title}`);
-          
+          this.logger.log(
+            `Triggering scheduled email (Template: ${schedule.templateId}) for Event: ${event.title}`,
+          );
+
           try {
             // Find all approved registrees for this event
             const registreeModel = this.eventModel.db.model('Registree');
@@ -134,7 +142,10 @@ export class EventReminderSchedulerService {
             eventUpdated = true;
             processedCount++;
           } catch (error) {
-            this.logger.error(`Error processing scheduled email for event ${event._id}`, error);
+            this.logger.error(
+              `Error processing scheduled email for event ${event._id}`,
+              error,
+            );
           }
         }
       }
@@ -144,6 +155,8 @@ export class EventReminderSchedulerService {
       }
     }
 
-    this.logger.log(`Finished daily event reminder job. Processed ${processedCount} schedules.`);
+    this.logger.log(
+      `Finished daily event reminder job. Processed ${processedCount} schedules.`,
+    );
   }
 }

@@ -23,13 +23,13 @@ export class VariableResolverService {
 
     // If current node is an array, we map the remaining path over its elements
     if (Array.isArray(current)) {
-      const results = current.map(item => this.resolveParts(item, parts));
+      const results = current.map((item) => this.resolveParts(item, parts));
       const flattened = this.flattenAndFilter(results);
       return flattened.length > 0 ? flattened : null;
     }
 
     const [first, ...rest] = parts;
-    
+
     // Support Mongoose Document get() if available, otherwise standard property access
     let nextValue: any;
     if (current && typeof current.get === 'function') {
@@ -46,7 +46,7 @@ export class VariableResolverService {
 
     if (Array.isArray(nextValue)) {
       // Encountered an array mid-path
-      const results = nextValue.map(item => this.resolveParts(item, rest));
+      const results = nextValue.map((item) => this.resolveParts(item, rest));
       const flattened = this.flattenAndFilter(results);
       return flattened.length > 0 ? flattened : null;
     }
@@ -87,8 +87,10 @@ export class VariableResolverService {
         ) || this.resolvePath(context, 'nominatorSnapshot');
 
       if (snapshot && typeof snapshot === 'object') {
-        if (subField === 'name' && snapshot.name !== undefined) return snapshot.name;
-        if (subField === 'email' && snapshot.email !== undefined) return snapshot.email;
+        if (subField === 'name' && snapshot.name !== undefined)
+          return snapshot.name;
+        if (subField === 'email' && snapshot.email !== undefined)
+          return snapshot.email;
         if (
           (subField === 'organization' || subField === 'company') &&
           snapshot.company !== undefined
@@ -101,7 +103,8 @@ export class VariableResolverService {
         ) {
           return snapshot.phone;
         }
-        if (subField === 'city' && snapshot.city !== undefined) return snapshot.city;
+        if (subField === 'city' && snapshot.city !== undefined)
+          return snapshot.city;
       }
     }
 
@@ -295,11 +298,11 @@ export class VariableResolverService {
         const val = this.resolveVariable(context, trimmedPath);
         const isTruthy = Boolean(
           val &&
-            (Array.isArray(val)
-              ? val.length > 0
-              : String(val).trim().length > 0 &&
-                String(val).trim() !== 'false' &&
-                String(val).trim() !== '0'),
+          (Array.isArray(val)
+            ? val.length > 0
+            : String(val).trim().length > 0 &&
+              String(val).trim() !== 'false' &&
+              String(val).trim() !== '0'),
         );
         const shouldRenderIf = isNot ? !isTruthy : isTruthy;
         return shouldRenderIf
@@ -316,11 +319,11 @@ export class VariableResolverService {
         const val = this.resolveVariable(context, trimmedPath);
         const isTruthy = Boolean(
           val &&
-            (Array.isArray(val)
-              ? val.length > 0
-              : String(val).trim().length > 0 &&
-                String(val).trim() !== 'false' &&
-                String(val).trim() !== '0'),
+          (Array.isArray(val)
+            ? val.length > 0
+            : String(val).trim().length > 0 &&
+              String(val).trim() !== 'false' &&
+              String(val).trim() !== '0'),
         );
         return isTruthy
           ? this.interpolate(ifBlock, context)
@@ -355,10 +358,7 @@ export class VariableResolverService {
           typeof resolved[0] === 'object' &&
           resolved[0] !== null
         ) {
-          if (
-            trimmedPath === 'nominees' ||
-            trimmedPath === 'params.nominees'
-          ) {
+          if (trimmedPath === 'nominees' || trimmedPath === 'params.nominees') {
             const tableVal = this.resolveVariable(context, 'nomineesTable');
             if (tableVal) return String(tableVal);
           }

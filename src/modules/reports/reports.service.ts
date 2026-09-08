@@ -294,7 +294,12 @@ export class ReportsService {
 
     this.eventEmitter.emit(
       AppEvents.REPORT_DOWNLOADED,
-      new ReportDownloadedEvent(report._id.toString(), email, websiteId, downloadUrl),
+      new ReportDownloadedEvent(
+        report._id.toString(),
+        email,
+        websiteId,
+        downloadUrl,
+      ),
     );
 
     return {

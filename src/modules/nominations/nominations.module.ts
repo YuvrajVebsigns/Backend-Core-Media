@@ -22,6 +22,7 @@ import { AdminNominationCategoriesController } from './nomination-categories.con
 import { AdminNominationSubCategoriesController } from './nomination-sub-categories.controller';
 import { WebsiteNominationsController } from './website-nominations.controller';
 import { AuthModule } from '@core/auth/auth.module';
+import { NominationExportService } from './nomination-export.service';
 
 @Module({
   imports: [
@@ -42,11 +43,13 @@ import { AuthModule } from '@core/auth/auth.module';
   ],
   providers: [
     NominationsService,
+    NominationExportService,
     NominationCategoriesService,
     NominationSubCategoriesService,
   ],
   exports: [
     NominationsService,
+    NominationExportService,
     NominationCategoriesService,
     NominationSubCategoriesService,
   ],

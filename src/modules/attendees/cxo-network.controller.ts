@@ -66,7 +66,8 @@ export class AdminCxoNetworkController {
     name: 'companyCategory',
     required: false,
     type: String,
-    description: 'Filter by category (Enterprise, Startup, Government, Education, Other)',
+    description:
+      'Filter by category (Enterprise, Startup, Government, Education, Other)',
   })
   @ApiQuery({
     name: 'websiteId',
@@ -103,7 +104,8 @@ export class AdminCxoNetworkController {
   @ApiResponse({ status: 401, description: 'Unauthorized request.' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden resource - requires registrations.create permission.',
+    description:
+      'Forbidden resource - requires registrations.create permission.',
   })
   create(@Body() dto: CreateCxoNetworkMemberDto) {
     return this.attendeesService.createCxoNetworkMember(dto, dto.websiteId);
@@ -124,7 +126,8 @@ export class AdminCxoNetworkController {
   @ApiResponse({ status: 401, description: 'Unauthorized request.' })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden resource - requires registrations.delete permission.',
+    description:
+      'Forbidden resource - requires registrations.delete permission.',
   })
   remove(@Param('id') id: string) {
     return this.attendeesService.removeCxoNetworkMember(id);

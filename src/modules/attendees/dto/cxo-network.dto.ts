@@ -1,10 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsOptional,
-  IsString,
-  IsEmail,
-  IsNotEmpty,
-} from 'class-validator';
+import { IsOptional, IsString, IsEmail, IsNotEmpty } from 'class-validator';
 import { Transform } from 'class-transformer';
 import {
   toTitleCase,
@@ -68,7 +63,10 @@ export class CreateCxoNetworkMemberDto {
   @IsNotEmpty()
   companyName: string;
 
-  @ApiProperty({ example: '123 Tech Park, Financial District', required: false })
+  @ApiProperty({
+    example: '123 Tech Park, Financial District',
+    required: false,
+  })
   @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsOptional()

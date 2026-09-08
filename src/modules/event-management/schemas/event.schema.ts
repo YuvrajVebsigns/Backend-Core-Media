@@ -79,7 +79,11 @@ export enum ScheduleType {
 
 @Schema({ _id: true, timestamps: true })
 export class EventScheduledEmail {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'MessageTemplate', required: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'MessageTemplate',
+    required: true,
+  })
   templateId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, enum: Object.values(ScheduleType) })
@@ -103,7 +107,6 @@ export class EventScheduledEmail {
   @Prop({ default: false })
   isProcessed: boolean;
 }
-
 
 @Schema({
   collection: 'events',

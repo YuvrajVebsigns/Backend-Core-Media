@@ -9,10 +9,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { RoleResponseDto } from '@core/roles/dto/role.dto';
-import {
-  toTitleCase,
-  cleanEmail,
-} from '@common/utils/string.util';
+import { toTitleCase, cleanEmail } from '@common/utils/string.util';
 
 export class CreateSystemUserDto {
   @ApiProperty({ example: 'user@example.com' })

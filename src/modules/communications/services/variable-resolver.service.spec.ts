@@ -24,8 +24,12 @@ describe('VariableResolverService', () => {
           name: 'Nominator Name',
         },
       };
-      expect(service.resolvePath(obj, 'nominatorId.email')).toBe('nominator@test.com');
-      expect(service.resolvePath(obj, 'nominatorId.name')).toBe('Nominator Name');
+      expect(service.resolvePath(obj, 'nominatorId.email')).toBe(
+        'nominator@test.com',
+      );
+      expect(service.resolvePath(obj, 'nominatorId.name')).toBe(
+        'Nominator Name',
+      );
     });
 
     it('should return null for non-existent path or null/undefined nodes', () => {
@@ -63,9 +67,7 @@ describe('VariableResolverService', () => {
             ],
           },
           {
-            members: [
-              { email: 'email3@test.com' },
-            ],
+            members: [{ email: 'email3@test.com' }],
           },
         ],
       };
@@ -85,7 +87,8 @@ describe('VariableResolverService', () => {
           title: 'Annual Tech Summit',
         },
       };
-      const template = 'Hello {{ registreeName }}, welcome to {{ event.title }}!';
+      const template =
+        'Hello {{ registreeName }}, welcome to {{ event.title }}!';
       expect(service.interpolate(template, obj)).toBe(
         'Hello Vaibhav, welcome to Annual Tech Summit!',
       );
@@ -132,7 +135,11 @@ describe('VariableResolverService', () => {
       const context = {
         nominatorName: 'John Doe',
         nominees: [
-          { name: 'Jane Smith', company: 'Infosys', category: 'CIO of the Year' },
+          {
+            name: 'Jane Smith',
+            company: 'Infosys',
+            category: 'CIO of the Year',
+          },
           { name: 'Bob Jones', company: 'Wipro', category: 'Cloud Innovation' },
         ],
       };
@@ -157,8 +164,11 @@ describe('VariableResolverService', () => {
           ],
         },
       };
-      const template = '{{#each params.nominees}}[{{name}} - {{category}}]{{/each}}';
-      expect(service.interpolate(template, context)).toBe('[Alice - Security][Charlie - DevOps]');
+      const template =
+        '{{#each params.nominees}}[{{name}} - {{category}}]{{/each}}';
+      expect(service.interpolate(template, context)).toBe(
+        '[Alice - Security][Charlie - DevOps]',
+      );
     });
 
     it('should format array of objects cleanly without [object Object] when referenced as a single token', () => {
@@ -232,8 +242,11 @@ describe('VariableResolverService', () => {
       const context = {
         nominees: [{ name: 'Alice', company: 'Wonderland' }],
       };
-      const template = '{{ for nominee in nominees }}{{ nominee.name }} at {{ nominee.company }}{{ endfor }}';
-      expect(service.interpolate(template, context)).toBe('Alice at Wonderland');
+      const template =
+        '{{ for nominee in nominees }}{{ nominee.name }} at {{ nominee.company }}{{ endfor }}';
+      expect(service.interpolate(template, context)).toBe(
+        'Alice at Wonderland',
+      );
     });
 
     it('should prioritize nominatorSnapshot values when resolving nominatorId.* paths', () => {
@@ -254,13 +267,24 @@ describe('VariableResolverService', () => {
         },
       };
 
-      expect(service.resolveVariable(context, 'nominatorId.name')).toBe('Snapshot Name');
-      expect(service.resolveVariable(context, 'nominatorId.email')).toBe('snapshot@test.com');
-      expect(service.resolveVariable(context, 'nominatorId.organization')).toBe('Snapshot Company');
-      expect(service.resolveVariable(context, 'nominatorId.phoneNumber')).toBe('9999999999');
-      expect(service.resolveVariable(context, 'nominatorId.city')).toBe('Snapshot City');
+      expect(service.resolveVariable(context, 'nominatorId.name')).toBe(
+        'Snapshot Name',
+      );
+      expect(service.resolveVariable(context, 'nominatorId.email')).toBe(
+        'snapshot@test.com',
+      );
+      expect(service.resolveVariable(context, 'nominatorId.organization')).toBe(
+        'Snapshot Company',
+      );
+      expect(service.resolveVariable(context, 'nominatorId.phoneNumber')).toBe(
+        '9999999999',
+      );
+      expect(service.resolveVariable(context, 'nominatorId.city')).toBe(
+        'Snapshot City',
+      );
 
-      const template = 'Nominator: {{ nominatorId.name }} from {{ nominatorId.organization }} ({{ nominatorId.email }})';
+      const template =
+        'Nominator: {{ nominatorId.name }} from {{ nominatorId.organization }} ({{ nominatorId.email }})';
       expect(service.interpolate(template, context)).toBe(
         'Nominator: Snapshot Name from Snapshot Company (snapshot@test.com)',
       );
@@ -277,11 +301,21 @@ describe('VariableResolverService', () => {
         },
       };
 
-      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.name')).toBe('Legacy Nominator');
-      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.email')).toBe('legacy@test.com');
-      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.company')).toBe('Legacy Org');
-      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.phone')).toBe('5555555555');
-      expect(service.resolveVariable(legacyContext, 'nominatorSnapshot.city')).toBe('Legacy City');
+      expect(
+        service.resolveVariable(legacyContext, 'nominatorSnapshot.name'),
+      ).toBe('Legacy Nominator');
+      expect(
+        service.resolveVariable(legacyContext, 'nominatorSnapshot.email'),
+      ).toBe('legacy@test.com');
+      expect(
+        service.resolveVariable(legacyContext, 'nominatorSnapshot.company'),
+      ).toBe('Legacy Org');
+      expect(
+        service.resolveVariable(legacyContext, 'nominatorSnapshot.phone'),
+      ).toBe('5555555555');
+      expect(
+        service.resolveVariable(legacyContext, 'nominatorSnapshot.city'),
+      ).toBe('Legacy City');
     });
   });
 });

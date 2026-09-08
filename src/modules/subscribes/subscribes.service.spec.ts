@@ -74,7 +74,9 @@ describe('SubscribesService', () => {
     });
 
     (service as any).subscribeModel = Object.assign(constructorMock, {
-      findOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
+      findOne: jest
+        .fn()
+        .mockReturnValue({ exec: jest.fn().mockResolvedValue(null) }),
     });
 
     const result = await service.create(

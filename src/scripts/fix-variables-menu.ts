@@ -8,7 +8,9 @@ async function run() {
   console.log('🌱 Starting database fix for Variables sidebar menu...');
   const app = await NestFactory.createApplicationContext(AppModule);
   try {
-    const sidebarMenuModel: Model<SidebarMenu> = app.get(getModelToken(SidebarMenu.name));
+    const sidebarMenuModel: Model<SidebarMenu> = app.get(
+      getModelToken(SidebarMenu.name),
+    );
 
     // Find parent menu
     const parent = await sidebarMenuModel.findOne({ name: 'Communications' });
@@ -31,7 +33,10 @@ async function run() {
       group: 'content management',
       parentId: parent._id as any,
     });
-    console.log('✅ Successfully created Variables menu with parentId:', parent._id);
+    console.log(
+      '✅ Successfully created Variables menu with parentId:',
+      parent._id,
+    );
   } catch (err) {
     console.error('❌ Error during DB fix:', err);
   } finally {

@@ -19,9 +19,8 @@ export class CaptchaService {
     'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
   constructor(private readonly configService: ConfigService) {
-    this.turnstileSecret = this.configService.get<string | undefined>(
-      'TURNSTILE_SECRET',
-    ) || '';
+    this.turnstileSecret =
+      this.configService.get<string | undefined>('TURNSTILE_SECRET') || '';
     this.nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
 
     if (!this.turnstileSecret) {
@@ -52,7 +51,10 @@ export class CaptchaService {
 
       // Development mode: Allow test tokens
       if (this.nodeEnv === 'development' || this.nodeEnv === 'test') {
-        if (token.startsWith('test_') || token === '1_1_00000000000000000000000000000000000000000') {
+        if (
+          token.startsWith('test_') ||
+          token === '1_1_00000000000000000000000000000000000000000'
+        ) {
           this.logger.log('Development mode: CAPTCHA verification bypassed');
           return {
             success: true,

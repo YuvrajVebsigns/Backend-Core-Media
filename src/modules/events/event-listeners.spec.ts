@@ -120,9 +120,7 @@ describe('EventListeners', () => {
     );
 
     // 5. Assert dispatch was called for all recipients
-    expect(
-      mockCommunicationsService.dispatch,
-    ).toHaveBeenCalledTimes(3);
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(3);
 
     // Expected recipients resolved from '{{ nominatorEmail }}, {{ nomineeEmails }}'
     const expectedRecipients = [
@@ -132,9 +130,7 @@ describe('EventListeners', () => {
     ];
 
     expectedRecipients.forEach((recipient, idx) => {
-      expect(
-        mockCommunicationsService.dispatch,
-      ).toHaveBeenNthCalledWith(
+      expect(mockCommunicationsService.dispatch).toHaveBeenNthCalledWith(
         idx + 1,
         undefined, // channel
         recipient,
@@ -172,12 +168,8 @@ describe('EventListeners', () => {
       eventPayload,
     );
 
-    expect(
-      mockCommunicationsService.dispatch,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      mockCommunicationsService.dispatch,
-    ).toHaveBeenCalledWith(
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledWith(
       undefined,
       'direct@recipient.com',
       '',
@@ -235,12 +227,8 @@ describe('EventListeners', () => {
     expect(mockAttendeesService.findOneRegistree).toHaveBeenCalledWith(
       'mock-registree-id',
     );
-    expect(
-      mockCommunicationsService.dispatch,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      mockCommunicationsService.dispatch,
-    ).toHaveBeenCalledWith(
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledWith(
       undefined,
       'jane.latest@gmail.com',
       '',
@@ -262,7 +250,8 @@ describe('EventListeners', () => {
       templateId: {
         slug: 'nominee-notification',
         subject: 'Nomination for {{ nomineeName }}',
-        htmlContent: '<p>Dear {{ nomineeName }}, you have been nominated for category {{ nomineeDetails }}. Nominator was {{ nominatorName }}.</p>',
+        htmlContent:
+          '<p>Dear {{ nomineeName }}, you have been nominated for category {{ nomineeDetails }}. Nominator was {{ nominatorName }}.</p>',
       },
       senderEmail: 'sender@coremedia.com',
       senderName: 'Core Media Admin',
@@ -360,7 +349,8 @@ describe('EventListeners', () => {
             slug: 'nominee-notice',
             channel: 'email',
             subject: 'Nominated in {{ category }}',
-            htmlContent: '<p>Hi {{ nomineeName }} ({{ nomineeCompany }}), category is {{ category }} & subcategory {{ subCategory }}.</p>',
+            htmlContent:
+              '<p>Hi {{ nomineeName }} ({{ nomineeCompany }}), category is {{ category }} & subcategory {{ subCategory }}.</p>',
           },
           isActive: true,
         },
@@ -453,7 +443,8 @@ describe('EventListeners', () => {
       templateId: {
         slug: 'nominator-thank-you',
         subject: 'Thank you {{ nominatorName }}',
-        htmlContent: '<p>Hi {{ nominatorName }} from {{ nominatorCompany }} ({{ nominatorId.organization }}), your phone is {{ nominatorPhone }}</p>',
+        htmlContent:
+          '<p>Hi {{ nominatorName }} from {{ nominatorCompany }} ({{ nominatorId.organization }}), your phone is {{ nominatorPhone }}</p>',
       },
       senderEmail: 'sender@coremedia.com',
       senderName: 'Core Media Admin',

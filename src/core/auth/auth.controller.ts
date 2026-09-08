@@ -180,7 +180,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Report screenshot attempt, disable user account, and notify administrator',
+    summary:
+      'Report screenshot attempt, disable user account, and notify administrator',
   })
   @ApiStandardResponse({
     status: 200,

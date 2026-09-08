@@ -47,11 +47,18 @@ export class AdminCommunicationVariablesController {
       'The path must be unique within its modelName classification.',
   })
   @ApiResponse({ status: 201, description: 'Variable created successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid request body or validation failure' })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid request body or validation failure',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT',
+  })
   @ApiResponse({
     status: 409,
-    description: 'Conflict — variable with same modelName + path already exists',
+    description:
+      'Conflict — variable with same modelName + path already exists',
   })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   create(@Body() createDto: CreateCommunicationVariableDto) {
@@ -66,14 +73,55 @@ export class AdminCommunicationVariablesController {
       'modelName, categoryGroup, active status, and sender variable compatibility. ' +
       'Search performs a case-insensitive match across name, path, and description fields.',
   })
-  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
-  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
-  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term across name, path, and description' })
-  @ApiQuery({ name: 'modelName', required: false, type: String, description: 'Filter by base schema model (e.g. Registree, Nomination, Event)' })
-  @ApiQuery({ name: 'categoryGroup', required: false, type: String, description: 'Filter by category group enum (REGISTRATION, NOMINATION, EVENT, BLOG, CONTACT, WEBSITE)' })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Filter by active/inactive status' })
-  @ApiQuery({ name: 'isSenderVariable', required: false, type: Boolean, description: 'Filter variables compatible for sender/recipient address mapping' })
-  @ApiResponse({ status: 200, description: 'Paginated list of communication variables' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search term across name, path, and description',
+  })
+  @ApiQuery({
+    name: 'modelName',
+    required: false,
+    type: String,
+    description:
+      'Filter by base schema model (e.g. Registree, Nomination, Event)',
+  })
+  @ApiQuery({
+    name: 'categoryGroup',
+    required: false,
+    type: String,
+    description:
+      'Filter by category group enum (REGISTRATION, NOMINATION, EVENT, BLOG, CONTACT, WEBSITE)',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    type: Boolean,
+    description: 'Filter by active/inactive status',
+  })
+  @ApiQuery({
+    name: 'isSenderVariable',
+    required: false,
+    type: Boolean,
+    description:
+      'Filter variables compatible for sender/recipient address mapping',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of communication variables',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
   findAll(@Query() queryDto: QueryCommunicationVariableDto) {
@@ -83,9 +131,13 @@ export class AdminCommunicationVariablesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get communication variable by ID',
-    description: 'Returns the full details of a single communication variable by its MongoDB ID.',
+    description:
+      'Returns the full details of a single communication variable by its MongoDB ID.',
   })
-  @ApiParam({ name: 'id', description: 'MongoDB ID of the communication variable' })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ID of the communication variable',
+  })
   @ApiResponse({ status: 200, description: 'Communication variable details' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Variable not found' })
@@ -101,7 +153,10 @@ export class AdminCommunicationVariablesController {
       'Partially updates a communication variable. Only the fields provided in the body will be updated. ' +
       'Updating the path or modelName may affect existing template mappings.',
   })
-  @ApiParam({ name: 'id', description: 'MongoDB ID of the communication variable' })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ID of the communication variable',
+  })
   @ApiResponse({ status: 200, description: 'Variable updated successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request body' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -121,7 +176,10 @@ export class AdminCommunicationVariablesController {
       'Soft-deletes the communication variable. The record is marked as deleted but remains in the database. ' +
       'Deleted variables will no longer appear in template variable selectors.',
   })
-  @ApiParam({ name: 'id', description: 'MongoDB ID of the communication variable' })
+  @ApiParam({
+    name: 'id',
+    description: 'MongoDB ID of the communication variable',
+  })
   @ApiResponse({ status: 200, description: 'Variable deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Variable not found' })

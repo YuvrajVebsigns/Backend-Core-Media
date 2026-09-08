@@ -100,7 +100,8 @@ export class WebsiteAttendeesController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Application submitted successfully and linked to registree contact record.',
+    description:
+      'Application submitted successfully and linked to registree contact record.',
   })
   @ApiResponse({
     status: 400,

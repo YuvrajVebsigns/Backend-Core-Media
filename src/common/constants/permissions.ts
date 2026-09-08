@@ -90,18 +90,21 @@ export const PERMISSIONS = {
   NOMINATORS_CREATE: 'nominators.create',
   NOMINATORS_UPDATE: 'nominators.update',
   NOMINATORS_DELETE: 'nominators.delete',
+  NOMINATORS_EXPORT: 'nominators.export',
 
   // Nominees
   NOMINEES_VIEW: 'nominees.view',
   NOMINEES_CREATE: 'nominees.create',
   NOMINEES_UPDATE: 'nominees.update',
   NOMINEES_DELETE: 'nominees.delete',
+  NOMINEES_EXPORT: 'nominees.export',
 
   // Nominations
   NOMINATIONS_VIEW: 'nominations.view',
   NOMINATIONS_CREATE: 'nominations.create',
   NOMINATIONS_UPDATE: 'nominations.update',
   NOMINATIONS_DELETE: 'nominations.delete',
+  NOMINATIONS_EXPORT: 'nominations.export',
 
   // Communications
   COMMUNICATIONS_VIEW: 'communications.view',

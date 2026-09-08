@@ -1,5 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { WebsiteAuthGuard } from '@core/auth/guards/website-auth.guard';
 import { CurrentWebsite } from '@common/decorators/current-website.decorator';
 import { NavbarService } from '../services/navbar.service';
@@ -34,7 +39,11 @@ export class NavbarController {
     @Query('position') position: NavbarPosition,
     @Query('nested') nested?: string,
   ) {
-    return this.navbarService.findAll(website.id, position, nested !== 'false', true);
+    return this.navbarService.findAll(
+      website.id,
+      position,
+      nested !== 'false',
+      true,
+    );
   }
 }
-

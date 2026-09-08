@@ -40,7 +40,9 @@ export class CommunicationsProcessor {
         CommunicationChannel.EMAIL,
       );
       if (!activeProvider) {
-        throw new Error('No active email provider configured. Please enable and configure Brevo or another email provider.');
+        throw new Error(
+          'No active email provider configured. Please enable and configure Brevo or another email provider.',
+        );
       }
 
       const result = await activeProvider.send({

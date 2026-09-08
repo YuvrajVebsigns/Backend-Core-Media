@@ -172,7 +172,9 @@ export class CommunicationsService implements OnApplicationBootstrap {
   }
 
   async getAdminEmail(): Promise<string> {
-    const brevo = await this.providerModel.findOne({ name: 'brevo', isDeleted: null }).exec();
+    const brevo = await this.providerModel
+      .findOne({ name: 'brevo', isDeleted: null })
+      .exec();
     if (brevo && brevo.config && typeof brevo.config.adminEmail === 'string') {
       return brevo.config.adminEmail;
     }
@@ -198,7 +200,9 @@ export class CommunicationsService implements OnApplicationBootstrap {
 
     let recipients: string[] = [];
     if (targetOverride) {
-      recipients = Array.isArray(targetOverride) ? targetOverride : [targetOverride];
+      recipients = Array.isArray(targetOverride)
+        ? targetOverride
+        : [targetOverride];
     } else {
       const targetPath =
         (template as any).to ||

@@ -24,11 +24,7 @@ import {
   NominationSubmittedEvent,
   NominationStatusChangedEvent,
 } from '@modules/events/event-definitions';
-import {
-  toTitleCase,
-  cleanEmail,
-  cleanPhone,
-} from '@common/utils/string.util';
+import { toTitleCase, cleanEmail, cleanPhone } from '@common/utils/string.util';
 
 @Injectable()
 export class NominationsService {
@@ -39,7 +35,7 @@ export class NominationsService {
     private readonly registreeModel: Model<Registree>,
     private readonly websitesService: WebsitesService,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   /**
    * Submit a nomination (website form)
@@ -115,9 +111,7 @@ export class NominationsService {
       nomineeEntries.push({
         nomineeId: nomineeRegistree._id,
         categoryId: new Types.ObjectId(nominee.categoryId),
-        ...(subCatId
-          ? { subCategoryId: new Types.ObjectId(subCatId) }
-          : {}),
+        ...(subCatId ? { subCategoryId: new Types.ObjectId(subCatId) } : {}),
         contactName: cleanContactName,
         companyName: cleanCompanyName,
         contactEmail: cleanContactEmail,
@@ -157,10 +151,7 @@ export class NominationsService {
     return result;
   }
 
-  async updateWebsiteNominationStatus(
-    websiteId: string,
-    isActive: boolean,
-  ) {
+  async updateWebsiteNominationStatus(websiteId: string, isActive: boolean) {
     const website = await this.websitesService.update(websiteId, {
       nominationActive: isActive,
     });
@@ -656,10 +647,13 @@ export class NominationsService {
     } else {
       // Preserve existing profile details if already set; fill in if missing
       if (!registree.name && data.name) registree.name = data.name;
-      if (!registree.phoneNumber && data.phoneNumber) registree.phoneNumber = data.phoneNumber;
-      if (!registree.organization && data.organization) registree.organization = data.organization;
+      if (!registree.phoneNumber && data.phoneNumber)
+        registree.phoneNumber = data.phoneNumber;
+      if (!registree.organization && data.organization)
+        registree.organization = data.organization;
       if (!registree.city && data.city) registree.city = data.city;
-      if (!registree.websiteId && websiteId) registree.websiteId = new Types.ObjectId(websiteId) as any;
+      if (!registree.websiteId && websiteId)
+        registree.websiteId = new Types.ObjectId(websiteId) as any;
 
       // Add tag if not already present
       if (!registree.tags) {

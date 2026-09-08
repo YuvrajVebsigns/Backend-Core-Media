@@ -8,7 +8,9 @@ import {
   Delete,
   Query,
   UseGuards,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -23,12 +25,14 @@ import { Roles } from '@common/decorators/roles.decorator';
 import { Permission } from '@common/decorators/permission.decorator';
 import { SystemUserRole } from '@common/enums/role.enum';
 import { NominationsService } from './nominations.service';
+import { NominationExportService } from './nomination-export.service';
 import {
   CreateNominationDto,
   UpdateNominationDto,
   UpdateNominationStatusDto,
   UpdateWebsiteNominationStatusDto,
   QueryNominationDto,
+  QueryNominationExportDto,
 } from './dto/nomination.dto';
 
 @ApiTags('Admin | Nominations')
@@ -36,7 +40,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
 @Controller('admin/nominations')
 export class AdminNominationsController {
-  constructor(private readonly nominationsService: NominationsService) {}
+  constructor(
+    private readonly nominationsService: NominationsService,
+    private readonly nominationExportService: NominationExportService,
+  ) {}
 
   @Post()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
@@ -95,6 +102,66 @@ export class AdminNominationsController {
   })
   findAllGroupedByNominee(@Query() query: QueryNominationDto) {
     return this.nominationsService.findAllGroupedByNominee(query);
+  }
+
+  @Get('export/nominees')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
+  @Permission('nominees.export', 'nominations.export')
+  @ApiOperation({
+    summary: 'Export nominees with voting data & analytics as Excel',
+    description:
+      'Generates a styled Excel workbook containing analytics KPI metrics, nominee directory with live Excel formulas, and detailed submission audit logs.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel spreadsheet file (.xlsx) stream',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
+  async exportNominees(
+    @Query() query: QueryNominationExportDto,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.nominationExportService.exportNominees(query);
+    const filename = `nominees-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.byteLength.toString());
+    res.end(buffer);
+  }
+
+  @Get('export/nominators')
+  @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
+  @Permission('nominators.export', 'nominations.export')
+  @ApiOperation({
+    summary: 'Export nominators with voting & submission data as Excel',
+    description:
+      'Generates a styled Excel workbook containing nominator activity analytics, nominator directory with live Excel formulas, and detailed submission audit logs.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel spreadsheet file (.xlsx) stream',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
+  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
+  async exportNominators(
+    @Query() query: QueryNominationExportDto,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.nominationExportService.exportNominators(query);
+    const filename = `nominators-export-${new Date().toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', buffer.byteLength.toString());
+    res.end(buffer);
   }
 
   @Get(':id')

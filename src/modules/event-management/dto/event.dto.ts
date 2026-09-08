@@ -16,7 +16,7 @@ import { ImageLinksDto } from '@common/dto/image-links.dto';
 import {
   EventType,
   EventStatus,
-  ScheduleType
+  ScheduleType,
 } from '@modules/event-management/schemas/event.schema';
 
 class EventLocationDto {
@@ -235,7 +235,7 @@ export class CreateEventDto {
   scheduledEmails?: EventScheduledEmailDto[];
 }
 
-export class UpdateEventDto extends PartialType(CreateEventDto) { }
+export class UpdateEventDto extends PartialType(CreateEventDto) {}
 
 export class QueryEventDto {
   @ApiProperty({ required: false, default: 1 })

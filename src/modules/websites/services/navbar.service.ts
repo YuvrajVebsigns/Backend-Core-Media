@@ -58,7 +58,9 @@ export class NavbarService {
       const filterVisible = (item: any) => {
         const raw = item.toJSON ? item.toJSON() : item;
         if (raw.items && Array.isArray(raw.items)) {
-          raw.items = raw.items.filter((subItem: any) => subItem.isVisible !== false);
+          raw.items = raw.items.filter(
+            (subItem: any) => subItem.isVisible !== false,
+          );
         }
         if (raw.children && Array.isArray(raw.children)) {
           raw.children = raw.children

@@ -9,7 +9,9 @@ import { CommunicationsModule } from '@modules/communications/communications.mod
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Subscribe.name, schema: SubscribeSchema }]),
+    MongooseModule.forFeature([
+      { name: Subscribe.name, schema: SubscribeSchema },
+    ]),
     AuthModule,
     CommunicationsModule,
   ],

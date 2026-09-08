@@ -13,11 +13,7 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { NominationStatus } from '../schemas/nomination.schema';
-import {
-  toTitleCase,
-  cleanEmail,
-  cleanPhone,
-} from '@common/utils/string.util';
+import { toTitleCase, cleanEmail, cleanPhone } from '@common/utils/string.util';
 
 /**
  * DTO for a single nominee in the form submission
@@ -212,4 +208,57 @@ export class QueryNominationDto {
   @IsString()
   @IsOptional()
   endDate?: string;
+}
+
+/**
+ * DTO for exporting nominations/nominees/nominators to Excel with filters
+ */
+export class QueryNominationExportDto {
+  @ApiProperty({ required: false, description: 'Filter by website ID' })
+  @IsMongoId()
+  @IsOptional()
+  websiteId?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Filter by start date (ISO string or YYYY-MM-DD)',
+  })
+  @IsString()
+  @IsOptional()
+  startDate?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Filter by end date (ISO string or YYYY-MM-DD)',
+  })
+  @IsString()
+  @IsOptional()
+  endDate?: string;
+
+  @ApiProperty({
+    enum: NominationStatus,
+    required: false,
+    description: 'Filter by status',
+  })
+  @IsEnum(NominationStatus)
+  @IsOptional()
+  status?: NominationStatus;
+
+  @ApiProperty({ required: false, description: 'Filter by category ID' })
+  @IsMongoId()
+  @IsOptional()
+  categoryId?: string;
+
+  @ApiProperty({ required: false, description: 'Filter by sub-category ID' })
+  @IsMongoId()
+  @IsOptional()
+  subCategoryId?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Search term for names, emails, organizations',
+  })
+  @IsString()
+  @IsOptional()
+  search?: string;
 }

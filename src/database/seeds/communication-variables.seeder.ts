@@ -829,7 +829,8 @@ export class CommunicationVariablesSeeder implements OnApplicationBootstrap {
         modelName: 'Subscriber',
         categoryGroup: VariableCategoryGroup.SUBSCRIBER,
         isSenderVariable: true,
-        description: 'Alternative email field for subscriber (from event payload)',
+        description:
+          'Alternative email field for subscriber (from event payload)',
       },
       {
         name: 'Subscription Source',

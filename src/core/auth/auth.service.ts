@@ -258,7 +258,8 @@ export class AuthService {
 
     // 2. Dispatch alert email to system administrator
     const adminEmail =
-      this.configService.get<string>('ADMIN_ALERT_EMAIL') || 'admin@vebsigns.com';
+      this.configService.get<string>('ADMIN_ALERT_EMAIL') ||
+      'admin@vebsigns.com';
     const userRoleName =
       (user.role as any)?.name || (user.role as any)?.roleKey || 'Staff User';
 
@@ -294,16 +295,11 @@ export class AuthService {
     `;
 
     try {
-      await this.communicationsService.sendEmail(
-        adminEmail,
-        subject,
-        content,
-        {
-          violation: 'SCREENSHOT_ATTEMPT',
-          userId: user.id || (user as any)._id.toString(),
-          userEmail: user.email,
-        },
-      );
+      await this.communicationsService.sendEmail(adminEmail, subject, content, {
+        violation: 'SCREENSHOT_ATTEMPT',
+        userId: user.id || (user as any)._id.toString(),
+        userEmail: user.email,
+      });
     } catch (err: any) {
       // Log error safely without blocking response
       console.error(

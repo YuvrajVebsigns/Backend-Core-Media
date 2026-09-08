@@ -79,7 +79,9 @@ export class EventListeners {
 
       if ((!mappings || mappings.length === 0) && payload.templateId) {
         try {
-          const template = await this.templateService.findOne(payload.templateId);
+          const template = await this.templateService.findOne(
+            payload.templateId,
+          );
           if (template) {
             mappings = [
               {
@@ -187,9 +189,14 @@ export class EventListeners {
 
       if (!resolvedRegistreeId) {
         const potentialEmail = payload.downloadedBy || payload.email;
-        if (potentialEmail && typeof potentialEmail === 'string' && potentialEmail.includes('@')) {
+        if (
+          potentialEmail &&
+          typeof potentialEmail === 'string' &&
+          potentialEmail.includes('@')
+        ) {
           try {
-            const registree = await this.attendeesService.findRegistreeByEmail(potentialEmail);
+            const registree =
+              await this.attendeesService.findRegistreeByEmail(potentialEmail);
             if (registree) {
               resolvedRegistreeId = registree._id.toString();
             }
@@ -482,15 +489,20 @@ export class EventListeners {
             nominationDoc = nominationObj;
             Object.assign(enrichedParams, nominationObj);
 
-            if (nomination.nominatorId || (nomination as any).nominatorSnapshot) {
+            if (
+              nomination.nominatorId ||
+              (nomination as any).nominatorSnapshot
+            ) {
               const snapshot = (nomination as any).nominatorSnapshot;
               const nominator = (nomination.nominatorId || {}) as any;
 
               // Prioritize snapshot values over nominatorId
               const nominatorName = snapshot?.name || nominator.name || '';
               const nominatorEmail = snapshot?.email || nominator.email || '';
-              const nominatorPhone = snapshot?.phone || nominator.phoneNumber || '';
-              const nominatorCompany = snapshot?.company || nominator.organization || '';
+              const nominatorPhone =
+                snapshot?.phone || nominator.phoneNumber || '';
+              const nominatorCompany =
+                snapshot?.company || nominator.organization || '';
               const nominatorCity = snapshot?.city || nominator.city || '';
 
               enrichedParams.nominatorName = nominatorName;
@@ -594,18 +606,24 @@ export class EventListeners {
                 .map((n: any) => n.company)
                 .filter(Boolean);
 
-              enrichedParams.nomineeOrganizations = enrichedParams.nomineeCompanies;
+              enrichedParams.nomineeOrganizations =
+                enrichedParams.nomineeCompanies;
 
               enrichedParams.nomineeCategories = formattedNominees
                 .map((n: any) => n.category)
                 .filter(Boolean);
 
               enrichedParams.category = formattedNominees[0]?.category || '';
-              enrichedParams.categoryName = formattedNominees[0]?.category || '';
-              enrichedParams.nomineeCategory = formattedNominees[0]?.category || '';
-              enrichedParams.subCategory = formattedNominees[0]?.subCategory || '';
-              enrichedParams.subCategoryName = formattedNominees[0]?.subCategory || '';
-              enrichedParams.nomineeSubCategory = formattedNominees[0]?.subCategory || '';
+              enrichedParams.categoryName =
+                formattedNominees[0]?.category || '';
+              enrichedParams.nomineeCategory =
+                formattedNominees[0]?.category || '';
+              enrichedParams.subCategory =
+                formattedNominees[0]?.subCategory || '';
+              enrichedParams.subCategoryName =
+                formattedNominees[0]?.subCategory || '';
+              enrichedParams.nomineeSubCategory =
+                formattedNominees[0]?.subCategory || '';
 
               enrichedParams.nomineePhones = formattedNominees
                 .map((n: any) => n.phone)
@@ -658,8 +676,12 @@ export class EventListeners {
               const listItems = formattedNominees
                 .map((item: any) => {
                   const orgStr = item.company ? ` (${item.company})` : '';
-                  const catStr = item.category ? ` &mdash; <strong>Category:</strong> ${item.category}` : '';
-                  const subStr = item.subCategory ? ` (${item.subCategory})` : '';
+                  const catStr = item.category
+                    ? ` &mdash; <strong>Category:</strong> ${item.category}`
+                    : '';
+                  const subStr = item.subCategory
+                    ? ` (${item.subCategory})`
+                    : '';
                   const emailStr = item.email ? ` &bull; ${item.email}` : '';
                   return `<li style="margin-bottom: 8px;"><strong>#${item.index}: ${item.name}</strong>${orgStr}${catStr}${subStr}${emailStr}</li>`;
                 })
@@ -794,7 +816,7 @@ export class EventListeners {
           enrichedParams.subscriberId = payload.subscriberId;
           enrichedParams.subscriberEmail = payload.email;
           enrichedParams.subscriptionSource = payload.source || 'website';
-          
+
           // Format subscription date and time
           if (payload.subscribedAt) {
             const subscriptionDate = new Date(payload.subscribedAt);
@@ -812,16 +834,20 @@ export class EventListeners {
             };
             const formatterDate = new Intl.DateTimeFormat('en-US', optionsDate);
             const formatterTime = new Intl.DateTimeFormat('en-US', optionsTime);
-            
-            enrichedParams.subscribedAtDate = formatterDate.format(subscriptionDate);
-            enrichedParams.subscribedAtTime = formatterTime.format(subscriptionDate);
+
+            enrichedParams.subscribedAtDate =
+              formatterDate.format(subscriptionDate);
+            enrichedParams.subscribedAtTime =
+              formatterTime.format(subscriptionDate);
             enrichedParams.subscribedAt = payload.subscribedAt;
           }
 
           // Ensure website details are populated for subscriber context
           if (payload.websiteId) {
             try {
-              const website = await this.websitesService.findOne(payload.websiteId);
+              const website = await this.websitesService.findOne(
+                payload.websiteId,
+              );
               if (website) {
                 enrichedParams.websiteName = website.name;
                 enrichedParams.websiteSlug = website.slug;
@@ -831,7 +857,9 @@ export class EventListeners {
                 enrichedParams.websiteOgImage = website.seo?.ogImage || '';
               }
             } catch (e) {
-              this.logger.error(`Error resolving website details for subscriber: ${e.message}`);
+              this.logger.error(
+                `Error resolving website details for subscriber: ${e.message}`,
+              );
             }
           }
         } catch (e) {
@@ -913,9 +941,7 @@ export class EventListeners {
             }
           }
         }
-        return [...new Set(results)].filter(
-          (email) => email.includes('@'),
-        );
+        return [...new Set(results)].filter((email) => email.includes('@'));
       };
 
       // Collapse array fields of objects to their latest element (last item), preserving 'nominees'
@@ -923,12 +949,17 @@ export class EventListeners {
       enrichedParams.params = { ...enrichedParams };
 
       const getPersonalizedParams = (targetEmail: string): any => {
-        if (!nominationDoc || !nominationDoc.nominees || nominationDoc.nominees.length === 0) {
+        if (
+          !nominationDoc ||
+          !nominationDoc.nominees ||
+          nominationDoc.nominees.length === 0
+        ) {
           return enrichedParams;
         }
         const matchedNominee = nominationDoc.nominees.find(
           (n: any) =>
-            (n.contactEmail && n.contactEmail.toLowerCase() === targetEmail.toLowerCase()) ||
+            (n.contactEmail &&
+              n.contactEmail.toLowerCase() === targetEmail.toLowerCase()) ||
             n.nomineeId?.email?.toLowerCase() === targetEmail.toLowerCase(),
         );
         if (!matchedNominee) {
@@ -936,11 +967,19 @@ export class EventListeners {
         }
 
         const targetParams = JSON.parse(JSON.stringify(enrichedParams));
-        const nomineeName = matchedNominee.contactName || matchedNominee.nomineeId?.name || '';
-        const nomineeEmail = matchedNominee.contactEmail || matchedNominee.nomineeId?.email || '';
+        const nomineeName =
+          matchedNominee.contactName || matchedNominee.nomineeId?.name || '';
+        const nomineeEmail =
+          matchedNominee.contactEmail || matchedNominee.nomineeId?.email || '';
         const categoryName = matchedNominee.categoryId?.name || '';
-        const companyName = matchedNominee.companyName || matchedNominee.nomineeId?.organization || '';
-        const nomineePhone = matchedNominee.mobileNo || matchedNominee.nomineeId?.phoneNumber || '';
+        const companyName =
+          matchedNominee.companyName ||
+          matchedNominee.nomineeId?.organization ||
+          '';
+        const nomineePhone =
+          matchedNominee.mobileNo ||
+          matchedNominee.nomineeId?.phoneNumber ||
+          '';
 
         targetParams.nomineeName = nomineeName;
         targetParams.nomineeEmail = nomineeEmail;
@@ -951,15 +990,17 @@ export class EventListeners {
         targetParams.categoryName = categoryName;
         targetParams.subCategory = matchedNominee.subCategoryId?.name || '';
         targetParams.subCategoryName = matchedNominee.subCategoryId?.name || '';
-        targetParams.nomineeSubCategory = matchedNominee.subCategoryId?.name || '';
+        targetParams.nomineeSubCategory =
+          matchedNominee.subCategoryId?.name || '';
 
         targetParams.nomineeNames = [nomineeName];
         targetParams.nomineeEmails = [nomineeEmail];
         targetParams.nomineeCompanies = [companyName];
         targetParams.nomineeCategories = [categoryName];
-        targetParams.nomineeDetails = nomineeName && categoryName
-          ? `${nomineeName} (Category: ${categoryName})`
-          : nomineeName || categoryName;
+        targetParams.nomineeDetails =
+          nomineeName && categoryName
+            ? `${nomineeName} (Category: ${categoryName})`
+            : nomineeName || categoryName;
 
         targetParams.params = { ...targetParams };
 
@@ -969,11 +1010,21 @@ export class EventListeners {
       const buildNomineeParams = (nomineeItem: any): any => {
         const targetParams = JSON.parse(JSON.stringify(enrichedParams));
         const nomineeName = nomineeItem.name || nomineeItem.contactName || '';
-        const nomineeEmail = nomineeItem.email || nomineeItem.contactEmail || '';
-        const categoryName = nomineeItem.category || nomineeItem.categoryName || '';
-        const companyName = nomineeItem.company || nomineeItem.companyName || nomineeItem.organization || '';
+        const nomineeEmail =
+          nomineeItem.email || nomineeItem.contactEmail || '';
+        const categoryName =
+          nomineeItem.category || nomineeItem.categoryName || '';
+        const companyName =
+          nomineeItem.company ||
+          nomineeItem.companyName ||
+          nomineeItem.organization ||
+          '';
         const nomineePhone = nomineeItem.phone || nomineeItem.mobileNo || '';
-        const subCategoryName = nomineeItem.subCategory || nomineeItem.subcategory || nomineeItem.subCategoryName || '';
+        const subCategoryName =
+          nomineeItem.subCategory ||
+          nomineeItem.subcategory ||
+          nomineeItem.subCategoryName ||
+          '';
 
         targetParams.nomineeName = nomineeName;
         targetParams.nomineeEmail = nomineeEmail;
@@ -992,9 +1043,10 @@ export class EventListeners {
         targetParams.nomineeEmails = [nomineeEmail];
         targetParams.nomineeCompanies = [companyName];
         targetParams.nomineeCategories = [categoryName];
-        targetParams.nomineeDetails = nomineeName && categoryName
-          ? `${nomineeName} (Category: ${categoryName})`
-          : nomineeName || categoryName;
+        targetParams.nomineeDetails =
+          nomineeName && categoryName
+            ? `${nomineeName} (Category: ${categoryName})`
+            : nomineeName || categoryName;
 
         targetParams.params = { ...targetParams };
 
@@ -1025,26 +1077,42 @@ export class EventListeners {
               : undefined;
 
             // When nomination is submitted and trigger targets nominees, dispatch each nomination row individually
-            const isNominationSubmitted = eventName === AppEvents.NOMINATION_SUBMITTED;
+            const isNominationSubmitted =
+              eventName === AppEvents.NOMINATION_SUBMITTED;
             const toExpression = trigger.to || '';
-            const toParts = toExpression.split(',').map((p: string) => p.trim().replace(/[{}]/g, ''));
-            const isNomineeTrigger = isNominationSubmitted && toParts.some((p: string) => p === 'nomineeEmails');
+            const toParts = toExpression
+              .split(',')
+              .map((p: string) => p.trim().replace(/[{}]/g, ''));
+            const isNomineeTrigger =
+              isNominationSubmitted &&
+              toParts.some((p: string) => p === 'nomineeEmails');
 
-            if (isNomineeTrigger && enrichedParams.nominees && enrichedParams.nominees.length > 0) {
-              const otherParts = toParts.filter((p: string) => p !== 'nomineeEmails' && p !== '');
+            if (
+              isNomineeTrigger &&
+              enrichedParams.nominees &&
+              enrichedParams.nominees.length > 0
+            ) {
+              const otherParts = toParts.filter(
+                (p: string) => p !== 'nomineeEmails' && p !== '',
+              );
               if (otherParts.length > 0) {
-                const otherTargets = resolveRecipientList(otherParts.join(', '));
+                const otherTargets = resolveRecipientList(
+                  otherParts.join(', '),
+                );
                 for (const otherTarget of otherTargets) {
                   const targetParams = getPersonalizedParams(otherTarget);
-                  const interpolatedSubject = this.variableResolverService.interpolate(
-                    template.subject || '',
-                    targetParams,
-                  );
-                  const contentTemplate = template.htmlContent || template.textContent || '';
-                  const interpolatedContent = this.variableResolverService.interpolate(
-                    contentTemplate,
-                    targetParams,
-                  );
+                  const interpolatedSubject =
+                    this.variableResolverService.interpolate(
+                      template.subject || '',
+                      targetParams,
+                    );
+                  const contentTemplate =
+                    template.htmlContent || template.textContent || '';
+                  const interpolatedContent =
+                    this.variableResolverService.interpolate(
+                      contentTemplate,
+                      targetParams,
+                    );
                   await this.communicationsService.dispatch(
                     template.channel,
                     otherTarget,
@@ -1052,8 +1120,14 @@ export class EventListeners {
                     interpolatedContent,
                     {
                       templateSlug: template.slug,
-                      senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
-                      senderName: trigger.senderName || mapping.senderName || template.senderName,
+                      senderEmail:
+                        trigger.senderEmail ||
+                        mapping.senderEmail ||
+                        template.senderEmail,
+                      senderName:
+                        trigger.senderName ||
+                        mapping.senderName ||
+                        template.senderName,
                       eventTrigger: true,
                       eventName,
                       params: targetParams,
@@ -1065,20 +1139,24 @@ export class EventListeners {
               }
 
               for (const nomineeItem of enrichedParams.nominees) {
-                const nomineeEmail = nomineeItem.email || nomineeItem.contactEmail;
+                const nomineeEmail =
+                  nomineeItem.email || nomineeItem.contactEmail;
                 if (!nomineeEmail || !nomineeEmail.includes('@')) {
                   continue;
                 }
                 const targetParams = buildNomineeParams(nomineeItem);
-                const interpolatedSubject = this.variableResolverService.interpolate(
-                  template.subject || '',
-                  targetParams,
-                );
-                const contentTemplate = template.htmlContent || template.textContent || '';
-                const interpolatedContent = this.variableResolverService.interpolate(
-                  contentTemplate,
-                  targetParams,
-                );
+                const interpolatedSubject =
+                  this.variableResolverService.interpolate(
+                    template.subject || '',
+                    targetParams,
+                  );
+                const contentTemplate =
+                  template.htmlContent || template.textContent || '';
+                const interpolatedContent =
+                  this.variableResolverService.interpolate(
+                    contentTemplate,
+                    targetParams,
+                  );
 
                 this.logger.log(
                   `Dispatching nominee template "${template.slug}" [Channel: ${trigger.channel}] for event: ${eventName} to: ${nomineeEmail} (Nominee: ${nomineeItem.name}, Category: ${nomineeItem.category})`,
@@ -1091,8 +1169,14 @@ export class EventListeners {
                   interpolatedContent,
                   {
                     templateSlug: template.slug,
-                    senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
-                    senderName: trigger.senderName || mapping.senderName || template.senderName,
+                    senderEmail:
+                      trigger.senderEmail ||
+                      mapping.senderEmail ||
+                      template.senderEmail,
+                    senderName:
+                      trigger.senderName ||
+                      mapping.senderName ||
+                      template.senderName,
                     eventTrigger: true,
                     eventName,
                     params: targetParams,
@@ -1108,16 +1192,19 @@ export class EventListeners {
 
             for (const target of targets) {
               const targetParams = getPersonalizedParams(target);
-              const interpolatedSubject = this.variableResolverService.interpolate(
-                template.subject || '',
-                targetParams,
-              );
+              const interpolatedSubject =
+                this.variableResolverService.interpolate(
+                  template.subject || '',
+                  targetParams,
+                );
 
-              const contentTemplate = template.htmlContent || template.textContent || '';
-              const interpolatedContent = this.variableResolverService.interpolate(
-                contentTemplate,
-                targetParams,
-              );
+              const contentTemplate =
+                template.htmlContent || template.textContent || '';
+              const interpolatedContent =
+                this.variableResolverService.interpolate(
+                  contentTemplate,
+                  targetParams,
+                );
 
               this.logger.log(
                 `Dispatching template "${template.slug}" [Channel: ${trigger.channel}] for event: ${eventName} to: ${target}`,
@@ -1130,8 +1217,14 @@ export class EventListeners {
                 interpolatedContent,
                 {
                   templateSlug: template.slug,
-                  senderEmail: trigger.senderEmail || mapping.senderEmail || template.senderEmail,
-                  senderName: trigger.senderName || mapping.senderName || template.senderName,
+                  senderEmail:
+                    trigger.senderEmail ||
+                    mapping.senderEmail ||
+                    template.senderEmail,
+                  senderName:
+                    trigger.senderName ||
+                    mapping.senderName ||
+                    template.senderName,
                   eventTrigger: true,
                   eventName,
                   params: targetParams,
@@ -1205,26 +1298,40 @@ export class EventListeners {
           ? resolveRecipientList(mapping.bcc).join(', ')
           : undefined;
 
-        const isLegacyNominationSubmitted = eventName === AppEvents.NOMINATION_SUBMITTED;
+        const isLegacyNominationSubmitted =
+          eventName === AppEvents.NOMINATION_SUBMITTED;
         const legacyToExpression = mapping.to || '';
-        const legacyToParts = legacyToExpression.split(',').map((p: string) => p.trim().replace(/[{}]/g, ''));
-        const isLegacyNomineeTrigger = isLegacyNominationSubmitted && legacyToParts.some((p: string) => p === 'nomineeEmails');
+        const legacyToParts = legacyToExpression
+          .split(',')
+          .map((p: string) => p.trim().replace(/[{}]/g, ''));
+        const isLegacyNomineeTrigger =
+          isLegacyNominationSubmitted &&
+          legacyToParts.some((p: string) => p === 'nomineeEmails');
 
-        if (isLegacyNomineeTrigger && enrichedParams.nominees && enrichedParams.nominees.length > 0) {
-          const otherParts = legacyToParts.filter((p: string) => p !== 'nomineeEmails' && p !== '');
+        if (
+          isLegacyNomineeTrigger &&
+          enrichedParams.nominees &&
+          enrichedParams.nominees.length > 0
+        ) {
+          const otherParts = legacyToParts.filter(
+            (p: string) => p !== 'nomineeEmails' && p !== '',
+          );
           if (otherParts.length > 0) {
             const otherTargets = resolveRecipientList(otherParts.join(', '));
             for (const otherTarget of otherTargets) {
               const targetParams = getPersonalizedParams(otherTarget);
-              const interpolatedSubject = this.variableResolverService.interpolate(
-                template.subject || '',
-                targetParams,
-              );
-              const contentTemplate = template.htmlContent || template.textContent || '';
-              const interpolatedContent = this.variableResolverService.interpolate(
-                contentTemplate,
-                targetParams,
-              );
+              const interpolatedSubject =
+                this.variableResolverService.interpolate(
+                  template.subject || '',
+                  targetParams,
+                );
+              const contentTemplate =
+                template.htmlContent || template.textContent || '';
+              const interpolatedContent =
+                this.variableResolverService.interpolate(
+                  contentTemplate,
+                  targetParams,
+                );
               await this.communicationsService.dispatch(
                 template.channel,
                 otherTarget,
@@ -1250,15 +1357,18 @@ export class EventListeners {
               continue;
             }
             const targetParams = buildNomineeParams(nomineeItem);
-            const interpolatedSubject = this.variableResolverService.interpolate(
-              template.subject || '',
-              targetParams,
-            );
-            const contentTemplate = template.htmlContent || template.textContent || '';
-            const interpolatedContent = this.variableResolverService.interpolate(
-              contentTemplate,
-              targetParams,
-            );
+            const interpolatedSubject =
+              this.variableResolverService.interpolate(
+                template.subject || '',
+                targetParams,
+              );
+            const contentTemplate =
+              template.htmlContent || template.textContent || '';
+            const interpolatedContent =
+              this.variableResolverService.interpolate(
+                contentTemplate,
+                targetParams,
+              );
             await this.communicationsService.dispatch(
               template.channel,
               nomineeEmail,
@@ -1286,7 +1396,8 @@ export class EventListeners {
             targetParams,
           );
 
-          const contentTemplate = template.htmlContent || template.textContent || '';
+          const contentTemplate =
+            template.htmlContent || template.textContent || '';
           const interpolatedContent = this.variableResolverService.interpolate(
             contentTemplate,
             targetParams,
@@ -1641,8 +1752,10 @@ export class EventListeners {
 
   @OnEvent(AppEvents.EVENT_REMINDER)
   handleEventReminder(event: EventReminderEvent) {
-    this.logger.log(`⏰ Event reminder scheduled for attendee: ${event.attendeeId} (Event: ${event.eventId})`);
-    
+    this.logger.log(
+      `⏰ Event reminder scheduled for attendee: ${event.attendeeId} (Event: ${event.eventId})`,
+    );
+
     // Instead of resolving standard mappings for EVENT_REMINDER via the generic triggerMappedEvent,
     // we want this event to trigger a specific template id explicitly passed.
     // The scheduling requires triggerMappedEvent to be able to handle this.

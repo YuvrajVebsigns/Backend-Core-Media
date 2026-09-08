@@ -10,7 +10,12 @@ import {
   timestamps: true,
 })
 export class NominationSubCategory extends BaseSchema {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'NominationCategory', required: true, index: true })
+  @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'NominationCategory',
+    required: true,
+    index: true,
+  })
   categoryId: MongooseSchema.Types.ObjectId;
 
   @Prop({ required: true, trim: true })

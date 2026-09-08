@@ -10,7 +10,12 @@ import {
   Post,
   Body,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@core/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
@@ -30,7 +35,9 @@ export class AdminSubscribesController {
 
   @Get()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @ApiOperation({ summary: 'Get all subscriptions with pagination and filters' })
+  @ApiOperation({
+    summary: 'Get all subscriptions with pagination and filters',
+  })
   @ApiResponse({ status: 200, description: 'List of subscriptions' })
   findAll(@Query() queryDto: QuerySubscribeDto) {
     return this.subscribesService.findAll(queryDto);
