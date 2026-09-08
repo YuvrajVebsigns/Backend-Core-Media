@@ -6,34 +6,47 @@ import {
   IsMongoId,
   IsArray,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+  cleanWhitespace,
+} from '@common/utils/string.util';
 
 export class UpdateRegistreeDto {
   @ApiProperty({ example: 'John Doe', required: false })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   name?: string;
 
   @ApiProperty({ example: 'john@example.com', required: false })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsOptional()
   email?: string;
 
   @ApiProperty({ example: '+91', required: false })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsOptional()
   countryCode?: string;
 
   @ApiProperty({ example: '9876543210', required: false })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   phoneNumber?: string;
 
   @ApiProperty({ example: 'Acme Corp', required: false })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   organization?: string;
 
   @ApiProperty({ example: 'Mumbai', required: false })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   city?: string;
@@ -65,6 +78,7 @@ export class QueryRegistreeDto {
   search?: string;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => cleanEmail(value))
   @IsString()
   @IsOptional()
   email?: string;

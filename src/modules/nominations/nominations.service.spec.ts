@@ -193,4 +193,46 @@ describe('NominationsService', () => {
     const secondResult = await service.create(secondDto);
     expect(secondResult).toBeDefined();
   });
+
+  it('should capture nominatorSnapshot and normalize nominator and nominee inputs to Title Case, lowercase email, and trimmed spaces', async () => {
+    const dto: CreateNominationDto = {
+      nominatorName: '  ram   kumar ',
+      nominatorCompany: 'acme   technologies  pvt  ltd',
+      nominatorCity: '  new   york  ',
+      nominatorPhone: '  +91  98765   43210 ',
+      nominatorEmail: '  RAM.KUMAR@EXAMPLE.COM  ',
+      nominees: [
+        {
+          categoryId: new Types.ObjectId().toHexString(),
+          contactName: 'jane smith',
+          companyName: 'infosys  technologies',
+          contactEmail: '  JANE@INFOSYS.COM ',
+          mobileNo: '  9876543210 ',
+        },
+      ],
+    };
+
+    await service.create(dto);
+
+    // Verify mockNominationModel was instantiated with normalized nominatorSnapshot
+    expect(mockNominationModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nominatorSnapshot: {
+          name: 'Ram Kumar',
+          email: 'ram.kumar@example.com',
+          company: 'Acme Technologies Pvt Ltd',
+          city: 'New York',
+          phone: '+91 98765 43210',
+        },
+        nominees: [
+          expect.objectContaining({
+            contactName: 'Jane Smith',
+            companyName: 'Infosys Technologies',
+            contactEmail: 'jane@infosys.com',
+            mobileNo: '9876543210',
+          }),
+        ],
+      }),
+    );
+  });
 });

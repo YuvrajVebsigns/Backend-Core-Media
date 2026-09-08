@@ -50,6 +50,27 @@ export class NomineeEntry {
 
 export const NomineeEntrySchema = SchemaFactory.createForClass(NomineeEntry);
 
+@Schema({ _id: false })
+export class NominatorSnapshot {
+  @Prop({ type: String, required: true })
+  name: string;
+
+  @Prop({ type: String, required: true })
+  email: string;
+
+  @Prop({ type: String, required: false })
+  company?: string;
+
+  @Prop({ type: String, required: false })
+  city?: string;
+
+  @Prop({ type: String, required: false })
+  phone?: string;
+}
+
+export const NominatorSnapshotSchema =
+  SchemaFactory.createForClass(NominatorSnapshot);
+
 @Schema({
   collection: 'nominations',
   timestamps: true,
@@ -62,6 +83,12 @@ export class Nomination extends BaseSchema {
     index: true,
   })
   nominatorId: Types.ObjectId;
+
+  @Prop({
+    type: NominatorSnapshotSchema,
+    required: false,
+  })
+  nominatorSnapshot?: NominatorSnapshot;
 
   @Prop({
     type: [NomineeEntrySchema],

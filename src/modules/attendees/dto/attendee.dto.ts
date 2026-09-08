@@ -5,8 +5,15 @@ import {
   IsMongoId,
   IsEnum,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { AttendeeStatus } from '@modules/attendees/schemas/attendee.schema';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+  cleanWhitespace,
+} from '@common/utils/string.util';
 
 export class RegisterAttendeeDto {
   @ApiProperty({ example: '507f1f77bcf86cd799439011' })
@@ -14,24 +21,29 @@ export class RegisterAttendeeDto {
   eventId: string;
 
   @ApiProperty({ example: 'John Doe' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   name: string;
 
   @ApiProperty({ example: 'john@example.com' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   email: string;
 
   @ApiProperty({ example: '+91', required: false })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsOptional()
   countryCode?: string;
 
   @ApiProperty({ example: '9876543210', required: false })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   phoneNumber?: string;
 
   @ApiProperty({ example: 'Acme Corp', required: false })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   organization?: string;
@@ -62,16 +74,19 @@ export class UpdateAttendeeDto {
   status?: AttendeeStatus;
 
   @ApiProperty({ example: 'Acme Corp', required: false })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   organization?: string;
 
   @ApiProperty({ example: '+91', required: false })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsOptional()
   countryCode?: string;
 
   @ApiProperty({ example: '9876543210', required: false })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   phoneNumber?: string;
@@ -117,16 +132,19 @@ export class QueryAttendeeDto {
   websiteId?: string;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => cleanEmail(value))
   @IsString()
   @IsOptional()
   email?: string;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsOptional()
   countryCode?: string;
 
   @ApiProperty({ required: false })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   phoneNumber?: string;

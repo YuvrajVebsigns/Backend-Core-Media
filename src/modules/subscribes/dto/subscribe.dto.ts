@@ -1,9 +1,12 @@
 import { IsEmail, IsOptional, IsString, IsMongoId, IsArray, ArrayNotEmpty } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
+import { cleanEmail } from '@common/utils/string.util';
 
 export class CreateSubscribeDto {
   @ApiProperty({ example: 'jane.doe@example.com', description: 'Subscriber email' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   email: string;
 
@@ -15,6 +18,7 @@ export class CreateSubscribeDto {
 
 export class QuerySubscribeDto extends PaginationQueryDto {
   @ApiPropertyOptional({ description: 'Search by email' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsString()
   @IsOptional()
   search?: string;

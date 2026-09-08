@@ -9,9 +9,14 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { RoleResponseDto } from '@core/roles/dto/role.dto';
+import {
+  toTitleCase,
+  cleanEmail,
+} from '@common/utils/string.util';
 
 export class CreateSystemUserDto {
   @ApiProperty({ example: 'user@example.com' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -22,6 +27,7 @@ export class CreateSystemUserDto {
   password: string;
 
   @ApiProperty({ example: 'John Doe' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsNotEmpty()
   fullName: string;
@@ -50,6 +56,7 @@ export class CreateSystemUserDto {
 
 export class UpdateSystemUserDto {
   @ApiPropertyOptional({ example: 'John Doe' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsOptional()
   @IsString()
   fullName?: string;

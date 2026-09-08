@@ -6,15 +6,23 @@ import {
   IsOptional,
   IsMongoId,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { ContactStatus } from '../schemas/contact.schema';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+  cleanWhitespace,
+} from '@common/utils/string.util';
 
 export class CreateContactDto {
   @ApiProperty({
     example: 'John Doe',
     description: 'Full name of the contact person',
   })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsNotEmpty()
   fullName: string;
@@ -23,6 +31,7 @@ export class CreateContactDto {
     example: 'john.doe@example.com',
     description: 'Email address of the contact person',
   })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -31,6 +40,7 @@ export class CreateContactDto {
     example: '+1-555-0199',
     description: 'Phone number of the contact person',
   })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsNotEmpty()
   phone: string;
@@ -39,6 +49,7 @@ export class CreateContactDto {
     example: 'Web Development',
     description: 'Selected service or topic',
   })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsNotEmpty()
   service: string;
@@ -47,6 +58,7 @@ export class CreateContactDto {
     example: 'Hi, I would like to get a quote for a new website.',
     description: 'The contact message',
   })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsNotEmpty()
   message: string;
@@ -65,6 +77,7 @@ export class ReplyContactDto {
     example: 'Hi John, thank you for reaching out. We have sent you a quote.',
     description: 'The reply message',
   })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsNotEmpty()
   replyMessage: string;

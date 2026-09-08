@@ -7,10 +7,17 @@ import {
   IsBoolean,
   Equals,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { SystemUserResponseDto } from '@core/system-users/dto/system-user.dto';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanWhitespace,
+} from '@common/utils/string.util';
 
 export class SignupDto {
   @ApiProperty({ example: 'user@example.com' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -22,6 +29,7 @@ export class SignupDto {
   password: string;
 
   @ApiProperty({ example: 'John Doe' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsNotEmpty()
   fullName: string;
@@ -38,6 +46,7 @@ export class SignupDto {
 
 export class LoginDto {
   @ApiProperty({ example: 'admin@coremedia.com', description: 'User email' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -51,6 +60,7 @@ export class LoginDto {
 
 export class ForgotPasswordDto {
   @ApiProperty({ example: 'admin@coremedia.com', description: 'User email' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
@@ -58,11 +68,13 @@ export class ForgotPasswordDto {
 
 export class VerifyOtpDto {
   @ApiProperty({ example: 'admin@coremedia.com', description: 'User email' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
   @ApiProperty({ example: '123456', description: '6-digit OTP' })
+  @Transform(({ value }) => cleanWhitespace(value))
   @IsString()
   @IsNotEmpty()
   otp: string;

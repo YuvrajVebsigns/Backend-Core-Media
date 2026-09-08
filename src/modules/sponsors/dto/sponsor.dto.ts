@@ -15,6 +15,12 @@ import { Type, Transform } from 'class-transformer';
 import { ImageLinksDto } from '@common/dto/image-links.dto';
 import { PaginationQueryDto } from '@common/dto/pagination-query.dto';
 import { SponsorType, SponsorTier } from '../schemas/sponsor.schema';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+  cleanWhitespace,
+} from '@common/utils/string.util';
 
 export class SocialLinksDto {
   @IsString()
@@ -37,31 +43,38 @@ export class SocialLinksDto {
 export class AddressDto {
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => cleanWhitespace(value))
   street?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => toTitleCase(value))
   city?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => toTitleCase(value))
   state?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => toTitleCase(value))
   country?: string;
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => cleanWhitespace(value))
   zip?: string;
 }
 
 export class CreateSponsorDto {
   @ApiProperty({ example: 'John Doe' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   name: string;
 
   @ApiPropertyOptional({ example: 'Tech Corp' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   companyName?: string;
@@ -72,16 +85,19 @@ export class CreateSponsorDto {
   companyDomain?: string;
 
   @ApiPropertyOptional({ example: 'john@techcorp.com' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   @IsOptional()
   email?: string;
 
   @ApiPropertyOptional({ example: '+1-555-0123' })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   phone?: string;
 
   @ApiPropertyOptional({ example: 'CEO' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   @IsOptional()
   designation?: string;

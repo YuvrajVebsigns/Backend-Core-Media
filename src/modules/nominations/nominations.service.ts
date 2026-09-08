@@ -24,6 +24,11 @@ import {
   NominationSubmittedEvent,
   NominationStatusChangedEvent,
 } from '@modules/events/event-definitions';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+} from '@common/utils/string.util';
 
 @Injectable()
 export class NominationsService {
@@ -68,13 +73,19 @@ export class NominationsService {
     }
 
     // Step 2: Find or create nominator in registrees
+    const cleanNominatorName = toTitleCase(createDto.nominatorName);
+    const cleanNominatorEmail = cleanEmail(createDto.nominatorEmail);
+    const cleanNominatorCompany = toTitleCase(createDto.nominatorCompany);
+    const cleanNominatorCity = toTitleCase(createDto.nominatorCity);
+    const cleanNominatorPhone = cleanPhone(createDto.nominatorPhone);
+
     const nominatorRegistree = await this.findOrCreateRegistree(
       {
-        name: createDto.nominatorName,
-        email: createDto.nominatorEmail,
-        phoneNumber: createDto.nominatorPhone || '',
-        organization: createDto.nominatorCompany,
-        city: createDto.nominatorCity,
+        name: cleanNominatorName,
+        email: cleanNominatorEmail,
+        phoneNumber: cleanNominatorPhone,
+        organization: cleanNominatorCompany,
+        city: cleanNominatorCity,
       },
       'nominator',
       websiteId,
@@ -84,12 +95,17 @@ export class NominationsService {
     const nomineeEntries: NomineeEntry[] = [];
 
     for (const nominee of createDto.nominees) {
+      const cleanContactName = toTitleCase(nominee.contactName);
+      const cleanContactEmail = cleanEmail(nominee.contactEmail);
+      const cleanCompanyName = toTitleCase(nominee.companyName);
+      const cleanMobileNo = cleanPhone(nominee.mobileNo);
+
       const nomineeRegistree = await this.findOrCreateRegistree(
         {
-          name: nominee.contactName,
-          email: nominee.contactEmail,
-          phoneNumber: nominee.mobileNo || '',
-          organization: nominee.companyName,
+          name: cleanContactName,
+          email: cleanContactEmail,
+          phoneNumber: cleanMobileNo,
+          organization: cleanCompanyName,
         },
         'nominee',
         websiteId,
@@ -102,16 +118,23 @@ export class NominationsService {
         ...(subCatId
           ? { subCategoryId: new Types.ObjectId(subCatId) }
           : {}),
-        contactName: nominee.contactName,
-        companyName: nominee.companyName,
-        contactEmail: nominee.contactEmail.toLowerCase(),
-        mobileNo: nominee.mobileNo || '',
+        contactName: cleanContactName,
+        companyName: cleanCompanyName,
+        contactEmail: cleanContactEmail,
+        mobileNo: cleanMobileNo,
       });
     }
 
     // Step 4: Create the nomination document
     const nomination = new this.nominationModel({
       nominatorId: nominatorRegistree._id,
+      nominatorSnapshot: {
+        name: cleanNominatorName,
+        email: cleanNominatorEmail,
+        company: cleanNominatorCompany,
+        city: cleanNominatorCity,
+        phone: cleanNominatorPhone,
+      },
       nominees: nomineeEntries,
       status: NominationStatus.PENDING,
       ...(websiteId ? { websiteId: new Types.ObjectId(websiteId) } : {}),
@@ -125,10 +148,8 @@ export class NominationsService {
       new NominationSubmittedEvent(
         result._id.toString(),
         createDto.nominees?.[0]?.categoryId || '',
-        createDto.nominees
-          ? createDto.nominees.map((n) => n.contactName).join(', ')
-          : '',
-        createDto.nominatorEmail,
+        nomineeEntries.map((n) => n.contactName).join(', '),
+        cleanNominatorEmail,
         websiteId,
       ),
     );
@@ -391,17 +412,21 @@ export class NominationsService {
         .exec();
 
       const registreeIds = matchingRegistrees.map((r) => r._id);
-      if (registreeIds.length > 0) {
-        matchQuery.$or = [
-          { nominatorId: { $in: registreeIds } },
-          { 'nominees.nomineeId': { $in: registreeIds } },
-        ];
-      } else {
-        return {
-          data: [],
-          meta: { total: 0, page, limit, totalPages: 0 },
-        };
-      }
+      matchQuery.$or = [
+        ...(registreeIds.length > 0
+          ? [
+              { nominatorId: { $in: registreeIds } },
+              { 'nominees.nomineeId': { $in: registreeIds } },
+            ]
+          : []),
+        { 'nominatorSnapshot.name': searchRegex },
+        { 'nominatorSnapshot.email': searchRegex },
+        { 'nominatorSnapshot.company': searchRegex },
+        { 'nominatorSnapshot.city': searchRegex },
+        { 'nominees.contactName': searchRegex },
+        { 'nominees.contactEmail': searchRegex },
+        { 'nominees.companyName': searchRegex },
+      ];
     }
 
     const [data, total] = await Promise.all([

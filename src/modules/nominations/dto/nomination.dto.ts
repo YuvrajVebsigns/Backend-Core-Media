@@ -11,8 +11,13 @@ import {
   ArrayMaxSize,
   IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { NominationStatus } from '../schemas/nomination.schema';
+import {
+  toTitleCase,
+  cleanEmail,
+  cleanPhone,
+} from '@common/utils/string.util';
 
 /**
  * DTO for a single nominee in the form submission
@@ -44,10 +49,12 @@ export class NomineeDto {
   subcategoryId?: string;
 
   @ApiProperty({ example: 'Jane Smith', description: 'CIO Contact Name' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   contactName!: string;
 
   @ApiProperty({ example: 'Infosys', description: 'CIO Company Name' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   companyName!: string;
 
@@ -55,6 +62,7 @@ export class NomineeDto {
     example: 'jane@infosys.com',
     description: 'CIO Contact Email',
   })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   contactEmail!: string;
 
@@ -63,6 +71,7 @@ export class NomineeDto {
     required: false,
     description: 'CIO Mobile No',
   })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   mobileNo?: string;
@@ -74,6 +83,7 @@ export class NomineeDto {
 export class CreateNominationDto {
   // Nominator details
   @ApiProperty({ example: 'John Doe', description: 'Name of the Nominator' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   nominatorName!: string;
 
@@ -81,10 +91,12 @@ export class CreateNominationDto {
     example: 'Acme Corp',
     description: "Name of the Nominator's Company",
   })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   nominatorCompany!: string;
 
   @ApiProperty({ example: 'Mumbai', description: 'Nominator City' })
+  @Transform(({ value }) => toTitleCase(value))
   @IsString()
   nominatorCity!: string;
 
@@ -93,11 +105,13 @@ export class CreateNominationDto {
     required: false,
     description: 'Nominator Contact No',
   })
+  @Transform(({ value }) => cleanPhone(value))
   @IsString()
   @IsOptional()
   nominatorPhone?: string;
 
   @ApiProperty({ example: 'john@acme.com', description: 'Nominator Email ID' })
+  @Transform(({ value }) => cleanEmail(value))
   @IsEmail()
   nominatorEmail!: string;
 
