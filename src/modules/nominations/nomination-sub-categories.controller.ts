@@ -54,7 +54,7 @@ export class AdminNominationSubCategoriesController {
 
   @Get()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({
     summary: 'Get all nomination sub categories with pagination',
   })
@@ -68,7 +68,7 @@ export class AdminNominationSubCategoriesController {
 
   @Get(':id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({ summary: 'Get a nomination sub category by ID' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the sub category' })
   @ApiResponse({ status: 200, description: 'Sub category details' })

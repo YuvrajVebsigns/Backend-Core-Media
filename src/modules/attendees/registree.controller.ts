@@ -30,7 +30,7 @@ import { SystemUserRole } from '@common/enums/role.enum';
 @Controller('admin/registrees')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionGuard)
-@Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
+@Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
 export class AdminRegistreesController {
   constructor(private readonly attendeesService: AttendeesService) {}
 
@@ -46,7 +46,7 @@ export class AdminRegistreesController {
   }
 
   @Get(':id')
-  @Permission('registrations.view')
+  @Permission('registrations.view', 'nominees.view', 'nominators.view')
   @ApiOperation({ summary: 'Get details of a single global registree by ID' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the Registree.' })
   findOne(@Param('id') id: string) {

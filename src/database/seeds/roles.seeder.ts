@@ -33,6 +33,20 @@ export class RolesSeeder implements OnApplicationBootstrap {
         isActive: true,
         isShow: true,
       },
+      {
+        name: 'Event Manager',
+        roleKey: 'event_manager',
+        permissions: [
+          'events.view',
+          'sponsors.view',
+          'registrations.view',
+          'attendance.view',
+          'nominators.view',
+          'nominees.view',
+        ],
+        isActive: true,
+        isShow: true,
+      },
     ];
 
     for (const roleData of roles) {

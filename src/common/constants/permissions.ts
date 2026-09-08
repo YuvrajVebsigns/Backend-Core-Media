@@ -97,6 +97,12 @@ export const PERMISSIONS = {
   NOMINEES_UPDATE: 'nominees.update',
   NOMINEES_DELETE: 'nominees.delete',
 
+  // Nominations
+  NOMINATIONS_VIEW: 'nominations.view',
+  NOMINATIONS_CREATE: 'nominations.create',
+  NOMINATIONS_UPDATE: 'nominations.update',
+  NOMINATIONS_DELETE: 'nominations.delete',
+
   // Communications
   COMMUNICATIONS_VIEW: 'communications.view',
 };

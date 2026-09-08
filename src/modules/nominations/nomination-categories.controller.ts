@@ -51,7 +51,7 @@ export class AdminNominationCategoriesController {
 
   @Get()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({ summary: 'Get all nomination categories with pagination' })
   @ApiResponse({ status: 200, description: 'List of nomination categories' })
   findAll(@Query() queryDto: QueryNominationCategoryDto) {
@@ -60,7 +60,7 @@ export class AdminNominationCategoriesController {
 
   @Get(':id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({ summary: 'Get a nomination category by ID' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the category' })
   @ApiResponse({ status: 200, description: 'Category details' })

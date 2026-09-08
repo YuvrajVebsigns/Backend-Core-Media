@@ -40,7 +40,7 @@ export class AdminNominationsController {
 
   @Post()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @Permission('nominations.create')
+  @Permission('nominators.create', 'nominees.create', 'nominations.create')
   @ApiOperation({
     summary: 'Create a nomination (Admin)',
     description:
@@ -58,7 +58,7 @@ export class AdminNominationsController {
 
   @Get()
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({
     summary: 'Get all nominations with pagination and filters',
     description:
@@ -71,7 +71,7 @@ export class AdminNominationsController {
 
   @Get('grouped/nominators')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominations.view')
   @ApiOperation({
     summary: 'Get all unique nominators with aggregated nominations',
   })
@@ -85,7 +85,7 @@ export class AdminNominationsController {
 
   @Get('grouped/nominees')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominees.view', 'nominations.view')
   @ApiOperation({
     summary: 'Get all unique nominees with aggregated nominations',
   })
@@ -99,7 +99,7 @@ export class AdminNominationsController {
 
   @Get(':id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN, SystemUserRole.STAFF)
-  @Permission('nominations.view')
+  @Permission('nominators.view', 'nominees.view', 'nominations.view')
   @ApiOperation({ summary: 'Get a nomination by ID' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
   @ApiResponse({
@@ -113,7 +113,7 @@ export class AdminNominationsController {
 
   @Patch(':id')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @Permission('nominations.update')
+  @Permission('nominators.update', 'nominees.update', 'nominations.update')
   @ApiOperation({ summary: 'Update a nomination' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
   @ApiResponse({ status: 200, description: 'Nomination updated successfully' })
@@ -124,7 +124,7 @@ export class AdminNominationsController {
 
   @Patch('websites/:websiteId/nomination-status')
   @Roles(SystemUserRole.SUPER_ADMIN, SystemUserRole.ADMIN)
-  @Permission('nominations.update')
+  @Permission('nominators.update', 'nominees.update', 'nominations.update')
   @ApiOperation({ summary: 'Update website nomination form status' })
   @ApiParam({ name: 'websiteId', description: 'MongoDB ID of the website' })
   @ApiResponse({
@@ -144,7 +144,7 @@ export class AdminNominationsController {
 
   @Delete(':id')
   @Roles(SystemUserRole.SUPER_ADMIN)
-  @Permission('nominations.delete')
+  @Permission('nominators.delete', 'nominees.delete', 'nominations.delete')
   @ApiOperation({ summary: 'Soft delete a nomination' })
   @ApiParam({ name: 'id', description: 'MongoDB ID of the nomination' })
   @ApiResponse({ status: 200, description: 'Nomination deleted successfully' })

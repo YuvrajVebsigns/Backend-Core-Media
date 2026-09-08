@@ -30,12 +30,16 @@ export class PermissionGuard implements CanActivate {
     // Role permissions are expected to be populated
     const userPermissions: string[] = user.role.permissions || [];
 
-    // Super Admin check (wildcard)
-    if (userPermissions.includes('*')) {
+    // Super Admin / Admin check (wildcard or roleKey)
+    if (
+      userPermissions.includes('*') ||
+      user.role?.roleKey === 'super_admin' ||
+      user.role?.roleKey === 'admin'
+    ) {
       return true;
     }
 
-    const hasPermission = requiredPermissions.every((permission) =>
+    const hasPermission = requiredPermissions.some((permission) =>
       userPermissions.includes(permission),
     );
 
