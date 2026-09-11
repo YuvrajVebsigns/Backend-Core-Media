@@ -15,7 +15,11 @@ export class EventsSeeder implements OnApplicationBootstrap {
 
   async onApplicationBootstrap() {
     setTimeout(async () => {
-      await this.seed();
+      try {
+        await this.seed();
+      } catch (err: any) {
+        console.warn('⚠️ EventsSeeder bootstrap error:', err.message);
+      }
     }, 2000);
   }
 
@@ -107,43 +111,56 @@ export class EventsSeeder implements OnApplicationBootstrap {
           }
         }
 
-        await this.eventService.create({
-          title,
-          slug,
-          description: {
-            blocks: [
-              {
-                type: 'paragraph',
-                data: {
-                  text: `Join us for ${title}. A premier event for industry leaders.`,
+        try {
+          await this.eventService.create({
+            title,
+            slug,
+            description: {
+              blocks: [
+                {
+                  type: 'paragraph',
+                  data: {
+                    text: `Join us for ${title}. A premier event for industry leaders.`,
+                  },
                 },
+              ],
+            },
+            excerpt: `A brief summary of ${title}`,
+            type: template.type,
+            status: template.status,
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            location: template.location,
+            meetingLink: template.meetingLink,
+            websites: eventWebsites,
+            agenda: [
+              {
+                time: '09:00 AM',
+                title: 'Registration & Breakfast',
+                speaker: 'Core Team',
+                description: 'Kickstart the day',
+              },
+              {
+                time: '10:00 AM',
+                title: 'Keynote Speech',
+                speaker: 'Industry Expert',
+                description: 'Trends for 2026',
               },
             ],
-          },
-          excerpt: `A brief summary of ${title}`,
-          type: template.type,
-          status: template.status,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          location: template.location,
-          meetingLink: template.meetingLink,
-          websites: eventWebsites,
-          agenda: [
-            {
-              time: '09:00 AM',
-              title: 'Registration & Breakfast',
-              speaker: 'Core Team',
-              description: 'Kickstart the day',
-            },
-            {
-              time: '10:00 AM',
-              title: 'Keynote Speech',
-              speaker: 'Industry Expert',
-              description: 'Trends for 2026',
-            },
-          ],
-        });
-        console.log(`✅ Event seeded: ${title}`);
+          });
+          console.log(`✅ Event seeded: ${title}`);
+        } catch (err: any) {
+          if (
+            err.code === 11000 ||
+            err.status === 409 ||
+            err.message?.includes('already exists') ||
+            err.message?.includes('E11000')
+          ) {
+            console.log(`ℹ️ Event "${slug}" already exists in database. Skipping.`);
+          } else {
+            console.warn(`⚠️ Failed to seed event "${slug}":`, err.message);
+          }
+        }
       }
     }
   }

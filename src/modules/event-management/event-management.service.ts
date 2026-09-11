@@ -141,9 +141,9 @@ export class EventsService {
     bannerFile?: Express.Multer.File,
     uploadedBy?: string,
   ): Promise<Event> {
-    const existing = await this.eventModel
-      .findOne({ slug: createEventDto.slug })
-      .exec();
+    const existing = await this.eventModel.collection.findOne({
+      slug: createEventDto.slug,
+    });
     if (existing) {
       throw new ConflictException(
         `Event with slug ${createEventDto.slug} already exists`,
@@ -155,7 +155,17 @@ export class EventsService {
     this.sanitizeImageUrls(createEventDto);
 
     const createdEvent = new this.eventModel(createEventDto);
-    const savedEvent = await createdEvent.save();
+    let savedEvent: any;
+    try {
+      savedEvent = await createdEvent.save();
+    } catch (err: any) {
+      if (err.code === 11000) {
+        throw new ConflictException(
+          `Event with slug ${createEventDto.slug} already exists`,
+        );
+      }
+      throw err;
+    }
 
     // Upload banner image if file is provided
     if (bannerFile && uploadedBy) {
