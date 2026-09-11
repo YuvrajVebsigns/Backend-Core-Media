@@ -494,7 +494,14 @@ export class EventListeners {
               (nomination as any).nominatorSnapshot
             ) {
               const snapshot = (nomination as any).nominatorSnapshot;
-              const nominator = (nomination.nominatorId || {}) as any;
+              const rawNominator = (nomination as any).nominatorId;
+              const nominator =
+                rawNominator && typeof rawNominator.toObject === 'function'
+                  ? rawNominator.toObject()
+                  : nominationObj.nominatorId &&
+                      typeof nominationObj.nominatorId === 'object'
+                    ? nominationObj.nominatorId
+                    : {};
 
               // Prioritize snapshot values over nominatorId
               const nominatorName = snapshot?.name || nominator.name || '';
@@ -887,8 +894,10 @@ export class EventListeners {
       const resolveLatestArrayRecords = (
         obj: any,
         preservedKeys: string[] = ['nominees'],
+        visited = new WeakSet(),
       ) => {
-        if (!obj || typeof obj !== 'object') return;
+        if (!obj || typeof obj !== 'object' || visited.has(obj)) return;
+        visited.add(obj);
         for (const [key, val] of Object.entries(obj)) {
           if (preservedKeys.includes(key)) {
             continue;
@@ -901,13 +910,13 @@ export class EventListeners {
             ) {
               // Resolve nested arrays first
               for (const item of val) {
-                resolveLatestArrayRecords(item, preservedKeys);
+                resolveLatestArrayRecords(item, preservedKeys, visited);
               }
               // Override with latest element
               obj[key] = val[val.length - 1];
             }
           } else if (val && typeof val === 'object') {
-            resolveLatestArrayRecords(val, preservedKeys);
+            resolveLatestArrayRecords(val, preservedKeys, visited);
           }
         }
       };
@@ -1428,6 +1437,7 @@ export class EventListeners {
     } catch (err) {
       this.logger.error(
         `Error processing event-template mapping for event ${eventName}: ${err.message}`,
+        err.stack,
       );
     }
   }

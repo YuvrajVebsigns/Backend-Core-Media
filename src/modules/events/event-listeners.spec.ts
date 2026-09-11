@@ -503,4 +503,68 @@ describe('EventListeners', () => {
       undefined,
     );
   });
+
+  it('should not exceed call stack size when nominatorId is a Mongoose document with internal circular references', async () => {
+    const mockMapping = {
+      to: '{{ nominatorEmail }}',
+      templateId: {
+        slug: 'nominator-thank-you',
+        subject: 'Thank you {{ nominatorName }}',
+        htmlContent: '<p>Hi {{ nominatorName }}</p>',
+      },
+    };
+    mockCommunicationsService.findEventMappingsByEvent.mockResolvedValue([
+      mockMapping,
+    ]);
+
+    // Create a mock Mongoose Document with internal circular references
+    const circularObj: any = { schema: {} };
+    circularObj.schema.parent = circularObj;
+
+    const mockMongooseNominator: any = {
+      name: 'Mongoose Nominator',
+      email: 'mongoose.nominator@test.com',
+      organization: 'Mongoose Org',
+      phoneNumber: '9999999999',
+      city: 'Delhi',
+      $__: circularObj,
+      _doc: { name: 'Mongoose Nominator' },
+    };
+    mockMongooseNominator.toObject = () => ({
+      name: 'Mongoose Nominator',
+      email: 'mongoose.nominator@test.com',
+      organization: 'Mongoose Org',
+      phoneNumber: '9999999999',
+      city: 'Delhi',
+    });
+
+    const mockNomination = {
+      nominatorId: mockMongooseNominator,
+      nominees: [],
+      status: 'pending',
+      toObject: () => ({
+        nominatorId: mockMongooseNominator.toObject(),
+        nominees: [],
+        status: 'pending',
+      }),
+    };
+    mockNominationsService.findOne.mockResolvedValue(mockNomination);
+
+    await (eventListeners as any).triggerMappedEvent('nomination.submitted', {
+      nominationId: 'mongoose-nom-123',
+    });
+
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledTimes(1);
+    expect(mockCommunicationsService.dispatch).toHaveBeenCalledWith(
+      undefined,
+      'mongoose.nominator@test.com',
+      'Thank you Mongoose Nominator',
+      '<p>Hi Mongoose Nominator</p>',
+      expect.objectContaining({
+        templateSlug: 'nominator-thank-you',
+      }),
+      undefined,
+      undefined,
+    );
+  });
 });
